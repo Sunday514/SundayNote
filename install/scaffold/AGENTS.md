@@ -1,0 +1,70 @@
+# Sunday Note Agent 规则
+
+本文件是 Codex、Claude Code 等 agent 在本 vault 内工作的通用规则。`SundayNoteAgent/AGENTS.md` 是 Agent 工具层自身的开发规则；本文件约束当前私人知识库。
+
+## 目标
+
+- 维护可信、低摩擦、低熵的个人知识库。
+- 用 Markdown 保存长期事实，用内部链接维护知识图谱。
+- 优先保留人工内容，避免无确认的改写、重组和生成式污染。
+
+## 目录职责
+
+```text
+首页.md
+10_原始材料/
+20_每日记录/
+21_每周记录/
+22_每月记录/
+23_项目复盘/
+30_知识库/
+40_个人写作/
+个人模板/
+SundayNoteAgent/
+```
+
+- `首页.md`: vault 导航和常用入口。
+- `10_原始材料/`: 原始证据、临时捕获、附件、截图、日志和未澄清材料。
+- `20_每日记录/`: 当天事实、过程记录、问题、阻塞和简短总结。
+- `21_每周记录/`: 每周计划、复盘、阶段压缩和对外呈现。
+- `22_每月记录/`: 月度方向、项目组合、知识库维护和阶段判断。
+- `23_项目复盘/`: 长期项目状态、阶段复盘、风险和下一步。
+- `30_知识库/`: 已确认、可复用、长期有效的概念、经验、方法和工作流。
+- `40_个人写作/`: 用户本人写作、日记、生活记录、随笔和其他私人文字。
+- `个人模板/`: 本地个人模板和相关自动化配置。
+- `SundayNoteAgent/`: SundayNoteAgent 项目 submodule。
+
+## 信息架构
+
+- Raw = 证据：`10_原始材料/`。保留来源和可追溯性，agent 可以读取和引用，但不主动改写原始材料。
+- Routine = 例行：`20_每日记录/`、`21_每周记录/`、`22_每月记录/`、`23_项目复盘/`。这是人和 agent 共同维护的周期记录层。
+- Wiki = 记忆：`30_知识库/`。只保存长期稳定、可复用、能减少未来解释成本的内容。
+- Journal = 写作：`40_个人写作/`。这是纯个人文字区，agent 默认只读。
+- Schema = 规则：`AGENTS.md`、`CLAUDE.md`、`SundayNoteAgent/`、`.agents/`、`.sunday-note-agent/` 和必要 `.obsidian` 配置。用户主导规则，agent 可以提出改进建议。
+
+## 写入边界
+
+- 不确定放置位置时，先进入 `10_原始材料/收件箱/` 或在对话中标记待确认。
+- 修改正式笔记时优先追加或局部小改，保留人工内容。
+- 新建正式页面前，先检查是否已有 canonical 页面可以更新。
+- 不确定事实、推测和待确认内容要明确标记；没有可靠来源时不要编造。
+- 写入 Routine、Wiki 或 Schema 前，说明建议位置、理由和需要更新的链接，并等待用户确认。
+- `30_知识库/` 不接收流水账、一次性安排、完整日志、未验证猜测或未确认的个人写作摘录。
+- `40_个人写作/` 下的文件不得创建、修改、重写、润色、移动、删除或自动搬运，除非用户明确要求。
+
+## 图像文件
+
+- 图像文件统一放在 vault 根目录的 `assets/figures/` 下。
+- Markdown 中使用相对路径引用图像，例如 `![](/assets/figures/example.png)` 或从当前文件出发的相对路径。
+- 移动或重命名包含图像的笔记时，修复指向 `assets/figures/` 的图片链接。
+- 多篇笔记共用的原始图片或临时截图先放入 `10_原始材料/`，只有确认需要长期引用时再移动到 `assets/figures/`。
+
+## 维护边界
+
+- 修改规则时保持简要、清晰、可执行；避免为具体 case 堆砌防御性规则。
+- 本 vault 自身结构、使用方式和配置说明写入 `README.md` 或 `SundayNoteAgent/SundayNoteAgent/知识库框架/`；agent 工作规则写入 `AGENTS.md`。
+- 个人内容、个人模板、模板插件配置和运行状态属于私人仓库。
+- `SundayNoteAgent/` 由 SundayNoteAgent 项目 submodule 提供；不要在其中写入个人内容。
+- `.trash/`、`.git/`、`.codex/` 和 `.claude/` 运行状态默认不参与知识库整理。
+- `.agents/` 是父 vault 的 agent skill 导出目录，由安装器从 `SundayNoteAgent/SundayNoteAgent/skills` 生成。
+- `.sunday-note-agent/` 是 SundayNoteAgent 的隐藏导出目录，保存路径配置和 Obsidian 自动化脚本，由安装器从 `SundayNoteAgent/SundayNoteAgent/config` 和 `SundayNoteAgent/SundayNoteAgent/automation` 生成。

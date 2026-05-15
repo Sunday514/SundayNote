@@ -1,0 +1,26 @@
+# Runtime state
+.DS_Store
+*.swp
+*~
+.trash/
+.codex/
+.claude/
+
+# Obsidian runtime state and plugin code
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/copilot-index-*.json
+.obsidian/plugins/*/main.js
+.obsidian/plugins/*/manifest.json
+.obsidian/plugins/*/styles.css
+.obsidian/themes/
+
+# Agent runtime state. Keep exported skills.
+.agents/*
+!.agents/
+!.agents/skills/
+!.agents/skills/**
+
+# SundayNoteAgent exported config and Obsidian automation.
+!.sunday-note-agent/
+!.sunday-note-agent/**

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sunday Note Ingest"
+  short_description: "Ingest sources into Sunday Note"
+  default_prompt: "Use $sunday-note-ingest to turn this source into traceable Sunday Note knowledge candidates."

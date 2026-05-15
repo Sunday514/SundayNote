@@ -1,0 +1,8 @@
+.agents/
+.codex/
+.claude/
+
+个人模板/**
+!个人模板/.gitkeep
+
+Scripts/quickadd/**
