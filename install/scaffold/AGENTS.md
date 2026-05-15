@@ -62,7 +62,7 @@ SundayNoteAgent/
 ## 维护边界
 
 - 修改规则时保持简要、清晰、可执行；避免为具体 case 堆砌防御性规则。
-- 本 vault 自身结构、使用方式和配置说明写入 `README.md` 或 `SundayNoteAgent/知识库框架/`；agent 工作规则写入 `AGENTS.md`。
+- 本 vault 自身结构、使用方式和配置说明写入 `README.md` 或 `SundayNoteAgent/docs/`；agent 工作规则写入 `AGENTS.md`。
 - 个人内容、个人模板、模板插件配置和运行状态属于私人仓库。
 - `SundayNoteAgent/` 由 SundayNoteAgent 项目 submodule 提供；不要在其中写入个人内容。
 - `.trash/`、`.git/`、`.codex/` 和 `.claude/` 运行状态默认不参与知识库整理。

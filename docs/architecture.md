@@ -11,7 +11,7 @@ sources:
 
 ## Summary
 
-本文件说明 Sunday Note 的框架架构，属于 `SundayNoteAgent/知识库框架/`。它不是 `30_知识库/` 的正文知识页。
+本文件说明 Sunday Note 的框架架构，属于 `SundayNoteAgent/docs/`。它不是 `30_知识库/` 的正文知识页。
 
 Sunday Note 参考 Karpathy 的 LLM Wiki 思路，但采用更保守的个人知识库版本：agent 负责整理、压缩、链接和提出写入建议，用户负责确认事实、取舍和正式写入。
 
@@ -31,8 +31,8 @@ Schema = 规则
 - Routine 对应 `20_每日记录/`、`21_每周记录/`、`22_每月记录/`、`23_项目复盘/`。它是人和 agent 半自动维护的例行记录层。
 - Wiki 对应 `30_知识库/`。它只保存长期稳定、可复用、能减少未来解释成本的内容。
 - Journal 对应 `40_个人写作/`。它保存用户本人的个人表达，agent 默认只读。
-- Schema 对应 `AGENTS.md`、`CLAUDE.md`、`SundayNoteAgent/`、父 vault `.agents/` 和必要 `.obsidian` 配置。它定义维护规则、skills、布局快照和工具层入口。
-- `SundayNoteAgent/config/sunday-note-vault.yaml` 是机器可读路径映射的源文件；安装器会导出为父 vault `.sunday-note-agent/config/sunday-note-vault.yaml`，负责把 Raw、Routine、Wiki、Journal 和 Schema 术语映射到当前 vault 的实际目录名。
+- Schema 对应 `AGENTS.md`、`CLAUDE.md`、`SundayNoteAgent/`、父 vault `.agents/` 和必要 `.obsidian` 配置。它定义维护规则、skills、配置快照和工具层入口。
+- `SundayNoteAgent/config/sunday-note-vault.yaml` 是机器可读路径映射的默认值；安装器会在父 vault 缺少配置时创建 `.sunday-note-agent/config/sunday-note-vault.yaml`，负责把 Raw、Routine、Wiki、Journal 和 Schema 术语映射到当前 vault 的实际目录名。
 
 `README.md` 是用户说明，不作为 agent 规则来源。
 
@@ -113,6 +113,6 @@ Raw -> Routine -> Wiki
 
 - [[AGENTS]]
 - [[README]]
-- [[目录说明]]
+- [[directory-structure]]
 - [[Karpathy LLM Wiki]]
-- [[未来待办]]
+- [[roadmap]]

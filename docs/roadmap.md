@@ -2,7 +2,7 @@
 status: draft
 updated: 2026-05-11
 sources:
-  - "[[架构设计]]"
+  - "[[architecture]]"
   - "[[AGENTS]]"
 ---
 
@@ -41,7 +41,7 @@ Sunday Note 当前已经进入 v0.1 框架验证阶段。下一步重点不是�
 - `.obsidian/workspace.json`
 - 个人图片和附件
 - Terminal transcript
-- 模板正文
+- 个人模板正文
 - `30_知识库/` 下的正文知识
 - `40_个人写作/` 下的个人写作
 

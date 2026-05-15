@@ -20,7 +20,7 @@ sources:
 - `23_项目复盘/`: Routine，项目视图。
 - `30_知识库/`: Wiki，长期记忆层。
 - `40_个人写作/`: Journal，个人写作层。
-- `SundayNoteAgent/`: Schema，框架文档、skills、自动化脚本、通用模板、布局快照和辅助文件。
+- `SundayNoteAgent/`: Schema，框架文档、skills、自动化脚本、通用模板、配置快照和辅助文件。
 
 ## 信息架构
 
@@ -40,17 +40,17 @@ Routine 是人和 agent 半自动维护的例行记录层，不等同于“工�
 
 框架项目由 `README.md`、`AGENTS.md`、`CLAUDE.md`、`SundayNoteAgent/`、`首页.md` 和必要 Obsidian 配置组成，进入 git 管理。其他内容目录只保留公共目录结构，具体笔记和个人模板默认由 `.gitignore` 排除。
 
-`SundayNoteAgent/config/sunday-note-vault.yaml` 保存机器可读的目录映射源文件；安装器会导出为父 vault 的 `.sunday-note-agent/config/sunday-note-vault.yaml`。人读文档仍直接使用当前目录名；skills 和未来脚本优先读取父 vault `.sunday-note-agent/` 下的配置，避免把 Raw、Wiki 等语义层和中文目录名绑定。
+`SundayNoteAgent/config/sunday-note-vault.yaml` 保存机器可读的目录映射默认值；安装器会在父 vault 缺少配置时创建 `.sunday-note-agent/config/sunday-note-vault.yaml`。人读文档仍直接使用当前目录名；skills 和未来脚本优先读取父 vault `.sunday-note-agent/` 下的本地配置，避免把 Raw、Wiki 等语义层和中文目录名绑定。
 
 `30_知识库/索引.md` 和 `30_知识库/知识库维护日志.md` 属于本地 Wiki 维护文件。它们帮助 agent 定位 canonical 页面和追踪 ingest / query / lint 演化，但默认不进入 Git。
 
-必要 Obsidian 配置是可迁移基线，不是插件安装包。仓库保存 terminal wrapper 和少量框架级配置，不保存社区插件的 `main.js`、`manifest.json`、`styles.css`，也不保存 Daily Notes、Calendar、Templates 和 QuickAdd actions 等本地模板配置。恢复布局快照前，用户需要先在 Obsidian 中安装并启用必备插件。
+必要 Obsidian 配置是可迁移基线，不是插件安装包。仓库保存 terminal wrapper、`config/` 下的框架级配置和布局快照，不保存社区插件的 `main.js`、`manifest.json`、`styles.css`，也不保存 Daily Notes、Calendar、Templates 和 QuickAdd actions 等本地模板配置。恢复 `config/layout-snapshots/` 中的布局快照前，用户需要先在 Obsidian 中安装并启用必备插件。
 
-QuickAdd 是模板、捕获和例行维护动作的主要入口。`创建每日记录`、`创建今日日记`、`统计本周打卡` 和 `统计月度包打卡` 这类动作配置属于本地模板配置；可复用脚本源文件放在 `SundayNoteAgent/automation/quickadd/`，安装时导出到父 vault `.sunday-note-agent/quickadd/`。
+QuickAdd 是模板、捕获和例行维护动作的主要入口。`创建每日记录`、`创建今日日记`、`统计本周打卡` 和 `统计月度包打卡` 这类动作配置属于本地模板配置；可复用脚本源文件放在 `SundayNoteAgent/automation/quickadd/`，安装时通过父 vault `.sunday-note-agent/quickadd` 软链接使用。
 
 具体打卡项保存在本地 Daily 模板中。Daily 创建统一使用个人模板中的 `每日记录.md`；某天不参与统计的项目可以直接从当天 Daily 中删除。Weekly 统计优先按 Daily 模板中的 checkbox 顺序输出，同时兼容历史 Daily 中额外出现的打卡项。
 
-`SundayNoteAgent/模板/` 保存 Wiki / 框架通用模板，可以进入 git。`个人模板/` 保存 Daily / Weekly / Monthly 等个人模板正文，由私人知识库管理。Templater 可以作为可选增强，但不作为迁移必需依赖。
+`SundayNoteAgent/templates/` 保存 Wiki / 框架通用模板，可以进入 git。`个人模板/` 保存 Daily / Weekly / Monthly 等个人模板正文，由私人知识库管理。Templater 可以作为可选增强，但不作为迁移必需依赖。
 
 ## 图像归属
 
@@ -60,8 +60,8 @@ QuickAdd 是模板、捕获和例行维护动作的主要入口。`创建每日�
 
 - Agent 规则: [[AGENTS]]
 - 项目说明: [[README]]
-- 架构设计: [[架构设计]]
-- 未来待办: [[未来待办]]
+- 架构设计: [[architecture]]
+- 未来待办: [[roadmap]]
 - Agent skills 源文件: `SundayNoteAgent/skills/`
 - QuickAdd 自动化源文件: `SundayNoteAgent/automation/quickadd/`
-- 安装后 skill 发现入口: `.agents/skills/`
+- 安装后 skill 发现入口: `.agents/skills/`，软链接到 `SundayNoteAgent/skills/`

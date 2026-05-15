@@ -9,7 +9,7 @@ layers:
   journal: "40_个人写作"
   schema:
     agent: "SundayNoteAgent"
-    framework: "SundayNoteAgent/知识库框架"
+    framework: "SundayNoteAgent/docs"
     skills: ".agents/skills"
     config: ".sunday-note-agent/config/sunday-note-vault.yaml"
 

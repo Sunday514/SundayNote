@@ -93,6 +93,18 @@ copy_scaffold_file() {
   copy_if_missing "$SCAFFOLD_DIR/$name" "$VAULT_ROOT/$name"
 }
 
+link_or_replace() {
+  local target="$1"
+  local link_path="$2"
+  if [ -e "$link_path" ] && [ ! -L "$link_path" ]; then
+    rm -rf "$link_path"
+  elif [ -L "$link_path" ]; then
+    rm -f "$link_path"
+  fi
+  mkdir -p "$(dirname -- "$link_path")"
+  ln -s "$target" "$link_path"
+}
+
 ensure_vault_dirs() {
   mkdir -p \
     "$VAULT_ROOT/.agents" \
@@ -148,25 +160,15 @@ export_agents_payload() {
   cd "$VAULT_ROOT"
   mkdir -p .agents
 
-  if [ -e .agents/skills ] && [ ! -d .agents/skills ]; then
-    echo ".agents/skills exists and is not a directory; refusing to replace it" >&2
-    exit 1
-  fi
-  if [ -e .sunday-note-agent/quickadd ] && [ ! -d .sunday-note-agent/quickadd ]; then
-    echo ".sunday-note-agent/quickadd exists and is not a directory; refusing to replace it" >&2
-    exit 1
-  fi
   if [ -e .sunday-note-agent/config/sunday-note-vault.yaml ] && [ ! -f .sunday-note-agent/config/sunday-note-vault.yaml ]; then
     echo ".sunday-note-agent/config/sunday-note-vault.yaml exists and is not a file; refusing to replace it" >&2
     exit 1
   fi
 
-  rm -rf .agents/skills
-  rm -rf .sunday-note-agent/quickadd
-  cp -a "$SOURCE_ROOT/skills" .agents/skills
   mkdir -p .sunday-note-agent/config
-  cp -a "$SOURCE_ROOT/automation/quickadd" .sunday-note-agent/quickadd
-  cp -f "$SOURCE_ROOT/config/sunday-note-vault.yaml" ".sunday-note-agent/config/sunday-note-vault.yaml"
+  link_or_replace "../$PROJECT_DIR_NAME/skills" ".agents/skills"
+  link_or_replace "../$PROJECT_DIR_NAME/automation/quickadd" ".sunday-note-agent/quickadd"
+  copy_if_missing "$SOURCE_ROOT/config/sunday-note-vault.yaml" ".sunday-note-agent/config/sunday-note-vault.yaml"
 }
 
 ensure_private_git() {
