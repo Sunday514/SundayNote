@@ -15,12 +15,6 @@
 .obsidian/plugins/*/styles.css
 .obsidian/themes/
 
-# Agent runtime state. Keep exported skills.
-.agents/*
-!.agents/
-!.agents/skills/
-!.agents/skills/**
-
-# SundayNoteAgent exported config and Obsidian automation.
-!.sunday-note-agent/
-!.sunday-note-agent/**
+# Generated agent exports. SundayNoteAgent/ is the source of truth.
+.agents/
+.sunday-note-agent/

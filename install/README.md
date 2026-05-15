@@ -17,7 +17,7 @@
 ```bash
 cd ~/Notes/Sunday-note
 git clone git@github.com:Sunday514/SundayNoteAgent.git SundayNoteAgent
-bash SundayNoteAgent/SundayNoteAgent/install/install.sh
+bash SundayNoteAgent/install/install.sh
 ```
 
 如果知识库根目录还不是 git 仓库，安装器会自动执行 `git init -b main`。如果 `SundayNoteAgent/` 还没有登记为 submodule，安装器会根据该目录的 `origin` 自动写入 `.gitmodules`。
@@ -39,7 +39,7 @@ bash SundayNoteAgent/install/install.sh /tmp/Sunday-note-test --framework-repo /
 如果已经手动把本项目拉到外部 vault 的 `SundayNoteAgent/` 目录下，可以在外部 vault 根目录运行：
 
 ```bash
-bash SundayNoteAgent/SundayNoteAgent/install/install.sh --vault-root .
+bash SundayNoteAgent/install/install.sh --vault-root .
 ```
 
 ## 生成内容

@@ -166,7 +166,7 @@ export_agents_payload() {
   cp -a "$SOURCE_ROOT/skills" .agents/skills
   mkdir -p .sunday-note-agent/config
   cp -a "$SOURCE_ROOT/automation/quickadd" .sunday-note-agent/quickadd
-  copy_if_missing "$SOURCE_ROOT/config/sunday-note-vault.yaml" ".sunday-note-agent/config/sunday-note-vault.yaml"
+  cp -f "$SOURCE_ROOT/config/sunday-note-vault.yaml" ".sunday-note-agent/config/sunday-note-vault.yaml"
 }
 
 ensure_private_git() {
@@ -179,8 +179,22 @@ ensure_private_git() {
 safe_local_git_config() {
   local repo="$1"
   local config_file="$2"
+  local git_dir=""
   git config --file "$config_file" --add safe.directory "$repo"
-  git config --file "$config_file" --add safe.directory "$repo/.git"
+
+  if [ -d "$repo/.git" ]; then
+    git_dir="$repo/.git"
+  elif [ -f "$repo/.git" ]; then
+    git_dir="$(sed -n 's/^gitdir: //p' "$repo/.git")"
+    case "$git_dir" in
+      /*) ;;
+      *) git_dir="$(cd -- "$repo" && cd -- "$(dirname -- "$git_dir")" && pwd)/$(basename -- "$git_dir")" ;;
+    esac
+  fi
+
+  if [ -n "$git_dir" ]; then
+    git config --file "$config_file" --add safe.directory "$git_dir"
+  fi
 }
 
 add_agent_submodule() {

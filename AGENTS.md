@@ -1,43 +1,31 @@
 # Agent 开发规则
 
-本目录用于维护 Sunday Note 的 agent 工具层。根目录 `../AGENTS.md` 仍然是整个 vault 的通用安全边界；本文件只补充 `SundayNoteAgent/` 内部的开发规则。
+本目录用于维护当前知识库的 agent 工具层。以下规则只适用于 `SundayNoteAgent/` 内部的开发工作。
 
 ## 目标
 
 - 维护可迁移、低复杂度、服务真实使用流程的 agent 工具层。
-- 优先改进 Daily、Weekly、Monthly、Project 和 Wiki 的使用闭环。
-- 避免为了单次需求堆砌规则、skill 或脚本。
+- 优先改进 agent 规则、skills、自动化脚本、模板和安装/导出流程。
+- 为保持代码和文档简洁清晰，避免为了单次需求堆砌规则、skill 或脚本。
 
-## 可编辑范围
+## 工作边界
 
-默认可以编辑：
-
-- `skills/`
-- `config/sunday-note-vault.yaml`
-- `automation/`
-- `布局快照/`
-- `知识库框架/`
-- `模板/`
-
-如需修改 `../README.md`、`../AGENTS.md`、`../CLAUDE.md` 或 `.obsidian` 配置，先说明原因和影响范围。
-
-默认不要编辑外层个人内容目录：
-
-- `../10_原始材料/`
-- `../20_每日记录/`
-- `../21_每周记录/`
-- `../22_每月记录/`
-- `../23_项目复盘/`
-- `../30_知识库/`
-- `../40_个人写作/`
+- 默认只修改 `SundayNoteAgent/` 内的源码、文档、脚本和模板。
+- 需要影响父 vault 时，优先修改安装器、scaffold 或配置源文件，不直接改父 vault 内容。
+- 不把个人数据、私有正文、本地运行状态或一次性工作记录写入子项目。
 
 ## 开发原则
 
-- 使用脱敏示例或本地模板测试，不依赖真实个人正文。
-- `模板/` 用于通用 Wiki / 框架模板，可以进入 git；`个人模板/` 用于 Daily / Weekly / Monthly 和相关 QuickAdd 脚本，默认不进入 git。
-- `automation/quickadd/` 保存可复用 QuickAdd 自动化脚本；脚本通过配置读取模板路径，不保存模板正文。
-- 修改 skill 时遵守 `skill-creator` 规范，保持 `SKILL.md` 简洁，frontmatter 只放 `name` 和 `description`。
-- skill 安装后通过父 vault `.sunday-note-agent/config/sunday-note-vault.yaml` 解析 Raw、Routine、Wiki、Journal 和 Schema 路径；本项目维护源文件 `config/sunday-note-vault.yaml`。
-- 修改脚本后运行基本语法检查。
-- 修改 QuickAdd、布局或 Obsidian 配置时，说明会影响哪些日常流程。
-- 不把个人数据写入 skills、规则或框架文档。
+- 修改前先明确目标结果、会影响的文件或产物，以及验证方式。
+- 优先选择最小可工作的设计，不为未来假设增加抽象、状态或配置。
+- 保持职责边界清楚；规则、skills、脚本、模板、安装器和导出产物不要互相混杂。
+- 只改完成当前目标所需的内容；发现无关问题时单独说明，不顺手重构。
+- 以可复用的框架能力为目标，不把规则、脚本或模板绑定到单个知识库 case。
+- 使用脱敏示例、临时目录或通用 fixture 测试，不依赖真实个人正文。
+- `模板/` 只保存可复用的通用模板；不要在子项目中保存个人模板或私有流程内容。
+- 自动化脚本应通过配置读取路径和模板位置，不硬编码父 vault 的个人目录或本机绝对路径。
+- 安装器和 scaffold 负责把子项目能力导出到父 vault；导出内容应可重复生成，源文件保留在子项目内。
+- 修改 skill 时保持 `SKILL.md` 简洁，frontmatter 只放 `name` 和 `description`。
+- 修改脚本、安装器或配置后，运行与改动类型匹配的基本检查；如果无法验证，说明缺口。
+- 修改安装、导出、Obsidian 自动化或布局相关逻辑时，说明会影响哪些用户流程。
+- 保持仓库数据有意图；不要让临时文件、测试输出或一次性布局进入长期契约。
