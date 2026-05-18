@@ -56,3 +56,25 @@ bash SundayNoteAgent/install/install.sh --vault-root .
 - 父 vault `.sunday-note-agent/quickadd` 软链接，指向 `SundayNoteAgent/automation/quickadd`。
 
 安装器只创建 `个人模板/` 目录，不打包个人模板正文。Daily / Weekly / Monthly 模板内容由私人知识库维护；自动化脚本通过 `.sunday-note-agent/config/sunday-note-vault.yaml` 读取模板路径。路径配置是父 vault 本地文件，安装器只在缺失时创建，不会覆盖已有配置。
+
+## QuickAdd 与插件说明
+
+- 当前 v0.1 提供 QuickAdd 自动化脚本与配置基线（`SundayNoteAgent/automation/quickadd` 及导出软链接），不预置 vault 内可直接执行的 QuickAdd choices/actions。
+- Daily Notes core plugin 只负责日期入口，模板和例行动作建议由 QuickAdd 与 `个人模板/` 组合实现。
+- 如果你需要隐藏运行产物目录，可选安装并启用 `OA-file-hider`（不作为安装器硬依赖）。
+
+## 导出验证
+
+安装后建议在父 vault 根目录运行：
+
+```bash
+ls -l .agents/skills
+find -L .agents/skills -maxdepth 3 -name SKILL.md -print
+```
+
+预期输出至少包含：
+
+- `skills/sunday-note-ingest/SKILL.md`
+- `skills/sunday-note-query/SKILL.md`
+- `skills/sunday-note-lint/SKILL.md`
+
