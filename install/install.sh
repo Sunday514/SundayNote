@@ -84,7 +84,10 @@ copy_if_missing() {
   local dst="$2"
   if [ -e "$src" ] && [ ! -e "$dst" ]; then
     mkdir -p "$(dirname -- "$dst")"
-    cp -a "$src" "$dst"
+    cp -R "$src" "$dst"
+    if [ -f "$dst" ]; then
+      chmod u+rw "$dst" 2>/dev/null || true
+    fi
   fi
 }
 
