@@ -1,39 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-FRAMEWORK_REPO="git@github.com:Sunday514/SundayNoteAgent.git"
 PROJECT_DIR_NAME="SundayNoteAgent"
-TARGET_DIR=""
 VAULT_ROOT=""
 
 usage() {
   cat <<'USAGE'
 Usage:
-  install.sh <target-dir> [--framework-repo <url-or-path>]
+  install.sh
   install.sh --vault-root <vault-dir>
 
-Modes:
-  <target-dir>
-    Create a new private vault, initialize git, and add this project as the
-    SundayNoteAgent/ submodule.
-
-  --vault-root <vault-dir>
-    Configure an existing vault that already contains this project under
-    SundayNoteAgent/.
-    If <vault-dir> has no git repository, one is initialized.
-
-The installer writes only the outer private vault scaffold. It does not migrate
-or rewrite existing personal notes.
+Configure a vault that already contains this project under SundayNoteAgent/.
+The installer writes the outer vault scaffold and export links. It does not
+migrate or rewrite existing personal notes.
 USAGE
 }
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --framework-repo)
-      [ "$#" -ge 2 ] || { echo "missing value for --framework-repo" >&2; exit 2; }
-      FRAMEWORK_REPO="$2"
-      shift 2
-      ;;
     --vault-root)
       [ "$#" -ge 2 ] || { echo "missing value for --vault-root" >&2; exit 2; }
       VAULT_ROOT="$2"
@@ -49,26 +33,15 @@ while [ "$#" -gt 0 ]; do
       exit 2
       ;;
     *)
-      [ -z "$TARGET_DIR" ] || { echo "target directory specified more than once" >&2; exit 2; }
-      TARGET_DIR="$1"
-      shift
+      echo "unexpected argument: $1" >&2
+      usage
+      exit 2
       ;;
   esac
 done
 
-if [ -n "$TARGET_DIR" ] && [ -n "$VAULT_ROOT" ]; then
-  echo "use either <target-dir> or --vault-root, not both" >&2
-  exit 2
-fi
-
-command -v git >/dev/null 2>&1 || { echo "git is required" >&2; exit 1; }
-
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
-CHECKOUT_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null || true)"
-if [ -z "$CHECKOUT_ROOT" ]; then
-  CHECKOUT_ROOT="$SOURCE_ROOT"
-fi
 SCAFFOLD_DIR="$SCRIPT_DIR/scaffold"
 
 abs_path() {
@@ -149,14 +122,14 @@ install_scaffold() {
 
   ensure_vault_dirs
 
-  copy_if_missing "$CHECKOUT_ROOT/.obsidian/app.json" "$VAULT_ROOT/.obsidian/app.json"
-  copy_if_missing "$CHECKOUT_ROOT/.obsidian/appearance.json" "$VAULT_ROOT/.obsidian/appearance.json"
-  copy_if_missing "$CHECKOUT_ROOT/.obsidian/community-plugins.json" "$VAULT_ROOT/.obsidian/community-plugins.json"
-  copy_if_missing "$CHECKOUT_ROOT/.obsidian/plugins/terminal/data.json" "$VAULT_ROOT/.obsidian/plugins/terminal/data.json"
-  copy_if_missing "$CHECKOUT_ROOT/.obsidian/bin/obsidian-codex-terminal" "$VAULT_ROOT/.obsidian/bin/obsidian-codex-terminal"
-  copy_if_missing "$CHECKOUT_ROOT/.obsidian/bin/obsidian-claude-terminal" "$VAULT_ROOT/.obsidian/bin/obsidian-claude-terminal"
-  copy_if_missing "$CHECKOUT_ROOT/.obsidian/bin/obsidian-bash-terminal" "$VAULT_ROOT/.obsidian/bin/obsidian-bash-terminal"
-  copy_if_missing "$CHECKOUT_ROOT/assets/figures/obsidian-layout.png" "$VAULT_ROOT/assets/figures/obsidian-layout.png"
+  copy_if_missing "$SOURCE_ROOT/.obsidian/app.json" "$VAULT_ROOT/.obsidian/app.json"
+  copy_if_missing "$SOURCE_ROOT/.obsidian/appearance.json" "$VAULT_ROOT/.obsidian/appearance.json"
+  copy_if_missing "$SOURCE_ROOT/.obsidian/community-plugins.json" "$VAULT_ROOT/.obsidian/community-plugins.json"
+  copy_if_missing "$SOURCE_ROOT/.obsidian/plugins/terminal/data.json" "$VAULT_ROOT/.obsidian/plugins/terminal/data.json"
+  copy_if_missing "$SOURCE_ROOT/.obsidian/bin/obsidian-codex-terminal" "$VAULT_ROOT/.obsidian/bin/obsidian-codex-terminal"
+  copy_if_missing "$SOURCE_ROOT/.obsidian/bin/obsidian-claude-terminal" "$VAULT_ROOT/.obsidian/bin/obsidian-claude-terminal"
+  copy_if_missing "$SOURCE_ROOT/.obsidian/bin/obsidian-bash-terminal" "$VAULT_ROOT/.obsidian/bin/obsidian-bash-terminal"
+  copy_if_missing "$SOURCE_ROOT/assets/figures/obsidian-layout.png" "$VAULT_ROOT/assets/figures/obsidian-layout.png"
 }
 
 export_agents_payload() {
@@ -174,108 +147,37 @@ export_agents_payload() {
   copy_if_missing "$SOURCE_ROOT/config/sunday-note-vault.yaml" ".sunday-note-agent/config/sunday-note-vault.yaml"
 }
 
-ensure_private_git() {
-  cd "$VAULT_ROOT"
-  if [ ! -d .git ]; then
-    git init -b main >/dev/null
-  fi
-}
-
-safe_local_git_config() {
-  local repo="$1"
-  local config_file="$2"
-  local git_dir=""
-  git config --file "$config_file" --add safe.directory "$repo"
-
-  if [ -d "$repo/.git" ]; then
-    git_dir="$repo/.git"
-  elif [ -f "$repo/.git" ]; then
-    git_dir="$(sed -n 's/^gitdir: //p' "$repo/.git")"
-    case "$git_dir" in
-      /*) ;;
-      *) git_dir="$(cd -- "$repo" && cd -- "$(dirname -- "$git_dir")" && pwd)/$(basename -- "$git_dir")" ;;
-    esac
-  fi
-
-  if [ -n "$git_dir" ]; then
-    git config --file "$config_file" --add safe.directory "$git_dir"
-  fi
-}
-
-add_agent_submodule() {
-  cd "$VAULT_ROOT"
-  if [ -e "$PROJECT_DIR_NAME" ]; then
-    echo "$PROJECT_DIR_NAME already exists; not adding a new submodule" >&2
-    return
-  fi
-
-  git_options=(-c protocol.file.allow=always)
-  if [ -d "$FRAMEWORK_REPO" ]; then
-    FRAMEWORK_REPO="$(cd -- "$FRAMEWORK_REPO" && pwd)"
-    temp_git_config="$(mktemp)"
-    trap 'rm -f "$temp_git_config"' EXIT
-    safe_local_git_config "$FRAMEWORK_REPO" "$temp_git_config"
-    GIT_CONFIG_GLOBAL="$temp_git_config" git "${git_options[@]}" submodule add "$FRAMEWORK_REPO" "$PROJECT_DIR_NAME" >/dev/null
-  else
-    git "${git_options[@]}" submodule add "$FRAMEWORK_REPO" "$PROJECT_DIR_NAME" >/dev/null
-  fi
-}
-
-register_existing_agent_submodule() {
-  cd "$VAULT_ROOT"
-  if git config --file .gitmodules --get-regexp '^submodule\\.SundayNoteAgent\\.' >/dev/null 2>&1; then
-    return
-  fi
-
-  if [ ! -d "$PROJECT_DIR_NAME" ]; then
+ensure_agent_sources() {
+  if [ ! -d "$VAULT_ROOT/$PROJECT_DIR_NAME" ]; then
     echo "missing $PROJECT_DIR_NAME directory under vault root: $VAULT_ROOT" >&2
     exit 1
   fi
-
-  local origin_url
-  origin_url="$(git -C "$PROJECT_DIR_NAME" config --get remote.origin.url || true)"
-  if [ -z "$origin_url" ]; then
-    origin_url="$FRAMEWORK_REPO"
-  fi
-
-  git_options=(-c protocol.file.allow=always)
-  git "${git_options[@]}" submodule add --force "$origin_url" "$PROJECT_DIR_NAME" >/dev/null
-}
-
-if [ -n "$TARGET_DIR" ]; then
-  VAULT_ROOT="$(abs_path "$TARGET_DIR")"
-  if [ -e "$VAULT_ROOT" ] && [ -n "$(find "$VAULT_ROOT" -mindepth 1 -print -quit 2>/dev/null)" ]; then
-    echo "target directory is not empty: $VAULT_ROOT" >&2
+  if [ ! -d "$VAULT_ROOT/$PROJECT_DIR_NAME/skills" ]; then
+    echo "missing $PROJECT_DIR_NAME/skills under vault root: $VAULT_ROOT" >&2
     exit 1
   fi
-  mkdir -p "$VAULT_ROOT"
-  ensure_private_git
-  add_agent_submodule
-elif [ -n "$VAULT_ROOT" ]; then
-  VAULT_ROOT="$(abs_path "$VAULT_ROOT")"
-  mkdir -p "$VAULT_ROOT"
-  ensure_private_git
-  register_existing_agent_submodule
-else
-  if [ "$(basename -- "$CHECKOUT_ROOT")" != "$PROJECT_DIR_NAME" ]; then
-    echo "no target provided, and this project is not installed under $PROJECT_DIR_NAME/" >&2
-    usage
-    exit 2
+  if [ ! -d "$VAULT_ROOT/$PROJECT_DIR_NAME/automation/quickadd" ]; then
+    echo "missing $PROJECT_DIR_NAME/automation/quickadd under vault root: $VAULT_ROOT" >&2
+    exit 1
   fi
-  VAULT_ROOT="$(cd -- "$CHECKOUT_ROOT/.." && pwd)"
-  ensure_private_git
-  register_existing_agent_submodule
+}
+
+if [ -n "$VAULT_ROOT" ]; then
+  VAULT_ROOT="$(abs_path "$VAULT_ROOT")"
+else
+  VAULT_ROOT="$(cd -- "$SOURCE_ROOT/.." && pwd)"
 fi
+
+if [ ! -d "$VAULT_ROOT" ]; then
+  echo "missing vault root: $VAULT_ROOT" >&2
+  exit 1
+fi
+
+ensure_agent_sources
+cd "$VAULT_ROOT"
 
 install_scaffold
 export_agents_payload
 
 echo "Installed Sunday Note vault at: $VAULT_ROOT"
-echo "Framework submodule: $PROJECT_DIR_NAME"
-echo
-echo "Verify:"
-echo "  find -L .agents/skills -maxdepth 3 -name SKILL.md -print"
-echo
-echo "Initial commit:"
-echo "  git add ."
-echo "  git commit -m 'Initialize Sunday Note private vault'"
+echo "Agent directory: $PROJECT_DIR_NAME"

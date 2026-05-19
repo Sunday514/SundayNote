@@ -1,16 +1,18 @@
 # SundayNoteAgent
 
-SundayNoteAgent 是一套用于 Obsidian 知识库的 agent 工具层。它提供安装器、Codex / agent skills、QuickAdd 自动化脚本、通用模板、路径配置和框架文档，适合放在私人知识库中作为 `SundayNoteAgent/` submodule 使用。
+SundayNoteAgent 是一套用于 Obsidian 知识库的 agent 工具层。它提供安装器、Codex / agent skills、QuickAdd 自动化脚本、通用模板、路径配置和框架文档，适合放在私人知识库中的 `SundayNoteAgent/` 目录下作为工具层独立 repo 使用。
 
 个人笔记、个人模板、附件、图片、本地 Obsidian 工作流配置和运行状态由父知识库管理，不属于本仓库。
 
 ## 安装
 
-创建一个新的父知识库，并自动加入 `SundayNoteAgent/` submodule：
+在 vault 根目录拉下工具层，然后安装配置和架构：
 
 ```bash
-git clone git@github.com:Sunday514/SundayNoteAgent.git /tmp/SundayNoteAgent
-bash /tmp/SundayNoteAgent/install/install.sh ~/Notes/MyVault
+mkdir -p ~/Notes/MyVault
+cd ~/Notes/MyVault
+git clone git@github.com:Sunday514/SundayNoteAgent.git SundayNoteAgent
+bash SundayNoteAgent/install/install.sh
 ```
 
 在已有知识库中安装：
@@ -21,12 +23,13 @@ git clone git@github.com:Sunday514/SundayNoteAgent.git SundayNoteAgent
 bash SundayNoteAgent/install/install.sh --vault-root .
 ```
 
-如果已有知识库还不是 Git 仓库，安装器会自动执行 `git init -b main`。如果 `SundayNoteAgent/` 还没有登记为 submodule，安装器会根据该目录的 `origin` 写入 `.gitmodules`。
-
 本地验证或使用 fork 时：
 
 ```bash
-bash /path/to/SundayNoteAgent/install/install.sh /tmp/my-vault-test --framework-repo /path/to/SundayNoteAgent
+mkdir -p /tmp/my-vault-test
+cd /tmp/my-vault-test
+git clone /path/to/SundayNoteAgent SundayNoteAgent
+bash SundayNoteAgent/install/install.sh
 ```
 
 ## 安装后内容
@@ -39,7 +42,7 @@ bash /path/to/SundayNoteAgent/install/install.sh /tmp/my-vault-test --framework-
 .sunday-note-agent/quickadd/                     -> ../SundayNoteAgent/automation/quickadd
 ```
 
-`skills` 和 `quickadd` 使用软链接，父知识库会直接使用 submodule 中的最新工具源码。路径配置文件是父知识库本地文件，只在不存在时由安装器创建，方便使用者按自己的 vault 目录调整。
+`skills` 和 `quickadd` 使用软链接，父知识库会直接使用 `SundayNoteAgent/` 中的最新工具源码。路径配置文件是父知识库本地文件，只在不存在时由安装器创建，方便使用者按自己的 vault 目录调整。
 
 ## 更新
 
@@ -52,7 +55,7 @@ cd ..
 bash SundayNoteAgent/install/install.sh --vault-root .
 ```
 
-如果父知识库使用 Git 管理，更新 submodule 后还需要在父知识库提交新的 submodule 指针。
+工具层更新在 `SundayNoteAgent/` 内完成，重新运行安装器即可刷新导出内容。
 
 ## 目录
 

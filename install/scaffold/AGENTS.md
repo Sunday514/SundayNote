@@ -32,7 +32,7 @@ SundayNoteAgent/
 - `30_知识库/`: 已确认、可复用、长期有效的概念、经验、方法和工作流。
 - `40_个人写作/`: 用户本人写作、日记、生活记录、随笔和其他私人文字。
 - `个人模板/`: 本地个人模板和相关自动化配置。
-- `SundayNoteAgent/`: SundayNoteAgent 项目 submodule。
+- `SundayNoteAgent/`: SundayNoteAgent 工具层目录。
 
 ## 信息架构
 
@@ -63,8 +63,8 @@ SundayNoteAgent/
 
 - 修改规则时保持简要、清晰、可执行；避免为具体 case 堆砌防御性规则。
 - 本 vault 自身结构、使用方式和配置说明写入 `README.md` 或 `SundayNoteAgent/docs/`；agent 工作规则写入 `AGENTS.md`。
-- 个人内容、个人模板、模板插件配置和运行状态属于私人仓库。
-- `SundayNoteAgent/` 由 SundayNoteAgent 项目 submodule 提供；不要在其中写入个人内容。
+- 个人内容、个人模板、模板插件配置和运行状态属于父 vault。
+- 不要在 `SundayNoteAgent/` 中写入个人内容。
 - `.trash/`、`.git/`、`.codex/` 和 `.claude/` 运行状态默认不参与知识库整理。
 - `.agents/` 是父 vault 的 agent skill 导出目录，由安装器从 `SundayNoteAgent/skills` 生成。
 - `.sunday-note-agent/` 是 SundayNoteAgent 的隐藏导出目录，保存路径配置和 Obsidian 自动化脚本，由安装器从 `SundayNoteAgent/config` 和 `SundayNoteAgent/automation` 生成。

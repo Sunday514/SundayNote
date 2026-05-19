@@ -38,7 +38,7 @@ Routine 是人和 agent 半自动维护的例行记录层，不等同于“工�
 
 ## 框架与个人内容
 
-框架项目由 `README.md`、`AGENTS.md`、`CLAUDE.md`、`SundayNoteAgent/`、`首页.md` 和必要 Obsidian 配置组成，进入 git 管理。其他内容目录只保留公共目录结构，具体笔记和个人模板默认由 `.gitignore` 排除。
+框架项目由 `README.md`、`AGENTS.md`、`CLAUDE.md`、`SundayNoteAgent/`、`首页.md` 和必要 Obsidian 配置组成。`SundayNoteAgent/` 是工具层目录，其他内容目录只保留公共目录结构，具体笔记和个人模板默认不写入工具层仓库。
 
 `SundayNoteAgent/config/sunday-note-vault.yaml` 保存机器可读的目录映射默认值；安装器会在父 vault 缺少配置时创建 `.sunday-note-agent/config/sunday-note-vault.yaml`。人读文档仍直接使用当前目录名；skills 和未来脚本优先读取父 vault `.sunday-note-agent/` 下的本地配置，避免把 Raw、Wiki 等语义层和中文目录名绑定。
 
