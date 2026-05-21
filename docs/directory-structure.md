@@ -63,5 +63,6 @@ QuickAdd 是模板、捕获和例行维护动作的主要入口。`创建每日�
 - 架构设计: [[architecture]]
 - 未来待办: [[roadmap]]
 - Agent skills 源文件: `SundayNoteAgent/skills/`
+- 命令行辅助脚本: `SundayNoteAgent/scripts/`
 - QuickAdd 自动化源文件: `SundayNoteAgent/automation/quickadd/`
 - 安装后 skill 发现入口: `.agents/skills/`，软链接到 `SundayNoteAgent/skills/`
