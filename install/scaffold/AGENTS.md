@@ -55,6 +55,7 @@ SundayNoteAgent/
 ## 图像文件
 
 - 图像文件统一放在 vault 根目录的 `assets/figures/` 下。
+- `assets/figures/` 下按内容层大类建立子目录，例如 `原始材料/`、`知识库/`；docx 等原始材料转换图片放入 `assets/figures/原始材料/docx/<文档名>/`。
 - Markdown 中使用相对路径引用图像，例如 `![](/assets/figures/example.png)` 或从当前文件出发的相对路径。
 - 移动或重命名包含图像的笔记时，修复指向 `assets/figures/` 的图片链接。
 - 多篇笔记共用的原始图片或临时截图先放入 `10_原始材料/`，只有确认需要长期引用时再移动到 `assets/figures/`。

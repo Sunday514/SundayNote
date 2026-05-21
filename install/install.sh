@@ -97,7 +97,9 @@ ensure_vault_dirs() {
     "$VAULT_ROOT/个人模板" \
     "$VAULT_ROOT/.sunday-note-agent/config" \
     "$VAULT_ROOT/.sunday-note-agent/quickadd" \
-    "$VAULT_ROOT/assets/figures"
+    "$VAULT_ROOT/assets/figures" \
+    "$VAULT_ROOT/assets/figures/原始材料" \
+    "$VAULT_ROOT/assets/figures/知识库"
 
   touch \
     "$VAULT_ROOT/10_原始材料/.gitkeep" \
@@ -110,7 +112,9 @@ ensure_vault_dirs() {
     "$VAULT_ROOT/30_知识库/.gitkeep" \
     "$VAULT_ROOT/40_个人写作/.gitkeep" \
     "$VAULT_ROOT/个人模板/.gitkeep" \
-    "$VAULT_ROOT/assets/figures/.gitkeep"
+    "$VAULT_ROOT/assets/figures/.gitkeep" \
+    "$VAULT_ROOT/assets/figures/原始材料/.gitkeep" \
+    "$VAULT_ROOT/assets/figures/知识库/.gitkeep"
 }
 
 install_scaffold() {

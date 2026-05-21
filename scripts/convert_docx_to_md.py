@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import posixpath
 import re
 import shutil
@@ -47,7 +48,11 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("source", help="A .docx file or a directory to scan recursively")
     parser.add_argument("-o", "--output-dir", help="Directory for generated Markdown")
-    parser.add_argument("--assets-dir", default="assets", help="Image directory relative to each Markdown file")
+    parser.add_argument(
+        "--assets-dir",
+        default="assets/figures/原始材料/docx",
+        help="Image directory relative to the current working directory",
+    )
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing Markdown files")
     return parser.parse_args()
 
@@ -72,8 +77,8 @@ class DocxConverter:
     def __init__(self, docx_path: Path, md_path: Path, assets_dir: str) -> None:
         self.docx_path = docx_path
         self.md_path = md_path
-        self.assets_dir = assets_dir.strip("/\\") or "assets"
-        self.asset_root = md_path.parent / self.assets_dir / slug(docx_path.stem)
+        self.assets_dir = Path(assets_dir.strip("/\\") or "assets/figures/原始材料/docx")
+        self.asset_root = self.assets_dir / slug(docx_path.stem)
         self.image_count = 0
         self.archive: zipfile.ZipFile
         self.relationships: dict[str, str] = {}
@@ -171,9 +176,10 @@ class DocxConverter:
         self.image_count += 1
         image_name = f"image-{self.image_count:03d}{Path(source).suffix or '.png'}"
         self.asset_root.mkdir(parents=True, exist_ok=True)
-        with self.archive.open(source) as src, (self.asset_root / image_name).open("wb") as dst:
+        image_path = self.asset_root / image_name
+        with self.archive.open(source) as src, image_path.open("wb") as dst:
             shutil.copyfileobj(src, dst)
-        return f"![{Path(source).stem}]({self.assets_dir}/{self.asset_root.name}/{image_name})"
+        return f"![{Path(source).stem}]({relative_link(self.md_path.parent, image_path)})"
 
 
 def word_target(target: str) -> str:
@@ -182,6 +188,10 @@ def word_target(target: str) -> str:
     if target.startswith("/"):
         return target.lstrip("/")
     return posixpath.normpath(posixpath.join("word", target))
+
+
+def relative_link(from_dir: Path, target: Path) -> str:
+    return os.path.relpath(target, from_dir).replace(os.sep, "/")
 
 
 def heading_level(paragraph: ET.Element) -> int:
