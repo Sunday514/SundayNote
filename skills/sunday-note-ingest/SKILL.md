@@ -1,29 +1,30 @@
 ---
 name: sunday-note-ingest
-description: Ingest external materials and raw sources into Sunday Note as traceable knowledge candidates. Use when the user asks to summarize, absorb, organize, or process articles, papers, links, screenshots, command output, collected sources, inbox notes, or other raw materials for possible Wiki entry.
+description: 当任务涉及 ingest / 资料摄取：整理、吸收或处理外部资料、收件箱材料或 Raw source，并判断是否值得长期保留、应放入哪一层、如何形成可复用结论时使用。
 ---
 
-# Sunday Note Ingest
+# Ingest
 
-## Workflow
+## 判断规则
 
-Read `AGENTS.md` first, then read `.sunday-note-agent/config/sunday-note-vault.yaml` to resolve Raw, Routine, Wiki, Journal, and Schema paths. Do not assume directory names. Read framework files from the configured Schema framework path and existing canonical Wiki pages only when they are needed to place the material.
+- 先判断资料是否值得沉淀，再决定去向。
+- 只有相对 LLM 默认知识和普通互联网搜索都有增量的信息，才是高价值候选。
+- 增量不要求信息完全独有；更深入、更有组织、密度更高、更贴近用户项目或包含已确认判断，也算增量。
+- 基于当前资料难以判断价值时，搜索核验。
 
-Produce:
+## 工作流
 
-- Source: title, link, path, date, or origin.
-- Summary.
-- Facts.
-- Inferences.
-- Open questions.
-- Wiki-entry judgment.
-- Suggested canonical page.
-- Link, index, or maintenance-log updates.
+1. 先读 `AGENTS.md`，再读 `.sunday-note-agent/config/sunday-note-vault.yaml` 解析 Raw、Routine、Wiki、Journal、Schema 路径；不要假设目录名。
+2. 按判断规则评估资料价值和去向。
+3. 区分来源事实、agent 推断和需要用户确认的问题，避免把外部观点或模型推理写成用户已确认判断。
+4. 对 Wiki 候选，优先建议更新已有 canonical 页面，并给出必要 header 更新。
+5. 只有候选会影响核心导航或维护历史时，才建议更新 index 或 maintenance log。
+6. 给出来源、价值判断、建议去向和待确认问题；需要写入时，按知识库写入规则确认后再修改或创建文件。
 
-## Rules
+## 结构原则
 
-- Preserve source identity and distinguish facts from interpretation.
-- Prefer updating an existing canonical page over creating a new page.
-- Treat compile as the confirmed follow-up to ingest: after user confirmation, suggest how to merge candidates into canonical Wiki.
-- Do not write to Wiki, Routine, Schema, or Journal paths before user confirmation.
-- Do not ingest Journal content unless the user explicitly asks.
+- 不套固定模板；按材料类型、用途和未来使用场景选择结构，只重组会影响理解、判断或复用的部分。
+- 需要回答问题或形成建议时，可用 SCQA 梳理背景、冲突、问题和回答。
+- 需要表达结论时，可用金字塔原则组织：核心判断 -> 分组理由 -> 来源证据。
+- 需要拆分复杂内容时，分组尽量清楚，避免混合不同主题、层级或来源。
+- 不机械复述原文目录；保留能形成长期判断、项目上下文、经验模式或可复用方法的内容。
