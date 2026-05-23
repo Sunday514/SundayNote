@@ -65,6 +65,7 @@ automation/               # QuickAdd 等自动化脚本源文件
 config/                   # 路径配置源文件和配置类快照
 docs/                     # 框架说明和维护文档
 install/                  # 安装器和父知识库 scaffold
+migration/                # 可复用知识库迁移辅助工具
 scripts/                  # 可复用命令行辅助脚本
 skills/                   # Codex / agent skills
 templates/                # 可复用通用模板

@@ -52,6 +52,8 @@ QuickAdd 是模板、捕获和例行维护动作的主要入口。`创建每日�
 
 `SundayNoteAgent/templates/` 保存 Wiki / 框架通用模板，可以进入 git。`个人模板/` 保存 Daily / Weekly / Monthly 等个人模板正文，由私人知识库管理。Templater 可以作为可选增强，但不作为迁移必需依赖。
 
+`SundayNoteAgent/migration/` 保存可复用的知识库迁移辅助工具，例如从外部知识源导出原始材料。迁移工具不得保存密钥、个人正文或一次性运行状态。
+
 ## 图像归属
 
 图像文件统一放在 vault 根目录的 `assets/figures/` 下，并按内容层大类建立子目录，例如 `assets/figures/原始材料/` 和 `assets/figures/知识库/`。docx 等原始材料转换产物先放入 `assets/figures/原始材料/docx/`，再按文档建立子目录；无法确认归属的临时图片先放入 `10_原始材料/`。
@@ -64,5 +66,6 @@ QuickAdd 是模板、捕获和例行维护动作的主要入口。`创建每日�
 - 未来待办: [[roadmap]]
 - Agent skills 源文件: `SundayNoteAgent/skills/`
 - 命令行辅助脚本: `SundayNoteAgent/scripts/`
+- 迁移辅助工具: `SundayNoteAgent/migration/`
 - QuickAdd 自动化源文件: `SundayNoteAgent/automation/quickadd/`
 - 安装后 skill 发现入口: `.agents/skills/`，软链接到 `SundayNoteAgent/skills/`
