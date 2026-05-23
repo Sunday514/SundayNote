@@ -1,6 +1,6 @@
 ---
 status: "reviewed"
-updated: "2026-05-11"
+updated: "2026-05-23"
 sources:
   - "[[README]]"
   - "[[AGENTS]]"
@@ -12,7 +12,7 @@ sources:
 
 ## 编号逻辑
 
-- `首页.md`: vault 入口文档，不作为内容层。
+- `首页.md`: Schema，知识库导航入口。
 - `10_原始材料/`: Raw，证据层。
 - `20_每日记录/`: Routine，当天视图。
 - `21_每周记录/`: Routine，每周视图。
@@ -20,7 +20,11 @@ sources:
 - `23_项目复盘/`: Routine，项目视图。
 - `30_知识库/`: Wiki，长期记忆层。
 - `40_个人写作/`: Journal，个人写作层。
-- `SundayNoteAgent/`: Schema，框架文档、skills、自动化脚本、通用模板、配置快照和辅助文件。
+- `个人模板/`: Schema，本地个人模板和相关自动化配置。
+- `SundayNoteAgent/`: Schema，可公开的工具项目，保存框架文档、skills、自动化脚本、配置快照、迁移工具和辅助文件。
+- `.agents/`: Schema，agent skill 导出目录。
+- `.sunday-note-agent/`: Schema，路径配置和自动化导出目录。
+- `.obsidian/`: Schema，Obsidian 配置和运行状态；只维护明确需要迁移的配置。
 
 ## 信息架构
 
@@ -32,17 +36,19 @@ Journal = 写作
 Schema = 规则
 ```
 
-Routine 是人和 agent 半自动维护的例行记录层，不等同于“工作”。Daily、Weekly、Monthly 和 Project 是 Routine 内部的不同视图。
+Routine 是用户主导的过程记录层，不等同于“工作”。Daily、Weekly、Monthly 和 Project 是 Routine 内部的不同视图。agent 写入或改写 Routine 前需要确认。
 
 `40_个人写作/` 不属于自动编译链路。它保存用户本人文字，只有用户明确确认时，agent 才能基于其中内容提出知识沉淀建议。
 
+Wiki 是 agent 可维护的长期记忆层。Wiki 页面使用 YAML header 记录 `status`、`updated`、`sources`、`use` 和 `aliases`，用于 query、ingest 和 lint 判断可信度、时效、来源、使用场景和别名。
+
 ## 框架与个人内容
 
-框架项目由 `README.md`、`AGENTS.md`、`CLAUDE.md`、`SundayNoteAgent/`、`首页.md` 和必要 Obsidian 配置组成。`SundayNoteAgent/` 是工具层目录，其他内容目录只保留公共目录结构，具体笔记和个人模板默认不写入工具层仓库。
+框架项目由 `README.md`、`AGENTS.md`、`CLAUDE.md`、`SundayNoteAgent/`、`首页.md`、本地模板和必要 Obsidian 配置组成。`SundayNoteAgent/` 是可公开的工具项目，不保存个人内容、个人模板正文或本地运行状态。
 
 `SundayNoteAgent/config/sunday-note-vault.yaml` 保存机器可读的目录映射默认值；安装器会在父 vault 缺少配置时创建 `.sunday-note-agent/config/sunday-note-vault.yaml`。人读文档仍直接使用当前目录名；skills 和未来脚本优先读取父 vault `.sunday-note-agent/` 下的本地配置，避免把 Raw、Wiki 等语义层和中文目录名绑定。
 
-`30_知识库/索引.md` 和 `30_知识库/知识库维护日志.md` 属于本地 Wiki 维护文件。它们帮助 agent 定位 canonical 页面和追踪 ingest / query / lint 演化，但默认不进入 Git。
+`30_知识库/索引.md` 和 `30_知识库/知识库维护日志.md` 属于本地 Wiki 维护文件。索引是核心导航入口，不重复 header 信息；维护日志记录 ingest / query / lint 带来的状态变化，但默认不进入 Git。
 
 必要 Obsidian 配置是可迁移基线，不是插件安装包。仓库保存 terminal wrapper、`config/` 下的框架级配置和布局快照，不保存社区插件的 `main.js`、`manifest.json`、`styles.css`，也不保存 Daily Notes、Calendar、Templates 和 QuickAdd actions 等本地模板配置。恢复 `config/layout-snapshots/` 中的布局快照前，用户需要先在 Obsidian 中安装并启用必备插件。
 
@@ -50,7 +56,7 @@ QuickAdd 是模板、捕获和例行维护动作的主要入口。`创建每日�
 
 具体打卡项保存在本地 Daily 模板中。Daily 创建统一使用个人模板中的 `每日记录.md`；某天不参与统计的项目可以直接从当天 Daily 中删除。Weekly 统计优先按 Daily 模板中的 checkbox 顺序输出，同时兼容历史 Daily 中额外出现的打卡项。
 
-`SundayNoteAgent/templates/` 保存 Wiki / 框架通用模板，可以进入 git。`个人模板/` 保存 Daily / Weekly / Monthly 等个人模板正文，由私人知识库管理。Templater 可以作为可选增强，但不作为迁移必需依赖。
+当前不提供通用笔记模板。`SundayNoteAgent/templates/` 只保留占位，不维护 Wiki、论文、书籍或课程模板。`个人模板/` 保存 Daily / Weekly / Monthly 等个人模板正文，由私人知识库管理。Templater 可以作为可选增强，但不作为迁移必需依赖。
 
 `SundayNoteAgent/migration/` 保存可复用的知识库迁移辅助工具，例如从外部知识源导出原始材料。迁移工具不得保存密钥、个人正文或一次性运行状态。
 

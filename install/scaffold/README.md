@@ -2,7 +2,7 @@
 
 这是一个私人 Sunday Note Obsidian vault。
 
-框架文档、通用模板、skills 源文件和自动化源文件保存在 `SundayNoteAgent/` 下。`.agents/` 是父 vault 的 agent skill 导出目录，`.sunday-note-agent/` 保存 SundayNoteAgent 导出的路径配置和 Obsidian 自动化脚本。个人笔记、日常记录、长期知识正文、个人写作、个人模板和本地 Obsidian 工作流配置由父 vault 自行维护。
+框架文档、skills 源文件和自动化源文件保存在 `SundayNoteAgent/` 下。`.agents/` 是父 vault 的 agent skill 导出目录，`.sunday-note-agent/` 保存 SundayNoteAgent 导出的路径配置和 Obsidian 自动化脚本。个人笔记、日常记录、长期知识正文、个人写作、个人模板和本地 Obsidian 工作流配置由父 vault 自行维护。
 
 更新框架时，在知识库根目录进入 `SundayNoteAgent/` 拉取更新，然后重新运行安装器导出最新配置：
 

@@ -62,6 +62,15 @@ agent 可维护的长期记忆层。
 - 只有包含个人事实、个人偏好、项目上下文、经验模式、历史决策或已确认判断的信息，才进入 `30_知识库/`。
 - 网络搜索可替代的资料摘要、未经确认的 AI 总结、没有个人判断的摘录、当天流水账和临时命令输出不进入 `30_知识库/`。
 - 写入时保留来源、相关链接和不确定性。
+- Wiki 页面使用 YAML header：
+
+```yaml
+status: draft # draft / active / stale / archived
+updated: YYYY-MM-DD # 只在内容或来源实质变化时更新
+sources: [] # 可追溯来源；无来源页面不应为 active
+use: "" # 未来 agent 何时使用本页
+aliases: [] # 真实用于搜索或链接的别名
+```
 
 ### Routine 层
 

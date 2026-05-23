@@ -1,6 +1,6 @@
 # SundayNoteAgent
 
-SundayNoteAgent 是一套用于 Obsidian 知识库的 agent 工具层。它提供安装器、Codex / agent skills、QuickAdd 自动化脚本、通用模板、路径配置和框架文档，适合放在私人知识库中的 `SundayNoteAgent/` 目录下作为工具层独立 repo 使用。
+SundayNoteAgent 是一套用于 Obsidian 知识库的 agent 工具层。它提供安装器、Codex / agent skills、QuickAdd 自动化脚本、路径配置和框架文档，适合放在私人知识库中的 `SundayNoteAgent/` 目录下作为工具层独立 repo 使用。
 
 个人笔记、个人模板、附件、图片、本地 Obsidian 工作流配置和运行状态由父知识库管理，不属于本仓库。
 
@@ -68,10 +68,10 @@ install/                  # 安装器和父知识库 scaffold
 migration/                # 可复用知识库迁移辅助工具
 scripts/                  # 可复用命令行辅助脚本
 skills/                   # Codex / agent skills
-templates/                # 可复用通用模板
+templates/                # 模板占位目录
 ```
 
-`config/layout-snapshots/` 保存可迁移的 Obsidian 布局快照。`templates/` 只保存通用模板，不保存个人模板正文。
+`config/layout-snapshots/` 保存可迁移的 Obsidian 布局快照。当前不提供通用笔记模板；`templates/` 仅保留占位，不保存个人模板正文。
 
 ## 文档入口
 

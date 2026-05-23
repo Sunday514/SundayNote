@@ -8,7 +8,7 @@ sources:
 
 # 路线图
 
-## Summary
+## 摘要
 
 Sunday Note 的目标是持续降低 agent 理解用户、项目和判断方式的成本。路线图优先强化个人知识库与 SundayNoteAgent 工具层的边界，让 ingest、query、lint 三个 micro-skill 围绕个人增量、低熵维护和可追溯链接工作。
 
@@ -18,8 +18,8 @@ Sunday Note 的目标是持续降低 agent 理解用户、项目和判断方式�
 
 ### sunday-note-ingest
 
-- 增加输出字段：`Personal delta`、`Search substitutability`、`Agent-use value`。
-- 保留 source、summary、facts、inferences、open questions、Wiki-entry judgment、suggested canonical page。
+- 增加输出字段：个人增量、搜索可替代性、Agent 使用价值。
+- 保留来源、摘要、事实、推断、待确认问题、Wiki 入库判断、canonical 页面建议。
 - 输出链接、索引和维护日志更新建议，但不直接写入 Wiki。
 
 ### sunday-note-query
@@ -31,7 +31,7 @@ Sunday Note 的目标是持续降低 agent 理解用户、项目和判断方式�
 
 ### sunday-note-lint
 
-- 增加降熵检查项：`Generic content`、`No personal delta`、`Low agent-use value`、`Context drag`、`Over-ingested`。
+- 增加降熵检查项：通用内容、缺少个人增量、低 Agent 使用价值、上下文拖累、过度摄取。
 - 保留重复主题、未索引页面、stale 页面、缺 sources/status/updated、弱链接和边界混淆检查。
 - 只输出修复计划和维护日志建议，不默认改写页面。
 
@@ -67,19 +67,6 @@ Sunday Note 的目标是持续降低 agent 理解用户、项目和判断方式�
 - 用户问项目状态时，agent 能先读 Project 页面。
 - Project 页面能回链到近期 Routine 和相关 canonical Wiki。
 
-## P2：更新 Wiki 模板
-
-目标：让每个 canonical Wiki 页面说明未来 agent 何时应该使用它。
-
-- 在通用 Wiki 模板中增加 `Agent 使用场景` 小节。
-- 建议字段包括：未来 agent 应在什么问题中读取本页、本页能改变哪些判断、不适用场景。
-- 保留 sources、相关条目和参考来源，保证结论可追溯。
-
-验证：
-
-- 新建 Wiki 页面能自然说明 agent-use value。
-- 模板仍保持通用，不绑定单个知识库 case。
-
 ## P2：规范维护日志
 
 目标：让维护日志记录知识库演化，而不是普通聊天流水。
@@ -93,23 +80,25 @@ Sunday Note 的目标是持续降低 agent 理解用户、项目和判断方式�
 - lint 输出能直接生成维护日志建议。
 - query 能通过维护日志理解最近的知识库演化。
 
-## P3：暂缓模板基线目录
+## P3：暂缓通用模板
 
-目标：避免在模板流程尚未稳定前增加目录复杂度。
+目标：避免模板反向规定内容结构。
 
-- 继续使用 `templates/` 保存可复用通用模板。
+- `templates/` 仅保留占位。
 - 父 vault 的 `个人模板/` 继续保存本地实际模板正文。
-- 只有当 QuickAdd 自动化稳定且需要发布通用模板时，再评估新增模板基线目录。
+- 不维护通用 Wiki、论文、书籍或课程模板。
+- Ingest 根据材料自身逻辑设计结构，按 SCQA 和金字塔原则组织写作。
+- 只有当真实使用中出现稳定、重复、可迁移的结构，再评估新增通用模板。
 
 验证：
 
 - 工具层不保存个人模板正文。
-- 通用模板仍可独立迁移和测试。
+- Ingest 不依赖固定模板也能生成清晰的写入计划。
 
 ## 持续检查
 
 - 根目录规则只约束个人知识库，不放具体 skill 输出格式或插件细节。
 - `SundayNoteAgent/AGENTS.md` 只约束工具开发，不写入个人数据。
 - skills 默认不触发，一个请求默认最多触发一个 skill。
-- Obsidian 链接遵守 `Index -> Canonical Wiki -> Sources / Projects / Routine`。
+- Obsidian 链接遵守 `index -> canonical Wiki -> sources / Project / Routine`。
 - Wiki 只保存能提升 agent 判断能力的个人增量。

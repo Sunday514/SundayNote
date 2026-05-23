@@ -1,6 +1,6 @@
 ---
 status: reviewed
-updated: 2026-05-11
+updated: 2026-05-23
 sources:
   - "[[README]]"
   - "[[AGENTS]]"
@@ -9,11 +9,11 @@ sources:
 
 # 架构设计
 
-## Summary
+## 摘要
 
 本文件说明 Sunday Note 的框架架构，属于 `SundayNoteAgent/docs/`。它不是 `30_知识库/` 的正文知识页。
 
-Sunday Note 参考 Karpathy 的 LLM Wiki 思路，但采用更保守的个人知识库版本：agent 负责整理、压缩、链接和提出写入建议，用户负责确认事实、取舍和正式写入。
+Sunday Note 参考 Karpathy 的 LLM Wiki 思路，但采用个人知识库版本：Wiki 是 agent 可维护的长期记忆层，Routine 是用户主导的过程记录层，Journal 是默认只读的个人表达层。
 
 最终分层是：
 
@@ -27,25 +27,25 @@ Schema = 规则
 
 ## 分层
 
-- Raw 对应 `10_原始材料/`。它保存来源、截图、日志、命令输出和未澄清材料，强调可追溯性。
-- Routine 对应 `20_每日记录/`、`21_每周记录/`、`22_每月记录/`、`23_项目复盘/`。它是人和 agent 半自动维护的例行记录层。
-- Wiki 对应 `30_知识库/`。它只保存长期稳定、可复用、能减少未来解释成本的内容。
-- Journal 对应 `40_个人写作/`。它保存用户本人的个人表达，agent 默认只读。
-- Schema 对应 `AGENTS.md`、`CLAUDE.md`、`SundayNoteAgent/`、父 vault `.agents/` 和必要 `.obsidian` 配置。它定义维护规则、skills、配置快照和工具层入口。
+- Raw 对应 `10_原始材料/`。它保存来源、截图、日志、命令输出和未澄清材料，默认不改写。
+- Routine 对应 `20_每日记录/`、`21_每周记录/`、`22_每月记录/`、`23_项目复盘/`。它是用户主导的过程记录层。
+- Wiki 对应 `30_知识库/`。它是 agent 可维护的长期记忆层，只保存已确认、可复用、能减少未来解释成本的内容。
+- Journal 对应 `40_个人写作/`。它保存用户本人的表达，agent 默认只读。
+- Schema 对应 `AGENTS.md`、`CLAUDE.md`、`.agents/`、`.sunday-note-agent/`、`SundayNoteAgent/`、`首页.md`、`个人模板/` 和必要 `.obsidian` 配置。它是规则、配置、模板和工具控制面。
 - `SundayNoteAgent/config/sunday-note-vault.yaml` 是机器可读路径映射的默认值；安装器会在父 vault 缺少配置时创建 `.sunday-note-agent/config/sunday-note-vault.yaml`，负责把 Raw、Routine、Wiki、Journal 和 Schema 术语映射到当前 vault 的实际目录名。
 
 `README.md` 是用户说明，不作为 agent 规则来源。
 
 ## Routine
 
-Routine 不等同于“工作”。它表示可以周期性维护、可以由人和 agent 协作压缩的例行上下文。
+Routine 不等同于“工作”。它表示用户主导的周期性上下文。
 
 - Daily：当天事实、过程记录、问题、阻塞和简短总结。
 - Weekly：一周的阶段压缩、项目推进和对外表达。
 - Monthly：月度方向、项目组合、知识库维护和阶段判断。
 - Project：长期项目状态、风险、下一步和阶段复盘。
 
-Daily 属于 Routine，不属于 Journal。它可以由人和 agent 共同维护。
+Daily 属于 Routine，不属于 Journal。agent 写入或改写 Routine 前需要用户确认。
 
 ## Journal
 
@@ -74,27 +74,47 @@ Raw -> Routine -> Wiki
 
 - Raw 保留证据。
 - Routine 维护当前上下文。
-- Wiki 保存长期记忆。
+- Wiki 保存长期记忆，由 agent 自动化维护。
 - Journal 独立存在，只在用户明确要求时被引用。
 - Schema 约束维护方式。
 
 ## Wiki 进入门槛
 
-只有满足以下条件之一的内容，才值得编译进 Wiki：
-
-- 以后大概率会重复使用。
-- 以后大概率会反复解释给 agent。
-- 包含稳定工作流、项目背景、踩坑经验或长期判断。
-- 能减少未来上下文成本。
+只有包含个人事实、个人偏好、项目上下文、经验模式、历史决策或已确认判断的信息，才值得进入 Wiki。
 
 不进入 Wiki 的内容：
 
+- 网络搜索可替代的资料摘要。
 - 当天流水账。
 - 一次性安排。
 - 未验证猜测。
-- 没有复用价值的中间过程。
+- 没有个人判断的摘录。
 - 完整命令输出或原始日志。
-- 未经用户确认的个人写作摘录或改写。
+- 未经用户明确要求的 Journal 内容。
+
+## Wiki Header
+
+Wiki 页面使用短 YAML header 作为维护依据，不承载正文内容：
+
+```yaml
+status: draft # draft / active / stale / archived
+updated: YYYY-MM-DD # 只在内容或来源实质变化时更新
+sources: [] # 可追溯来源；无来源页面不应为 active
+use: "" # 未来 agent 何时使用本页
+aliases: [] # 真实用于搜索或链接的别名
+```
+
+Header 用于三个动作：
+
+- Ingest 根据 header 判断是否已有 canonical 页面，并建议 `sources`、`use` 和状态更新。
+- Query 根据 header 判断可信度、时效、匹配度和证据链。
+- Lint 检查缺字段、非法状态、缺来源、缺 use、stale 候选和 alias 冲突。
+
+## Index 和 Log
+
+`30_知识库/索引.md` 是导航入口，只放核心页面、核心工作流、项目背景和待复查页面，不重复 header 信息。
+
+`30_知识库/知识库维护日志.md` 记录 ingest、query、lint 带来的演化，例如新增、合并、标记 stale、进入索引和状态变化。Header 是页面当前状态，Log 是状态变化历史。
 
 ## 维护原则
 
