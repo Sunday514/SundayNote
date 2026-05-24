@@ -1,39 +1,15 @@
 ---
 name: sunday-note-query
-description: Answer questions from existing Sunday Note vault documents with evidence. Use when the user asks about vault rules, Schema/framework docs, Routine records including Daily, Weekly, Monthly, and Project notes, Wiki pages, or Raw evidence already present in the vault; reference Journal only when explicitly requested by the user.
+description: 使用已有个人知识库上下文回答、判断、规划或讨论。用于用户询问个人记录、知识库内容、历史决策、已有项目、个人偏好、长期目标、工作流、规则文档、过往方案，或开放问题的答案可能被既有个人上下文改变，例如“适不适合我”“下一步怎么做”“之前怎么定的”“按我的记录来看”。优先最少证据检索；不要用于通用知识、普通技术问答、纯外部事实查询、当前对话已足够回答的问题、资料摄取或知识库维护。
 ---
 
-# Sunday Note Query
+# Query
 
-## Workflow
+## 工作流
 
-Read `.sunday-note-agent/config/sunday-note-vault.yaml` to resolve Raw, Routine, Wiki, Journal, and Schema paths. For any factual question, use the cheapest vault lookup that can produce reliable evidence; do not run broad searches when a named page, linked page, or already-open file is enough.
-
-Progressive discovery:
-
-1. If the user names a page, file, date, or project, read that target directly.
-2. If the target is unclear, check the configured Wiki index or run a narrow `rg` search over the likely layer.
-3. Use `scripts/query_search.py` only as a small top-k candidate finder for broad or ambiguous questions; keep its default Wiki/Schema scope unless Routine context is necessary, and do not paste large search output into the answer context.
-4. Search Wiki first, then Schema, then Routine when the question needs personal context or chronology. Use Raw only when the user asks for source evidence or existing Wiki/Routine evidence is insufficient.
-5. Expand through Obsidian `[[wikilinks]]`, backlinks, and `sources` frontmatter only when direct candidates are incomplete, conflicting, or weakly supported.
-6. Stop searching when the answer has enough relevant evidence; usually one to three strong local sources is enough.
-
-Reference Journal only when explicitly requested by the user. Read `README.md` only when entry or background context is needed.
-
-Treat Wiki as the LLM-owned working knowledge layer. After answering, identify whether the answer should update an existing Wiki page, become a new Wiki page, or remain only an answer. Do not write back into Routine or Journal unless the user explicitly requests it.
-
-Answer with:
-
-- Answer.
-- Evidence.
-- Uncertainty or 待确认.
-- Suggested write-back, if the answer is reusable.
-
-## Rules
-
-- Link to key evidence when answering from local files.
-- If no relevant vault evidence is found, say so directly before giving any general answer.
-- Mark inference and missing context clearly.
-- Do not treat unconfirmed inference as fact.
-- Do not modify Routine or Journal without explicit user request.
-- Write back to Wiki only when the user asks to save, update, or compile the answer; otherwise suggest the target Wiki page and reason.
+1. 从用户问题中提取 3-8 个关键词，优先保留用户对话中给出的名称、日期、项目线索、术语和短语；去掉泛词和任务动词。
+2. 运行本 skill 的 `scripts/query_search.py <关键词...>` 获取候选文件列表。
+3. 根据问题意图选择匹配度最高的候选作为证据文件：Wiki 看 `topic` / `keywords`，Routine 看日期、项目线索和命中词；证据文件不超过 3 个。
+4. 使用 Wiki 作为证据文件时，只建议将该文件 header 的 `last_queried` 更新为当天，并将 `query_count` 加 1；不要自动写入。
+5. 读取证据文件，并以其内容作为证据回答问题；不要粘贴大段搜索结果或原文。
+6. 问题回答后，如产生新的稳定判断、项目状态变化、偏好约束或高价值总结，给出写回建议，并说明写回时需要更新目标 Wiki 的 `last_updated` 和 `update_count`；不直接写回。

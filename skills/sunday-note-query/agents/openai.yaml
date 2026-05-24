@@ -1,4 +1,0 @@
-interface:
-  display_name: "Sunday Note Query"
-  short_description: "Query existing Sunday Note knowledge"
-  default_prompt: "Use $sunday-note-query to answer this from existing Sunday Note records with evidence."
