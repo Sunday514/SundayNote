@@ -21,7 +21,7 @@
 - 说明和代码以当前契约为基准；删除已失效流程、分支、注释和文档段落。
 - 文档描述当前行为，不用历史对照式表述；只有能直接指导当前使用或维护的约束才保留。
 - 修改 agent 相关文档时，把文档视为 prompt context 中会被 agent 直接执行的规则；使用最小、直接、可操作的指令，不写第三视角设计说明。
-- Agent 相关文档、skill `description` 和 `SKILL.md` 正文使用中文；只保留约定名词英文，如 Raw、Routine、Wiki、Journal、Schema、canonical、index、log。
+- Agent 相关文档、skill `description` 和 `SKILL.md` 正文使用中文；只保留约定名词英文，如 Raw、Routine、Wiki、Journal、Schema、index、log。
 - 同一事实放在职责最近的位置；README 给入口，安装文档给使用细节，scaffold 给生成后的规则。
 - 以可复用的框架能力为目标，不把规则、脚本或模板绑定到单个知识库 case。
 - 使用脱敏示例、临时目录或通用 fixture 测试，不依赖真实个人正文。

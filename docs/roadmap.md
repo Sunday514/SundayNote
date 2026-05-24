@@ -1,9 +1,20 @@
 ---
-status: draft
-updated: 2026-05-23
+last_updated: 2026-05-24
+update_count: 1
+last_queried: ""
+query_count: 0
 sources:
   - "[[architecture]]"
   - "[[AGENTS]]"
+topic: "Sunday Note 路线图"
+keywords:
+  - "路线图"
+  - "micro-skill"
+  - "ingest"
+  - "query"
+  - "lint"
+  - "Wiki 索引"
+  - "Project Hub"
 ---
 
 # 路线图
@@ -32,7 +43,7 @@ Sunday Note 的目标是持续降低 agent 理解用户、项目和判断方式�
 ### sunday-note-lint
 
 - 增加降熵检查项：通用内容、缺少个人增量、低 Agent 使用价值、上下文拖累、过度摄取。
-- 保留重复主题、未索引页面、stale 页面、缺 sources/status/updated、弱链接和边界混淆检查。
+- 保留重复主题、未索引页面、缺 sources/last_updated/update_count/last_queried/query_count/topic/keywords、弱链接和边界混淆检查。
 - 只输出修复计划和维护日志建议，不默认改写页面。
 
 验证：
@@ -47,7 +58,7 @@ Sunday Note 的目标是持续降低 agent 理解用户、项目和判断方式�
 - 只放核心方法、核心工作流、核心概念、核心经验、长期项目背景和待复查页面。
 - 不把索引做成全量目录。
 - 将重要 canonical Wiki 页面按查询价值加入索引。
-- 将 draft、缺个人判断或需要降熵的页面列入待复查。
+- 将缺个人判断、长期未 query 或需要降熵的页面列入待复查。
 
 验证：
 

@@ -1,10 +1,22 @@
 ---
-status: reviewed
-updated: 2026-05-23
+last_updated: 2026-05-24
+update_count: 1
+last_queried: ""
+query_count: 0
 sources:
   - "[[README]]"
   - "[[AGENTS]]"
   - "[[Karpathy LLM Wiki]]"
+topic: "Sunday Note 架构"
+keywords:
+  - "Sunday Note"
+  - "架构"
+  - "Raw"
+  - "Routine"
+  - "Wiki"
+  - "Journal"
+  - "Schema"
+  - "Wiki Header"
 ---
 
 # 架构设计
@@ -97,24 +109,26 @@ Raw -> Routine -> Wiki
 Wiki 页面使用短 YAML header 作为维护依据，不承载正文内容：
 
 ```yaml
-status: draft # draft / active / stale / archived
-updated: YYYY-MM-DD # 只在内容或来源实质变化时更新
-sources: [] # 可追溯来源；无来源页面不应为 active
-use: "" # 未来 agent 何时使用本页
-aliases: [] # 真实用于搜索或链接的别名
+last_updated: YYYY-MM-DD # 内容或来源实质变化日期
+update_count: 1 # 内容或来源实质变化次数
+last_queried: "" # 最近一次作为 query 证据使用的日期
+query_count: 0 # 作为 query 证据使用的次数
+sources: [] # 长期可追溯来源，如书籍、课程、论文、网页
+topic: "" # 单一稳定主题，用于判断页面归属和合并边界
+keywords: [] # 检索提示词，用于 query 候选匹配
 ```
 
 Header 用于三个动作：
 
-- Ingest 根据 header 判断是否已有 canonical 页面，并建议 `sources`、`use` 和状态更新。
-- Query 根据 header 判断可信度、时效、匹配度和证据链。
-- Lint 检查缺字段、非法状态、缺来源、缺 use、stale 候选和 alias 冲突。
+- Ingest 根据 header 判断是否已有同主题页面，并维护 `last_updated`、`update_count`、`sources`、`topic` 和 `keywords`。
+- Query 根据 header 判断时效、主题匹配、检索命中和证据链，并建议更新 `last_queried` 和 `query_count`。
+- Lint 检查缺字段、日期格式、计数值、缺来源、缺 `topic`、缺 `keywords` 和 topic / keyword 冲突。
 
 ## Index 和 Log
 
 `30_知识库/索引.md` 是导航入口，只放核心页面、核心工作流、项目背景和待复查页面，不重复 header 信息。
 
-`30_知识库/知识库维护日志.md` 记录 ingest、query、lint 带来的演化，例如新增、合并、标记 stale、进入索引和状态变化。Header 是页面当前状态，Log 是状态变化历史。
+`30_知识库/知识库维护日志.md` 记录 ingest、query、lint 带来的演化，例如新增、合并、进入索引、复查和 header 字段变化。Header 是页面当前维护数据，Log 是维护历史。
 
 ## 维护原则
 
@@ -125,7 +139,7 @@ Header 用于三个动作：
 - Schema 由用户主导，agent 可以建议演化。
 - 根目录规则用于知识库使用，`SundayNoteAgent/AGENTS.md` 用于工具层开发。
 - 新建正式文件要比更新已有文件更难。
-- 同一长期主题只维护一个 canonical Wiki 页面。
+- 同一长期主题尽量只维护一个主要 Wiki 页面。
 - Skill 负责触发和执行入口；执行时先读取路径映射，不直接假设目录名；详细知识仍以 Wiki 和框架文档为准。
 - `30_知识库/索引.md` 和 `30_知识库/知识库维护日志.md` 是本地 Wiki 维护文件，默认不进入 Git。
 

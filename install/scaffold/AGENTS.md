@@ -51,10 +51,11 @@ agent 可维护的长期记忆层。
 
 - 不确定放置位置时，先放入 `10_原始材料/收件箱/` 或在对话中标记待确认。
 - 修改正式笔记时优先追加或局部小改，保留人工内容。
-- 新建正式页面前，先检查是否已有 canonical 页面可以更新。
+- 新建正式页面前，先检查是否已有同主题页面可以更新。
 - 不确定事实、推测和待确认内容要明确标记；没有可靠来源时不要编造。
 - 长期引用的图像放在 `assets/figures/`，原始截图或临时图片先放入 `10_原始材料/`。
 - Markdown 使用相对路径引用图像；图像默认显示宽度为 640，保持原始长宽比；移动或重命名笔记时同步修复图片链接。
+- 日期统一使用 `YYYY-MM-DD`；Daily 文件名使用 `YYYY-MM-DD.md`，Wiki header 中的日期字段也使用 `YYYY-MM-DD`。
 
 ### Wiki 层
 
@@ -65,11 +66,13 @@ agent 可维护的长期记忆层。
 - Wiki 页面使用 YAML header：
 
 ```yaml
-status: draft # draft / active / stale / archived
-updated: YYYY-MM-DD # 只在内容或来源实质变化时更新
-sources: [] # 可追溯来源；无来源页面不应为 active
-use: "" # 未来 agent 何时使用本页
-aliases: [] # 真实用于搜索或链接的别名
+last_updated: YYYY-MM-DD # 内容或来源实质变化日期
+update_count: 1 # 内容或来源实质变化次数
+last_queried: "" # 最近一次作为 query 证据使用的日期
+query_count: 0 # 作为 query 证据使用的次数
+sources: [] # 长期可追溯来源，如书籍、课程、论文、网页
+topic: "" # 单一稳定主题，用于判断页面归属和合并边界
+keywords: [] # 检索提示词，用于 query 候选匹配
 ```
 
 ### Routine 层

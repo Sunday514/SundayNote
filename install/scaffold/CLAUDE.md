@@ -4,7 +4,7 @@
 
 ## Claude Code Adapter
 
-This vault uses `AGENTS.md` as the canonical agent instructions.
+This vault uses `AGENTS.md` as the source of truth for agent instructions.
 
 When working in this vault:
 
