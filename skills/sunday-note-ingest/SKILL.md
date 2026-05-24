@@ -14,12 +14,18 @@ description: 当任务涉及 ingest / 资料摄取：整理、吸收或处理外
 
 ## 工作流
 
-1. 先读 `AGENTS.md`，再读 `.sunday-note-agent/config/sunday-note-vault.yaml` 解析 Raw、Routine、Wiki、Journal、Schema 路径；不要假设目录名。
+1. 读取路径配置解析 Raw、Routine、Wiki、Journal、Schema 路径；不要假设目录名。
 2. 按判断规则评估资料价值和去向。
 3. 区分来源事实、agent 推断和需要用户确认的问题，避免把外部观点或模型推理写成用户已确认判断。
-4. 对 Wiki 候选，优先建议更新已有 canonical 页面，并给出必要 header 更新。
+4. 对 Wiki 候选，优先建议更新已有 canonical 页面，并按既有 Wiki header 处理字段。
 5. 只有候选会影响核心导航或维护历史时，才建议更新 index 或 maintenance log。
 6. 给出来源、价值判断、建议去向和待确认问题；需要写入时，按知识库写入规则确认后再修改或创建文件。
+
+## Wiki header 更新规则
+
+- 更新已有页面：用 `aliases`、`use` 识别 canonical 页面；正文结论或来源实质变化时更新 `updated`，并补充 `sources`。
+- 仅当本次 ingest 改变长期用途、可信状态或真实别名时，才修改 `use`、`status` 或 `aliases`。
+- 创建新候选：生成最小 header；`status` 默认 `draft`，`sources` 指向当前资料，`use` 写明未来 agent 使用场景，`aliases` 只写真实别名。
 
 ## 结构原则
 
