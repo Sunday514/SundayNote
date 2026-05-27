@@ -1,37 +1,42 @@
 ---
 name: sunday-note-lint
-description: Inspect and maintain Sunday Note knowledge-base health. Use when the user asks to check, clean, merge, deduplicate, repair, organize, or maintain the Markdown Wiki, or during monthly knowledge-base maintenance.
+description: 检查知识库健康度并降低熵。用于月度维护，或用户要求清理、合并、去重、修复、维护 Wiki；检查重复主题、孤立或未进入 index 的 Wiki 页面、过期页面、弱链接、缺来源、边界混淆、搜索可替代内容、缺少个人增量和低 Agent 使用价值。
 ---
 
-# Sunday Note Lint
+# Lint
 
-## Workflow
+## 工作流
 
-Read `AGENTS.md`, then read `.sunday-note-agent/config/sunday-note-vault.yaml` to resolve Raw, Routine, Wiki, Journal, and Schema paths. Read relevant framework pages from the configured Schema path and the configured Wiki index if it exists. Inspect only the scope needed for the requested maintenance pass.
+1. 读取 `AGENTS.md` 和 `.sunday-note-agent/config/sunday-note-vault.yaml`，解析路径和写入边界。
+2. 读取配置中的 Wiki index；必要时读取 maintenance log 和相关框架文档。
+3. 按用户指定范围检查，不默认扫描全库。
+4. 按根 `AGENTS.md` 的 Wiki header 契约检查 header、结构、来源、链接、时效性、边界和个人增量。
+5. 输出修复计划、索引建议、合并或归档候选、维护日志建议。
+6. 不直接改写页面，除非用户确认具体修复。
 
-Check:
+## 检查项
 
-- Duplicate topics.
-- Missing canonical pages.
-- Orphaned or unindexed Wiki pages.
-- Stale pages.
-- Missing source, status, or updated fields.
-- Weak or missing internal links.
-- Raw / Routine / Wiki / Journal / Schema boundary confusion.
-- Pages that should be merged, archived, moved, or marked stale.
+- 重复主题、缺少主要说明页面、孤立或未进入 index 的 Wiki 页面。
+- 缺 header 字段、日期格式错误、计数值错误、缺 sources / topic / keywords。
+- 高频 query 但缺 sources / topic / keywords、长期未 query、来源冲突、跨页矛盾。
+- 弱链接、缺少内部链接、topic / keyword 冲突。
+- 通用或搜索可替代内容、缺少个人增量、低 Agent 使用价值、上下文拖累。
+- Raw / Routine / Wiki / Journal / Schema 边界混淆。
+- Wiki 正文中可见的 agent 维护内容，如待继续编译、待确认或复查线索，应迁入 `%% agent ... %%` 注释块。
 
-## Output
+## 输出
 
-Use this table:
+使用表格：
 
-| Finding | Severity | Evidence | Suggested action |
-|---|---|---|---|
+| 问题 | 类型 | 严重程度 | 证据 | 建议动作 |
+|---|---|---|---|---|
 
-Also include checked scope, index updates, and a suggested maintenance-log entry.
+同时给出检查范围、index 更新、合并 / 归档候选和维护日志建议。
 
-## Rules
+## 规则
 
-- Prefer merge and update over creating new pages.
-- Do not rewrite pages without user confirmation.
-- Do not lint Journal content unless the user explicitly asks.
-- Treat the configured Wiki maintenance log as Wiki maintenance metadata, not ordinary journal content.
+- 优先合并和更新已有同主题页面，而不是新建页面。
+- 只输出修复计划，不默认改写页面。
+- 不 lint Journal，除非用户明确要求。
+- maintenance log 是 Wiki 维护元数据，不是普通 journal。
+- Lint 不自动触发 ingest 或 query。
