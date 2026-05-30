@@ -42,7 +42,7 @@ Schema = 规则
 - Raw 对应 `10_原始材料/`。它保存来源、截图、日志、命令输出和未澄清材料，默认不改写。
 - Routine 对应 `20_每日记录/`、`21_每周记录/`、`22_每月记录/`、`23_项目复盘/`。它是用户主导的过程记录层。
 - Wiki 对应 `30_知识库/`。它是 agent 可维护的长期记忆层，只保存已确认、可复用、能减少未来解释成本的内容。
-- Journal 对应 `40_个人写作/`。它保存用户本人的表达，agent 默认只读。
+- Journal 对应可选的 `40_个人写作/` 骨架。具体内容和内部结构由用户自行定义，agent 默认只读。
 - Schema 对应 `AGENTS.md`、`CLAUDE.md`、`.agents/`、`.sunday-note-agent/`、`SundayNoteAgent/`、`首页.md`、`个人模板/` 和必要 `.obsidian` 配置。它是规则、配置、模板和工具控制面。
 - `SundayNoteAgent/config/sunday-note-vault.yaml` 是机器可读路径映射的默认值；安装器会在父 vault 缺少配置时创建 `.sunday-note-agent/config/sunday-note-vault.yaml`，负责把 Raw、Routine、Wiki、Journal 和 Schema 术语映射到当前 vault 的实际目录名。
 
@@ -61,9 +61,9 @@ Daily 属于 Routine，不属于 Journal。agent 写入或改写 Routine 前需�
 
 ## Journal
 
-Journal 是纯个人写作层，对应 `40_个人写作/`。它保存用户本人的表达、日记、生活记录、随笔和私人文字。
+Journal 是可选个人写作层。SundayNoteAgent 只在新 vault 初始化时提供 `40_个人写作/` 空目录骨架，不定义其中应保存什么内容，也不维护其内部结构。
 
-agent 默认只读 Journal，不主动改写、润色、搬运、压缩或编译到 Wiki。只有用户明确要求时，agent 才能处理其中内容。
+agent 默认只读 Journal，不主动创建、改写、润色、搬运、压缩或编译到 Wiki。只有用户明确要求时，agent 才能处理其中内容。
 
 ## 信息流
 
@@ -135,7 +135,7 @@ Header 用于三个动作：
 - Raw 可以多，Wiki 必须少。
 - Routine 记录事实和压缩上下文。
 - Wiki 保存长期稳定记忆，不重复归档 Routine。
-- Journal 保留人的声音。
+- Journal 由用户自行维护，agent 默认只读。
 - Schema 由用户主导，agent 可以建议演化。
 - 根目录规则用于知识库使用，`SundayNoteAgent/AGENTS.md` 用于工具层开发。
 - 新建正式文件要比更新已有文件更难。

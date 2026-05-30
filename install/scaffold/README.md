@@ -33,7 +33,7 @@ SundayNoteAgent/
 - 临时材料先进入 `10_原始材料/收件箱/`。
 - Daily、Weekly、Monthly 和项目状态属于 Routine。
 - 长期稳定、可复用的内容进入 `30_知识库/`。
-- 私人写作保存在 `40_个人写作/`。
+- `40_个人写作/` 是可选个人写作骨架；具体内容和结构由用户自行定义，agent 默认只读。
 - Daily Notes core plugin 负责日期入口；实际模板与日/周/月动作由 QuickAdd 和 `个人模板/` 管理。
 - 当前 v0.1 仅提供 QuickAdd 配置与脚本基线，不预置可直接运行的 choices/actions。
 - agent 工作边界见 `AGENTS.md`。

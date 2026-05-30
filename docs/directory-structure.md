@@ -31,7 +31,7 @@ keywords:
 - `22_每月记录/`: Routine，每月视图。
 - `23_项目复盘/`: Routine，项目视图。
 - `30_知识库/`: Wiki，长期记忆层。
-- `40_个人写作/`: Journal，个人写作层。
+- `40_个人写作/`: Journal，可选个人写作骨架；具体内容和结构由用户自行定义。
 - `个人模板/`: Schema，本地个人模板和相关自动化配置。
 - `SundayNoteAgent/`: Schema，可公开的工具项目，保存框架文档、skills、自动化脚本、配置快照、迁移工具和辅助文件。
 - `.agents/`: Schema，agent skill 导出目录。
@@ -50,7 +50,7 @@ Schema = 规则
 
 Routine 是用户主导的过程记录层，不等同于“工作”。Daily、Weekly、Monthly 和 Project 是 Routine 内部的不同视图。agent 写入或改写 Routine 前需要确认。
 
-`40_个人写作/` 不属于自动编译链路。它保存用户本人文字，只有用户明确确认时，agent 才能基于其中内容提出知识沉淀建议。
+`40_个人写作/` 不属于自动编译链路。SundayNoteAgent 不定义其中内容，也不维护其内部结构；只有用户明确确认时，agent 才能基于其中内容提出知识沉淀建议。
 
 Wiki 是 agent 可维护的长期记忆层。Wiki 页面使用 YAML header 记录 `last_updated`、`update_count`、`last_queried`、`query_count`、`sources`、`topic` 和 `keywords`，用于 query、ingest 和 lint 判断时效、维护次数、使用次数、来源、主题归属和检索入口。
 

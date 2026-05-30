@@ -3,6 +3,7 @@ set -euo pipefail
 
 PROJECT_DIR_NAME="SundayNoteAgent"
 VAULT_ROOT=""
+INIT_CONTENT_SCAFFOLD=1
 
 usage() {
   cat <<'USAGE'
@@ -11,8 +12,10 @@ Usage:
   install.sh --vault-root <vault-dir>
 
 Configure a vault that already contains this project under SundayNoteAgent/.
-The installer writes the outer vault scaffold and export links. It does not
-migrate or rewrite existing personal notes.
+Without --vault-root, the installer initializes the standard Sunday Note
+directory skeleton around the project. With --vault-root, it configures an
+existing vault and does not create or reshape content-layer directories.
+It does not migrate or rewrite existing personal notes.
 USAGE
 }
 
@@ -21,6 +24,7 @@ while [ "$#" -gt 0 ]; do
     --vault-root)
       [ "$#" -ge 2 ] || { echo "missing value for --vault-root" >&2; exit 2; }
       VAULT_ROOT="$2"
+      INIT_CONTENT_SCAFFOLD=0
       shift 2
       ;;
     -h|--help)
@@ -124,16 +128,18 @@ install_scaffold() {
   copy_scaffold_file 首页.md
   copy_scaffold_file .gitignore
 
-  ensure_vault_dirs
+  if [ "$INIT_CONTENT_SCAFFOLD" -eq 1 ]; then
+    ensure_vault_dirs
 
-  copy_if_missing "$SOURCE_ROOT/.obsidian/app.json" "$VAULT_ROOT/.obsidian/app.json"
-  copy_if_missing "$SOURCE_ROOT/.obsidian/appearance.json" "$VAULT_ROOT/.obsidian/appearance.json"
-  copy_if_missing "$SOURCE_ROOT/.obsidian/community-plugins.json" "$VAULT_ROOT/.obsidian/community-plugins.json"
-  copy_if_missing "$SOURCE_ROOT/.obsidian/plugins/terminal/data.json" "$VAULT_ROOT/.obsidian/plugins/terminal/data.json"
-  copy_if_missing "$SOURCE_ROOT/.obsidian/bin/obsidian-codex-terminal" "$VAULT_ROOT/.obsidian/bin/obsidian-codex-terminal"
-  copy_if_missing "$SOURCE_ROOT/.obsidian/bin/obsidian-claude-terminal" "$VAULT_ROOT/.obsidian/bin/obsidian-claude-terminal"
-  copy_if_missing "$SOURCE_ROOT/.obsidian/bin/obsidian-bash-terminal" "$VAULT_ROOT/.obsidian/bin/obsidian-bash-terminal"
-  copy_if_missing "$SOURCE_ROOT/assets/figures/obsidian-layout.png" "$VAULT_ROOT/assets/figures/obsidian-layout.png"
+    copy_if_missing "$SOURCE_ROOT/.obsidian/app.json" "$VAULT_ROOT/.obsidian/app.json"
+    copy_if_missing "$SOURCE_ROOT/.obsidian/appearance.json" "$VAULT_ROOT/.obsidian/appearance.json"
+    copy_if_missing "$SOURCE_ROOT/.obsidian/community-plugins.json" "$VAULT_ROOT/.obsidian/community-plugins.json"
+    copy_if_missing "$SOURCE_ROOT/.obsidian/plugins/terminal/data.json" "$VAULT_ROOT/.obsidian/plugins/terminal/data.json"
+    copy_if_missing "$SOURCE_ROOT/.obsidian/bin/obsidian-codex-terminal" "$VAULT_ROOT/.obsidian/bin/obsidian-codex-terminal"
+    copy_if_missing "$SOURCE_ROOT/.obsidian/bin/obsidian-claude-terminal" "$VAULT_ROOT/.obsidian/bin/obsidian-claude-terminal"
+    copy_if_missing "$SOURCE_ROOT/.obsidian/bin/obsidian-bash-terminal" "$VAULT_ROOT/.obsidian/bin/obsidian-bash-terminal"
+    copy_if_missing "$SOURCE_ROOT/assets/figures/obsidian-layout.png" "$VAULT_ROOT/assets/figures/obsidian-layout.png"
+  fi
 }
 
 export_agents_payload() {
