@@ -1,4 +1,0 @@
-interface:
-  display_name: "Sunday Note Lint"
-  short_description: "Inspect Sunday Note wiki health"
-  default_prompt: "Use $sunday-note-lint to inspect Sunday Note knowledge-base health and suggest fixes."
