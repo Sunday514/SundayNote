@@ -88,8 +88,6 @@ link_or_replace() {
 ensure_vault_dirs() {
   mkdir -p \
     "$VAULT_ROOT/.agents" \
-    "$VAULT_ROOT/.obsidian/bin" \
-    "$VAULT_ROOT/.obsidian/plugins/terminal" \
     "$VAULT_ROOT/10_原始材料/收件箱" \
     "$VAULT_ROOT/10_原始材料/Codex记录" \
     "$VAULT_ROOT/20_每日记录" \
@@ -134,10 +132,6 @@ install_scaffold() {
     copy_if_missing "$SOURCE_ROOT/.obsidian/app.json" "$VAULT_ROOT/.obsidian/app.json"
     copy_if_missing "$SOURCE_ROOT/.obsidian/appearance.json" "$VAULT_ROOT/.obsidian/appearance.json"
     copy_if_missing "$SOURCE_ROOT/.obsidian/community-plugins.json" "$VAULT_ROOT/.obsidian/community-plugins.json"
-    copy_if_missing "$SOURCE_ROOT/.obsidian/plugins/terminal/data.json" "$VAULT_ROOT/.obsidian/plugins/terminal/data.json"
-    copy_if_missing "$SOURCE_ROOT/.obsidian/bin/obsidian-codex-terminal" "$VAULT_ROOT/.obsidian/bin/obsidian-codex-terminal"
-    copy_if_missing "$SOURCE_ROOT/.obsidian/bin/obsidian-claude-terminal" "$VAULT_ROOT/.obsidian/bin/obsidian-claude-terminal"
-    copy_if_missing "$SOURCE_ROOT/.obsidian/bin/obsidian-bash-terminal" "$VAULT_ROOT/.obsidian/bin/obsidian-bash-terminal"
     copy_if_missing "$SOURCE_ROOT/assets/figures/obsidian-layout.png" "$VAULT_ROOT/assets/figures/obsidian-layout.png"
   fi
 }

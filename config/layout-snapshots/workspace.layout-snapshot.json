@@ -305,7 +305,7 @@
   "active": "2bc0435dd10b2c89",
   "lastOpenFiles": [],
   "_snapshot": {
-    "purpose": "Portable Obsidian layout snapshot for Linux without note contents, recent files, absolute paths, or terminal transcripts",
+    "purpose": "Linux Obsidian layout snapshot without note contents, recent files, absolute paths, or terminal transcripts",
     "created": "2026-05-08",
     "source": ".obsidian/workspace.json",
     "restoreTarget": ".obsidian/workspace.json",
@@ -315,7 +315,8 @@
     ],
     "notes": [
       "Install and enable required plugins before restoring this snapshot.",
-      "Keeps core layout, Calendar, file explorer, and Codex/Bash terminal panes.",
+      "Keeps core layout, Calendar, file explorer, and Linux Codex/Bash terminal panes.",
+      "Do not restore terminal panes from this snapshot on Windows; create Windows terminal profiles locally.",
       "Does not include optional plugin panes such as Templater, Dataview, or Table Editor.",
       "Terminal cwd and serial history are null.",
       "Recent files are cleared to avoid recording private file history."

@@ -62,7 +62,7 @@ Wiki 是 agent 可维护的长期记忆层。Wiki 页面使用 YAML header 记�
 
 `30_知识库/索引.md` 和 `30_知识库/知识库维护日志.md` 属于本地 Wiki 维护文件。索引是核心导航入口，不重复 header 信息；维护日志记录 ingest / query / lint 带来的状态变化，但默认不进入 Git。
 
-必要 Obsidian 配置是可迁移基线，不是插件安装包。仓库保存 terminal wrapper、`config/` 下的框架级配置和布局快照，不保存社区插件的 `main.js`、`manifest.json`、`styles.css`，也不保存 Daily Notes、Calendar、Templates 和 QuickAdd actions 等本地模板配置。恢复 `config/layout-snapshots/` 中的布局快照前，用户需要先在 Obsidian 中安装并启用必备插件。
+必要 Obsidian 配置是可迁移基线，不是插件安装包。仓库保存 `config/` 下的框架级配置和布局快照，不保存社区插件的 `main.js`、`manifest.json`、`styles.css`，也不保存 Daily Notes、Calendar、Templates、QuickAdd actions、terminal wrapper 和 workspace 运行状态等本地配置。terminal profile 可以在共享配置中按 `platforms` 区分系统。恢复 `config/layout-snapshots/` 中的布局快照前，用户需要先在 Obsidian 中安装并启用必备插件；包含 terminal 面板的布局快照只适用于同系统恢复。
 
 QuickAdd 是模板、捕获和例行维护动作的主要入口。`创建每日记录`、`统计本周打卡` 和 `统计月度包打卡` 这类动作配置属于本地模板配置；可复用脚本源文件放在 `SundayNoteAgent/automation/quickadd/`，安装时通过父 vault `.sunday-note-agent/quickadd` 软链接使用。个人日记入口属于私人模板工作流，优先放在 Daily 模板或父 vault 本地 action 中，不放入可复用 agent 脚本。
 

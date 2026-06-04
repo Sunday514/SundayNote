@@ -1,6 +1,7 @@
 .agents/
 .codex/
 .claude/
+.obsidian/bin/
 
 个人模板/**
 !个人模板/.gitkeep

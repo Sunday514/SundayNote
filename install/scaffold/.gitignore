@@ -10,6 +10,7 @@
 .obsidian/workspace.json
 .obsidian/workspace-mobile.json
 .obsidian/copilot-index-*.json
+.obsidian/bin/
 .obsidian/plugins/*/main.js
 .obsidian/plugins/*/manifest.json
 .obsidian/plugins/*/styles.css

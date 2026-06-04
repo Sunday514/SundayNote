@@ -36,4 +36,5 @@ SundayNoteAgent/
 - `40_个人写作/` 是可选个人写作骨架；具体内容和结构由用户自行定义，agent 默认只读。
 - Daily Notes core plugin 负责日期入口；实际模板与日/周/月动作由 QuickAdd 和 `个人模板/` 管理。
 - 当前 v0.1 仅提供 QuickAdd 配置与脚本基线，不预置可直接运行的 choices/actions。
+- Linux 和 Windows 共用 vault 时，Obsidian terminal profile 在共享配置中按 `platforms` 区分系统；`.obsidian/bin/` 和 workspace 运行状态按设备本地维护。
 - agent 工作边界见 `AGENTS.md`。
