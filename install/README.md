@@ -49,7 +49,7 @@ bash SundayNoteAgent/install/install.sh --vault-root .
 - `README.md`：私人 vault 简短说明。
 - `首页.md`：vault 首页。
 - `10_原始材料/`、`20_每日记录/`、`21_每周记录/`、`22_每月记录/`、`23_项目复盘/`、`30_知识库/`、`40_个人写作/`、`个人模板/`。
-- 必要 `.obsidian` 基线配置；terminal wrapper 和 workspace 运行状态由每台设备本地维护。
+- 必要 `.obsidian` 基线配置；Agent Client 使用系统 PATH 调用 agent，workspace 运行状态由每台设备本地维护。
 - `SundayNoteAgent/` 工具层目录。
 
 其中 `40_个人写作/` 只是空目录骨架，安装器不定义其中内容，也不维护其内部结构。
@@ -62,45 +62,27 @@ bash SundayNoteAgent/install/install.sh --vault-root .
 
 安装器只在新 vault 初始化时创建 `个人模板/` 目录，不打包个人模板正文。Daily / Weekly / Monthly 模板内容由私人知识库维护；自动化脚本通过 `.sunday-note-agent/config/sunday-note-vault.yaml` 读取模板路径。路径配置是父 vault 本地文件，安装器只在缺失时创建，不会覆盖已有配置。
 
-## 跨设备 terminal
+## Agent Client
 
-Obsidian terminal 插件支持多个 terminal profile。跨 Linux 和 Windows 同步 vault 时，可以共享 `.obsidian/plugins/terminal/data.json`，但要在同一个配置里放多套 profile，并用 `platforms` 限定适用系统。
+Agent Client 是 Obsidian 内默认的 Codex 入口。共享 vault 中的 `.obsidian/plugins/agent-client/data.json` 使用可迁移配置：
 
-profile 示例：
+- `codex.command` 使用 `codex-acp`，不写 Linux 或 Windows 绝对路径。
+- `codex.env` 保持为空，不在 vault 配置里写代理。
+- `nodePath` 保持为空，交给插件按当前系统查找 Node。
+- `defaultAgentId` 使用 `codex-acp`。
 
-```json
-{
-  "name": "Bash",
-  "type": "integrated",
-  "executable": "/bin/bash",
-  "args": ["-lc", "exec /bin/bash"],
-  "platforms": {
-    "linux": true
-  }
-}
-```
-
-```json
-{
-  "name": "PowerShell",
-  "type": "integrated",
-  "executable": "powershell",
-  "args": ["-NoLogo"],
-  "platforms": {
-    "windows": true
-  }
-}
-```
-
-也可以把 Windows profile 改成 Git Bash 或 WSL，例如 `executable` 使用 `wsl`，或使用 Git Bash 的 `bash.exe` 路径。不要在共享 profile 里引用 `.obsidian/bin/` 下的 wrapper；wrapper 是系统相关脚本，应按设备本地维护。
+每台设备都需要在自己的系统环境里安装并暴露 `node`、`codex` 和 `codex-acp`。Linux 和 Windows 都优先提供本机同名 `codex-acp` wrapper，并把 wrapper 所在目录放到 Obsidian 可见的 PATH 前面；wrapper 负责设置本机代理并转发到真实 `codex-acp`。共享 vault 不保存代理、nvm 路径、npm 全局路径或系统绝对路径。
 
 跨系统同步时，仍按设备维护以下内容：
 
 - `.obsidian/workspace.json`
 - `.obsidian/workspace-mobile.json`
-- `.obsidian/bin/`
 
-`workspace.json` 会保存已经打开的 terminal pane 和具体 profile 引用，容易把 Linux pane 带到 Windows。父 vault 如果使用 Git 管理，安装器生成的 `.gitignore` 已默认忽略这些本地状态路径。使用 Obsidian Sync、Syncthing、Dropbox、OneDrive 或其他文件夹同步时，也应在对应同步工具里排除这些路径。
+`workspace.json` 会保存当前打开的 pane、最近文件和插件视图状态，不适合作为跨设备共享配置。使用 Syncthing、Obsidian Sync、Dropbox、OneDrive 或其他文件夹同步时，应排除这些 workspace 文件；如果无法排除，就不要把运行中会保存本机状态的 pane 固定在共享 workspace 里。
+
+## 可选 Terminal
+
+Terminal 插件只作为本机可选工具，不作为 Codex 默认入口。需要继续使用 Terminal 时，profile 可以在共享 `.obsidian/plugins/terminal/data.json` 中按 `platforms` 区分系统；`.obsidian/bin/`、terminal wrapper 和固定 terminal pane 仍按设备本地维护。
 
 ## QuickAdd 与插件说明
 

@@ -73,7 +73,7 @@ templates/                # 模板占位目录
 
 `config/layout-snapshots/` 保存可迁移的 Obsidian 布局快照。当前不提供通用笔记模板；`templates/` 仅保留占位，不保存个人模板正文。
 
-跨 Linux 和 Windows 同步 vault 时，Obsidian terminal profile 可以在同一个 `.obsidian/plugins/terminal/data.json` 中用多套 `platforms` profile 共享；`.obsidian/workspace.json`、`.obsidian/workspace-mobile.json` 和 `.obsidian/bin/` 仍按设备本地维护。Linux terminal 布局快照只作为 Linux 恢复示例使用。
+跨 Linux 和 Windows 同步 vault 时，Obsidian 内默认使用 Agent Client 调用 `codex-acp`，共享配置不写系统绝对路径或代理。`.obsidian/workspace.json` 和 `.obsidian/workspace-mobile.json` 仍按设备本地维护；Terminal 插件只作为本机可选工具。
 
 ## 文档入口
 
