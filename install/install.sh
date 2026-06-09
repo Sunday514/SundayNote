@@ -129,9 +129,9 @@ install_scaffold() {
   if [ "$INIT_CONTENT_SCAFFOLD" -eq 1 ]; then
     ensure_vault_dirs
 
-    copy_if_missing "$SOURCE_ROOT/.obsidian/app.json" "$VAULT_ROOT/.obsidian/app.json"
-    copy_if_missing "$SOURCE_ROOT/.obsidian/appearance.json" "$VAULT_ROOT/.obsidian/appearance.json"
-    copy_if_missing "$SOURCE_ROOT/.obsidian/community-plugins.json" "$VAULT_ROOT/.obsidian/community-plugins.json"
+    copy_if_missing "$SOURCE_ROOT/config/obsidian/app.json" "$VAULT_ROOT/.obsidian/app.json"
+    copy_if_missing "$SOURCE_ROOT/config/obsidian/appearance.json" "$VAULT_ROOT/.obsidian/appearance.json"
+    copy_if_missing "$SOURCE_ROOT/config/obsidian/community-plugins.json" "$VAULT_ROOT/.obsidian/community-plugins.json"
     copy_if_missing "$SOURCE_ROOT/assets/figures/obsidian-layout.png" "$VAULT_ROOT/assets/figures/obsidian-layout.png"
   fi
 }
@@ -146,9 +146,12 @@ export_agents_payload() {
   fi
 
   mkdir -p .sunday-note-agent/config
+  mkdir -p .claudian
   link_or_replace "../$PROJECT_DIR_NAME/skills" ".agents/skills"
   link_or_replace "../$PROJECT_DIR_NAME/automation/quickadd" ".sunday-note-agent/quickadd"
   copy_if_missing "$SOURCE_ROOT/config/sunday-note-vault.yaml" ".sunday-note-agent/config/sunday-note-vault.yaml"
+  copy_if_missing "$SOURCE_ROOT/config/claudian/claudian-settings.json" ".claudian/claudian-settings.json"
+  copy_if_missing "$SOURCE_ROOT/config/obsidian/community-plugins.json" ".obsidian/community-plugins.json"
 }
 
 ensure_agent_sources() {

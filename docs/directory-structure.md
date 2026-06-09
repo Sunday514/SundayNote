@@ -36,6 +36,7 @@ keywords:
 - `SundayNoteAgent/`: Schema，可公开的工具项目，保存框架文档、skills、自动化脚本、配置快照、迁移工具和辅助文件。
 - `.agents/`: Schema，agent skill 导出目录。
 - `.sunday-note-agent/`: Schema，路径配置和自动化导出目录。
+- `.claudian/`: Schema，Claudian 本地设置和会话状态；只维护脱敏默认设置，不维护会话。
 - `.obsidian/`: Schema，Obsidian 配置和运行状态；只维护明确需要迁移的配置。
 
 ## 信息架构
@@ -56,13 +57,13 @@ Wiki 是 agent 可维护的长期记忆层。Wiki 页面使用 YAML header 记�
 
 ## 框架与个人内容
 
-框架项目由 `README.md`、`AGENTS.md`、`CLAUDE.md`、`SundayNoteAgent/`、`首页.md`、本地模板和必要 Obsidian 配置组成。`SundayNoteAgent/` 是可公开的工具项目，不保存个人内容、个人模板正文或本地运行状态。
+框架项目由 `README.md`、`AGENTS.md`、`CLAUDE.md`、`SundayNoteAgent/`、`首页.md`、本地模板、必要 Obsidian 配置和脱敏 Claudian 默认配置组成。`SundayNoteAgent/` 是可公开的工具项目，不保存个人内容、个人模板正文或本地运行状态。
 
 `SundayNoteAgent/config/sunday-note-vault.yaml` 保存机器可读的目录映射默认值；安装器会在父 vault 缺少配置时创建 `.sunday-note-agent/config/sunday-note-vault.yaml`。人读文档仍直接使用当前目录名；skills 和未来脚本优先读取父 vault `.sunday-note-agent/` 下的本地配置，避免把 Raw、Wiki 等语义层和中文目录名绑定。
 
 `30_知识库/索引.md` 和 `30_知识库/知识库维护日志.md` 属于本地 Wiki 维护文件。索引是核心导航入口，不重复 header 信息；维护日志记录 ingest / query / lint 带来的状态变化，但默认不进入 Git。
 
-必要 Obsidian 配置是可迁移基线，不是插件安装包。仓库保存 `config/` 下的框架级配置和布局快照，不保存社区插件的 `main.js`、`manifest.json`、`styles.css`，也不保存 Daily Notes、Calendar、Templates、QuickAdd actions、terminal wrapper 和 workspace 运行状态等本地配置。terminal profile 可以在共享配置中按 `platforms` 区分系统。恢复 `config/layout-snapshots/` 中的布局快照前，用户需要先在 Obsidian 中安装并启用必备插件；包含 terminal 面板的布局快照只适用于同系统恢复。
+必要 Obsidian 配置是可迁移基线，不是插件安装包。仓库保存 `config/` 下的框架级配置、脱敏 Claudian 默认配置和布局快照，不保存社区插件的 `main.js`、`manifest.json`、`styles.css`，也不保存 Daily Notes、Calendar、Templates、QuickAdd actions、terminal wrapper、workspace、Claudian sessions、设备 ID、CLI 绝对路径、环境变量或代理等本地配置。Obsidian 内默认通过 Claudian（`realclaudian`）调用 agent，Codex provider 使用当前设备可见的 `codex` 命令或本机 Claudian 设置。恢复 `config/layout-snapshots/` 中的布局快照前，用户需要先在 Obsidian 中安装并启用必备插件。
 
 QuickAdd 是模板、捕获和例行维护动作的主要入口。`创建每日记录`、`统计本周打卡` 和 `统计月度包打卡` 这类动作配置属于本地模板配置；可复用脚本源文件放在 `SundayNoteAgent/automation/quickadd/`，安装时通过父 vault `.sunday-note-agent/quickadd` 软链接使用。个人日记入口属于私人模板工作流，优先放在 Daily 模板或父 vault 本地 action 中，不放入可复用 agent 脚本。
 

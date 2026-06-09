@@ -5,6 +5,8 @@
 .trash/
 .codex/
 .claude/
+.claudian/sessions/
+.claudian/claudian-settings.json
 
 # Obsidian runtime state and plugin code
 .obsidian/workspace.json

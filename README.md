@@ -71,9 +71,9 @@ skills/                   # Codex / agent skills
 templates/                # 模板占位目录
 ```
 
-`config/layout-snapshots/` 保存可迁移的 Obsidian 布局快照。当前不提供通用笔记模板；`templates/` 仅保留占位，不保存个人模板正文。
+`config/claudian/` 保存脱敏的 Claudian 默认配置；其中不包含设备 ID、CLI 绝对路径、环境变量、代理或会话状态。`config/layout-snapshots/` 保存可迁移的 Obsidian 布局快照。当前不提供通用笔记模板；`templates/` 仅保留占位，不保存个人模板正文。
 
-跨 Linux 和 Windows 同步 vault 时，Obsidian terminal profile 可以在同一个 `.obsidian/plugins/terminal/data.json` 中用多套 `platforms` profile 共享；`.obsidian/workspace.json`、`.obsidian/workspace-mobile.json` 和 `.obsidian/bin/` 仍按设备本地维护。Linux terminal 布局快照只作为 Linux 恢复示例使用。
+Obsidian 内默认使用 Claudian（`realclaudian`）作为 agent 入口，Codex provider 在 Claudian 中启用；各 provider 使用当前设备可见的 CLI 命令或本地 Claudian 设置。共享配置不写系统绝对路径、设备 ID、环境变量或代理；`.obsidian/workspace.json`、`.obsidian/workspace-mobile.json` 和 `.claudian/sessions/` 按设备本地维护；Terminal 插件只作为本机可选工具。
 
 ## 文档入口
 

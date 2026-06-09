@@ -1,6 +1,7 @@
 .agents/
 .codex/
 .claude/
+.claudian/
 .obsidian/bin/
 
 个人模板/**

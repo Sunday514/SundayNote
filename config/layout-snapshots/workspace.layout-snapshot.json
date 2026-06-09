@@ -6,7 +6,6 @@
       {
         "id": "229c43b7240a0800",
         "type": "tabs",
-        "dimension": 61.820480404551205,
         "children": [
           {
             "id": "62e023eadd8d1b9a",
@@ -16,99 +15,6 @@
               "state": {},
               "icon": "lucide-file",
               "title": "New tab"
-            }
-          }
-        ]
-      },
-      {
-        "id": "112be35814f83096",
-        "type": "tabs",
-        "dimension": 38.179519595448795,
-        "children": [
-          {
-            "id": "2bc0435dd10b2c89",
-            "type": "leaf",
-            "pinned": true,
-            "state": {
-              "type": "terminal:terminal",
-              "state": {
-                "terminal:terminal": {
-                  "cwd": null,
-                  "focus": false,
-                  "profile": {
-                    "args": [
-                      "-lc",
-                      "exec /bin/bash \"$PWD/.obsidian/bin/obsidian-codex-terminal\""
-                    ],
-                    "executable": "/bin/bash",
-                    "followTheme": true,
-                    "name": "Codex",
-                    "platforms": {
-                      "linux": true
-                    },
-                    "pythonExecutable": "python3",
-                    "restoreHistory": false,
-                    "rightClickAction": "copyPaste",
-                    "successExitCodes": [
-                      "0",
-                      "SIGINT",
-                      "SIGTERM"
-                    ],
-                    "terminalOptions": {
-                      "documentOverride": null
-                    },
-                    "type": "integrated",
-                    "useWin32Conhost": true
-                  },
-                  "serial": null
-                }
-              },
-              "pinned": true,
-              "icon": "terminal",
-              "title": "Terminal: Codex"
-            }
-          },
-          {
-            "id": "0d589becd9613405",
-            "type": "leaf",
-            "pinned": true,
-            "state": {
-              "type": "terminal:terminal",
-              "state": {
-                "terminal:terminal": {
-                  "cwd": null,
-                  "focus": false,
-                  "profile": {
-                    "args": [
-                      "-lc",
-                      "exec /bin/bash \"$PWD/.obsidian/bin/obsidian-bash-terminal\""
-                    ],
-                    "executable": "/bin/bash",
-                    "followTheme": true,
-                    "name": "Bash",
-                    "platforms": {
-                      "linux": true
-                    },
-                    "pythonExecutable": "python3",
-                    "restoreHistory": false,
-                    "rightClickAction": "copyPaste",
-                    "successExitCodes": [
-                      "0",
-                      "SIGINT",
-                      "SIGTERM"
-                    ],
-                    "terminalOptions": {
-                      "documentOverride": null
-                    },
-                    "type": "integrated",
-                    "useWin32Conhost": false
-                  },
-                  "serial": null
-                }
-              },
-              "pinned": true,
-              "icon": "terminal",
-              "title": "Terminal: Bash"
             }
           }
         ]
@@ -196,6 +102,16 @@
         "id": "3b48d9d92943dcf9",
         "type": "tabs",
         "children": [
+          {
+            "id": "e226e507e9272ea0",
+            "type": "leaf",
+            "state": {
+              "type": "claudian-view",
+              "state": {},
+              "icon": "bot",
+              "title": "Claudian"
+            }
+          },
           {
             "id": "96d2e8e8771ec519",
             "type": "leaf",
@@ -299,26 +215,24 @@
       "templates:Insert template": false,
       "command-palette:Open command palette": false,
       "bases:Create new base": false,
-      "terminal:Open terminal": false
+      "realclaudian:Open Claudian": false
     }
   },
-  "active": "2bc0435dd10b2c89",
+  "active": "e226e507e9272ea0",
   "lastOpenFiles": [],
   "_snapshot": {
-    "purpose": "Linux Obsidian layout snapshot without note contents, recent files, absolute paths, or terminal transcripts",
+    "purpose": "Portable Obsidian layout snapshot without note contents, recent files, absolute paths, terminal panes, or agent transcripts",
     "created": "2026-05-08",
     "source": ".obsidian/workspace.json",
     "restoreTarget": ".obsidian/workspace.json",
     "requiredPlugins": [
       "calendar",
-      "terminal"
+      "realclaudian"
     ],
     "notes": [
       "Install and enable required plugins before restoring this snapshot.",
-      "Keeps core layout, Calendar, file explorer, and Linux Codex/Bash terminal panes.",
-      "Do not restore terminal panes from this snapshot on Windows; create Windows terminal profiles locally.",
-      "Does not include optional plugin panes such as Templater, Dataview, or Table Editor.",
-      "Terminal cwd and serial history are null.",
+      "Keeps core layout, Calendar, file explorer, and Claudian chat view.",
+      "Does not include terminal panes, local workspace state, or optional plugin panes such as Templater, Dataview, or Table Editor.",
       "Recent files are cleared to avoid recording private file history."
     ]
   }
