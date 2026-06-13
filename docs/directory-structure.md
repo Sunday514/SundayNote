@@ -1,6 +1,6 @@
 ---
-last_updated: "2026-05-24"
-update_count: 1
+last_updated: "2026-06-13"
+update_count: 2
 last_queried: ""
 query_count: 0
 sources:
@@ -53,7 +53,7 @@ Routine 是用户主导的过程记录层，不等同于“工作”。Daily、W
 
 `40_个人写作/` 不属于自动编译链路。SundayNoteAgent 不定义其中内容，也不维护其内部结构；只有用户明确确认时，agent 才能基于其中内容提出知识沉淀建议。
 
-Wiki 是 agent 可维护的长期记忆层。Wiki 页面使用 YAML header 记录 `last_updated`、`update_count`、`last_queried`、`query_count`、`sources`、`topic` 和 `keywords`，用于 query、ingest 和 lint 判断时效、维护次数、使用次数、来源、主题归属和检索入口。
+Wiki 是 agent 可维护的长期记忆层。Wiki 页面使用 YAML header 记录 `last_updated`、`update_count`、`last_queried`、`query_count`、`sources`、`topic` 和 `keywords`，用于 query、ingest 和 lint 判断时效、维护次数、使用次数、来源、主题归属和检索入口。`30_知识库/个人上下文.md` 属于本地 Wiki，用于保存长期兴趣、近期计划、推荐偏好和当前项目，不放入 `SundayNoteAgent/`。
 
 ## 框架与个人内容
 
@@ -61,7 +61,7 @@ Wiki 是 agent 可维护的长期记忆层。Wiki 页面使用 YAML header 记�
 
 `SundayNoteAgent/config/sunday-note-vault.yaml` 保存机器可读的目录映射默认值；安装器会在父 vault 缺少配置时创建 `.sunday-note-agent/config/sunday-note-vault.yaml`。人读文档仍直接使用当前目录名；skills 和未来脚本优先读取父 vault `.sunday-note-agent/` 下的本地配置，避免把 Raw、Wiki 等语义层和中文目录名绑定。
 
-`30_知识库/索引.md` 和 `30_知识库/知识库维护日志.md` 属于本地 Wiki 维护文件。索引是核心导航入口，不重复 header 信息；维护日志记录 ingest / query / lint 带来的状态变化，但默认不进入 Git。
+`30_知识库/索引.md`、`30_知识库/知识库维护日志.md` 和个人上下文页面属于本地 Wiki 维护文件。索引是核心导航入口，不重复 header 信息；维护日志记录 ingest / query / lint 带来的状态变化；个人上下文集中保存能降低 agent 沟通成本的稳定个人偏好和计划。这些文件默认不进入 Git。
 
 必要 Obsidian 配置是可迁移基线，不是插件安装包。仓库保存 `config/` 下的框架级配置、脱敏 Claudian 默认配置和布局快照，不保存社区插件的 `main.js`、`manifest.json`、`styles.css`，也不保存 Daily Notes、Calendar、Templates、QuickAdd actions、terminal wrapper、workspace、Claudian sessions、设备 ID、CLI 绝对路径、环境变量或代理等本地配置。Obsidian 内默认通过 Claudian（`realclaudian`）调用 agent，Codex provider 使用当前设备可见的 `codex` 命令或本机 Claudian 设置。恢复 `config/layout-snapshots/` 中的布局快照前，用户需要先在 Obsidian 中安装并启用必备插件。
 

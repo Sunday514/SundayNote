@@ -1,6 +1,6 @@
 ---
-last_updated: 2026-05-24
-update_count: 1
+last_updated: 2026-06-13
+update_count: 2
 last_queried: ""
 query_count: 0
 sources:
@@ -123,6 +123,18 @@ Header 用于三个动作：
 - Ingest 根据 header 判断是否已有同主题页面，并维护 `last_updated`、`update_count`、`sources`、`topic` 和 `keywords`。
 - Query 根据 header 判断时效、主题匹配、检索命中和证据链，并建议更新 `last_queried` 和 `query_count`。
 - Lint 检查缺字段、日期格式、计数值、缺来源、缺 `topic`、缺 `keywords` 和 topic / keyword 冲突。
+
+## 个人上下文
+
+个人上下文是 Wiki 内的 canonical 页面，用于集中保存长期兴趣、近期计划、推荐偏好、当前项目和明确不感兴趣的方向。它不是新的信息层，也不是对话日志。
+
+个人上下文只收纳稳定、已确认、能降低未来沟通成本的信息。来源可以来自 Routine、Project、用户明确确认的对话总结或已沉淀的 Wiki；不要从单次聊天、未验证推断或未经用户要求的 Journal 内容直接写入。
+
+个人上下文只在用户明确要求，或当前任务确实依赖个人偏好、计划和项目状态时使用；不要求 agent 每次回答都推荐内容，也不固定输出推荐小节。
+
+个人上下文页面的 `keywords` 用于记录真实兴趣词、方向词、项目词或常用问法，不用于标记页面类型；不要把“个人上下文”作为通用 keyword 加到相关计划或笔记中。
+
+当对话或资料产生新的稳定兴趣、近期计划、偏好约束或项目状态变化时，agent 只提出写回建议。Lint 可以把个人上下文更新作为维护检查项，输出候选和修复计划；写入或更新个人上下文页面前需要用户确认，并按普通 Wiki header 更新 `last_updated` 和 `update_count`。
 
 ## Index 和 Log
 

@@ -119,6 +119,41 @@ ensure_vault_dirs() {
     "$VAULT_ROOT/assets/figures/知识库/.gitkeep"
 }
 
+ensure_personal_context_file() {
+  local wiki_dir="$VAULT_ROOT/30_知识库"
+  local target="$wiki_dir/个人上下文.md"
+  local current_date
+
+  if [ ! -d "$wiki_dir" ] || [ -e "$target" ]; then
+    return
+  fi
+
+  current_date="$(date +%F)"
+  cat > "$target" <<EOF
+---
+last_updated: $current_date
+update_count: 1
+last_queried: ""
+query_count: 0
+sources: []
+topic: "个人兴趣与近期计划"
+keywords: []
+---
+
+# 个人上下文
+
+## 兴趣方向
+
+## 近期计划
+
+## 推荐偏好
+
+## 当前项目
+
+## 不感兴趣
+EOF
+}
+
 install_scaffold() {
   copy_scaffold_file AGENTS.md
   copy_scaffold_file CLAUDE.md
@@ -184,6 +219,7 @@ ensure_agent_sources
 cd "$VAULT_ROOT"
 
 install_scaffold
+ensure_personal_context_file
 export_agents_payload
 
 echo "Installed Sunday Note vault at: $VAULT_ROOT"

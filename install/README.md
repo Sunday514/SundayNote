@@ -50,6 +50,7 @@ bash SundayNoteAgent/install/install.sh --vault-root .
 - `README.md`：私人 vault 简短说明。
 - `首页.md`：vault 首页。
 - `10_原始材料/`、`20_每日记录/`、`21_每周记录/`、`22_每月记录/`、`23_项目复盘/`、`30_知识库/`、`40_个人写作/`、`个人模板/`。
+- `30_知识库/个人上下文.md`：空的个人上下文 Wiki 页面，`keywords` 初始为空，后续只记录真实兴趣词、方向词、项目词或常用问法。
 - 必要 `.obsidian` 基线配置；Obsidian 默认通过 Claudian 调用 agent，workspace 和 Claudian 会话状态由每台设备本地维护。
 - `SundayNoteAgent/` 工具层目录。
 
@@ -61,6 +62,8 @@ bash SundayNoteAgent/install/install.sh --vault-root .
 - 父 vault `.sunday-note-agent/config/` 下的本地路径配置。
 - 父 vault `.sunday-note-agent/quickadd` 软链接，指向 `SundayNoteAgent/automation/quickadd`。
 - 父 vault `.claudian/claudian-settings.json` 的脱敏默认配置；仅在缺失时创建。
+
+如果已有 vault 中存在 `30_知识库/`，安装器会在缺失时补建空的 `30_知识库/个人上下文.md`；已有文件不会被覆盖。
 
 安装器只在新 vault 初始化时创建 `个人模板/` 目录，不打包个人模板正文。Daily / Weekly / Monthly 模板内容由私人知识库维护；自动化脚本通过 `.sunday-note-agent/config/sunday-note-vault.yaml` 读取模板路径。路径配置是父 vault 本地文件，安装器只在缺失时创建，不会覆盖已有配置。
 
