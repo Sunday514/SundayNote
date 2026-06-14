@@ -28,3 +28,4 @@ templates:
 
 automation:
   quickadd_scripts: ".sunday-note-agent/quickadd"
+  quickadd_rollups: ".sunday-note-agent/config/quickadd-rollups.json"

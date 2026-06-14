@@ -185,6 +185,7 @@ export_agents_payload() {
   link_or_replace "../$PROJECT_DIR_NAME/skills" ".agents/skills"
   link_or_replace "../$PROJECT_DIR_NAME/automation/quickadd" ".sunday-note-agent/quickadd"
   copy_if_missing "$SOURCE_ROOT/config/sunday-note-vault.yaml" ".sunday-note-agent/config/sunday-note-vault.yaml"
+  copy_if_missing "$SOURCE_ROOT/config/quickadd-rollups.json" ".sunday-note-agent/config/quickadd-rollups.json"
   copy_if_missing "$SOURCE_ROOT/config/claudian/claudian-settings.json" ".claudian/claudian-settings.json"
   copy_if_missing "$SOURCE_ROOT/config/obsidian/community-plugins.json" ".obsidian/community-plugins.json"
 }

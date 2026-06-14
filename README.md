@@ -39,11 +39,12 @@ bash SundayNoteAgent/install/install.sh
 ```text
 .agents/skills/                                  -> ../SundayNoteAgent/skills
 .sunday-note-agent/config/sunday-note-vault.yaml
+.sunday-note-agent/config/quickadd-rollups.json
 .sunday-note-agent/quickadd/                     -> ../SundayNoteAgent/automation/quickadd
 30_知识库/个人上下文.md                          -> 空 Wiki 页面，后续写入真实兴趣和计划
 ```
 
-`skills` 和 `quickadd` 使用软链接，父知识库会直接使用 `SundayNoteAgent/` 中的最新工具源码。路径配置文件是父知识库本地文件，只在不存在时由安装器创建，方便使用者按自己的 vault 目录调整。
+`skills` 和 `quickadd` 使用软链接，父知识库会直接使用 `SundayNoteAgent/` 中的最新工具源码。路径配置文件和统计配置是父知识库本地文件，只在不存在时由安装器创建，方便使用者按自己的 vault 目录、模板路径和统计规则调整。
 
 ## 更新
 

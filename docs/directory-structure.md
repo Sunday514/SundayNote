@@ -65,7 +65,7 @@ Wiki 是 agent 可维护的长期记忆层。Wiki 页面使用 YAML header 记�
 
 必要 Obsidian 配置是可迁移基线，不是插件安装包。仓库保存 `config/` 下的框架级配置、脱敏 Claudian 默认配置和布局快照，不保存社区插件的 `main.js`、`manifest.json`、`styles.css`，也不保存 Daily Notes、Calendar、Templates、QuickAdd actions、terminal wrapper、workspace、Claudian sessions、设备 ID、CLI 绝对路径、环境变量或代理等本地配置。Obsidian 内默认通过 Claudian（`realclaudian`）调用 agent，Codex provider 使用当前设备可见的 `codex` 命令或本机 Claudian 设置。恢复 `config/layout-snapshots/` 中的布局快照前，用户需要先在 Obsidian 中安装并启用必备插件。
 
-QuickAdd 是模板、捕获和例行维护动作的主要入口。`创建每日记录`、`统计本周打卡` 和 `统计月度包打卡` 这类动作配置属于本地模板配置；可复用脚本源文件放在 `SundayNoteAgent/automation/quickadd/`，安装时通过父 vault `.sunday-note-agent/quickadd` 软链接使用。个人日记入口属于私人模板工作流，优先放在 Daily 模板或父 vault 本地 action 中，不放入可复用 agent 脚本。
+QuickAdd 是模板、捕获和例行维护动作的主要入口。创建 Daily、Weekly、Monthly 等具体文档的动作配置属于父 vault 本地模板配置；本仓库只提供可复用统计入口 `SundayNoteAgent/automation/quickadd/rollup.js`。统计项由父 vault `.sunday-note-agent/config/quickadd-rollups.json` 配置；默认配置中，周统计按 ISO week 自动推导 7 天 Daily，月统计通过 `week_rule` 配置下辖 ISO weeks，默认按周日所在月份选择。统计脚本只更新已存在目标文档中的自动块，不负责创建、移动或维护周/月记录正文。
 
 具体打卡项保存在本地 Daily 模板中。Daily 创建统一使用个人模板中的 `每日记录.md`；某天不参与统计的项目可以直接从当天 Daily 中删除。Weekly 统计优先按 Daily 模板中的 checkbox 顺序输出，同时兼容历史 Daily 中额外出现的打卡项。
 

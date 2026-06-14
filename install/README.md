@@ -12,6 +12,7 @@
 ```text
 .agents/skills/                                  -> ../SundayNoteAgent/skills
 .sunday-note-agent/config/sunday-note-vault.yaml
+.sunday-note-agent/config/quickadd-rollups.json
 .sunday-note-agent/quickadd/                     -> ../SundayNoteAgent/automation/quickadd
 .claudian/claudian-settings.json
 ```
@@ -60,6 +61,7 @@ bash SundayNoteAgent/install/install.sh --vault-root .
 
 - 父 vault `.agents/skills` 软链接，指向 `SundayNoteAgent/skills`。
 - 父 vault `.sunday-note-agent/config/` 下的本地路径配置。
+- 父 vault `.sunday-note-agent/config/quickadd-rollups.json` 下的 QuickAdd 统计配置；仅在缺失时创建。
 - 父 vault `.sunday-note-agent/quickadd` 软链接，指向 `SundayNoteAgent/automation/quickadd`。
 - 父 vault `.claudian/claudian-settings.json` 的脱敏默认配置；仅在缺失时创建。
 
@@ -93,5 +95,9 @@ Terminal 插件只作为本机可选工具，不作为 agent 默认入口。需�
 ## QuickAdd 与插件说明
 
 - 当前 v0.1 提供 QuickAdd 自动化脚本与配置基线（`SundayNoteAgent/automation/quickadd` 及导出软链接），不预置 vault 内可直接执行的 QuickAdd choices/actions。
+- `automation/quickadd/rollup.js` 是通用统计入口；具体统计项由 `.sunday-note-agent/config/quickadd-rollups.json` 决定。
+- vault 本地 QuickAdd choice 可以通过本地 wrapper、URI 或变量传入 `rollup=weekly_checkins` / `rollup=month_pack_checkins` 来选择统计配置。
+- 默认统计配置中，周统计按 ISO week 自动推导 7 天 Daily；月统计通过 `week_rule` 配置下辖 ISO weeks，默认按周日所在月份选择。
+- 统计脚本只更新已存在目标文档中的自动块；Daily / Weekly / Monthly 等具体文档的创建、模板正文和 QuickAdd choice 由父 vault 本地维护。
 - Daily Notes core plugin 只负责日期入口，模板和例行动作建议由 QuickAdd 与 `个人模板/` 组合实现。
 - 如果你需要隐藏运行产物目录，可选安装并启用 `OA-file-hider`（不作为安装器硬依赖）。
