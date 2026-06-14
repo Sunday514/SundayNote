@@ -1,0 +1,27 @@
+# Git state is not safe to sync with Syncthing. Use git pull/push instead.
+.git
+.git/**
+
+# Syncthing conflict copies should not be propagated again.
+*sync-conflict*
+**/*sync-conflict*
+
+# Local agent/runtime state.
+.agents
+.agents/**
+.codex
+.codex/**
+.claude
+.claude/**
+.claudian
+.claudian/**
+.obsidian/bin
+.obsidian/bin/**
+
+# Local caches and OS metadata.
+__pycache__
+**/__pycache__
+*.pyc
+**/*.pyc
+.DS_Store
+**/.DS_Store
