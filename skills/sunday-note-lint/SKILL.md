@@ -1,18 +1,19 @@
 ---
 name: sunday-note-lint
-description: 检查知识库健康度并降低熵。用于月度维护，或用户要求清理、合并、去重、修复、维护 Wiki 或个人上下文；检查重复主题、孤立或未进入 index 的 Wiki 页面、过期页面、弱链接、缺来源、边界混淆、搜索可替代内容、缺少个人增量和低 Agent 使用价值。
+description: 检查知识库健康度并降低熵。用于清理、合并、去重、修复或维护 Wiki 与个人上下文；检查重复主题、孤立或未进入 index 的 Wiki 页面、过期页面、弱链接、缺来源、边界混淆、搜索可替代内容、缺少个人增量和低 Agent 使用价值。
 ---
 
 # Lint
 
 ## 工作流
 
-1. 读取 `AGENTS.md` 和 `.sunday-note-agent/config/sunday-note-vault.yaml`，解析路径和写入边界。
-2. 读取配置中的 Wiki index；必要时读取 maintenance log 和相关框架文档。
-3. 按用户指定范围检查，不默认扫描全库。
-4. 按根 `AGENTS.md` 的 Wiki header 契约检查 header、结构、来源、链接、时效性、边界和个人增量。
-5. 输出修复计划、索引建议、合并或归档候选、个人上下文更新建议、维护日志建议。
-6. 不直接改写页面，除非用户确认具体修复。
+1. 读取当前任务明确提供的规则、路径映射和写入边界。
+2. 对明确指定的范围，可先运行 `scripts/lint_headers.py --scope <文件或目录>`，用 header 和指定 index 链接生成维护优先级候选。
+3. 读取指定范围内的 Wiki index；必要时读取 maintenance log 和相关框架文档。
+4. 按用户指定范围检查，不默认扫描全库。
+5. 按当前任务提供的 Wiki header 契约检查 header、结构、来源、链接、时效性、边界和个人增量。
+6. 输出修复计划、索引建议、合并或归档候选、个人上下文更新建议、维护日志建议。
+7. 不直接改写页面，除非用户确认具体修复。
 
 ## 检查项
 
@@ -42,3 +43,4 @@ description: 检查知识库健康度并降低熵。用于月度维护，或用�
 - 不 lint Journal，除非用户明确要求。
 - maintenance log 是 Wiki 维护元数据，不是普通 journal。
 - Lint 不自动触发 ingest 或 query。
+- `scripts/lint_headers.py` 只做可流程化的粗筛：检查 header 字段、日期、计数、来源、topic、keywords、重复 topic、可选 index 链接和维护优先级；不读取正文语义，不判断个人增量，不替代最终 lint 判断。
