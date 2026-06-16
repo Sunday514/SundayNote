@@ -1,6 +1,6 @@
 ---
-last_updated: 2026-06-13
-update_count: 2
+last_updated: 2026-06-16
+update_count: 3
 last_queried: ""
 query_count: 0
 sources:
@@ -93,6 +93,8 @@ Raw -> Routine -> Wiki
 ## Wiki 进入门槛
 
 只有包含个人事实、个人偏好、项目上下文、经验模式、历史决策或已确认判断的信息，才值得进入 Wiki。
+
+Wiki 正文不保存来源结构复述；每个段落应承载可复用事实、判断、关系、约束、经验模式或已确认结论。
 
 不进入 Wiki 的内容：
 
