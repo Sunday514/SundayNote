@@ -24,6 +24,27 @@ REQUIRED_FIELDS = [
 LIST_FIELDS = {"sources", "keywords"}
 DATE_FIELDS = {"last_updated", "last_queried"}
 COUNT_FIELDS = {"update_count", "query_count"}
+DEFAULT_INDEX_CHECK_EXCLUDES = [
+    "index.md",
+    "索引.md",
+    "maintenance log.md",
+    "知识库维护日志.md",
+    "知识库待维护列表.md",
+]
+STRUCTURAL_PATTERNS = [
+    r"本文",
+    r"本章",
+    r"本节",
+    r"第[一二三四五六七八九十0-9]+章",
+    r"主要介绍",
+    r"内容包括",
+    r"围绕[^。；\n]{0,30}展开",
+]
+VISIBLE_MAINTENANCE_PATTERNS = [
+    r"待继续编译",
+    r"待确认",
+    r"复查线索",
+]
 
 
 @dataclass
@@ -79,6 +100,29 @@ def parse_args() -> argparse.Namespace:
         help="query_count threshold for high-use maintenance checks.",
     )
     parser.add_argument(
+        "--exclude",
+        action="append",
+        default=[],
+        help="File name, relative path, or glob pattern to exclude from the report.",
+    )
+    parser.add_argument(
+        "--exclude-index-check",
+        action="append",
+        default=[],
+        help="File name, relative path, or glob pattern to skip for index-link checks.",
+    )
+    parser.add_argument(
+        "--exclude-body-scan",
+        action="append",
+        default=[],
+        help="File name, relative path, or glob pattern to skip for body candidate scans.",
+    )
+    parser.add_argument(
+        "--body-scan",
+        action="store_true",
+        help="Scan body text for structural filler and visible maintenance markers.",
+    )
+    parser.add_argument(
         "--format",
         choices=["markdown", "json"],
         default="markdown",
@@ -102,6 +146,22 @@ def markdown_files(scopes: list[str], root: Path) -> list[Path]:
         elif path.is_dir():
             files.update(path.rglob("*.md"))
     return sorted(files)
+
+
+def filter_files(files: list[Path], root: Path, patterns: list[str]) -> list[Path]:
+    if not patterns:
+        return files
+    return [path for path in files if not matches_any(path, root, patterns)]
+
+
+def matches_any(path: Path, root: Path, patterns: list[str]) -> bool:
+    name = path.name
+    relative = rel(path, root).replace("\\", "/")
+    for pattern in patterns:
+        normalized = pattern.replace("\\", "/")
+        if name == normalized or relative == normalized or path.match(normalized):
+            return True
+    return False
 
 
 def resolve_path(raw_path: str, root: Path) -> Path:
@@ -214,9 +274,12 @@ def inspect_file(
     path: Path,
     root: Path,
     indexed_links: set[str] | None,
+    index_check_excludes: list[str],
+    body_scan_excludes: list[str],
     stale_days: int,
     high_query_count: int,
     duplicate_topics: set[str],
+    body_scan: bool,
 ) -> FileReport:
     relative = rel(path, root)
     text = read_text(path)
@@ -240,10 +303,12 @@ def inspect_file(
         inspect_usage(header, issues, high_query_count)
 
     in_index: bool | None = None
-    if indexed_links is not None:
+    if indexed_links is not None and not matches_any(path, root, index_check_excludes):
         in_index = linked_by_index(path, root, indexed_links)
         if not in_index:
             issues.append(Issue("not_indexed", 12, "not linked from supplied index"))
+    if body_scan and not matches_any(path, root, body_scan_excludes):
+        inspect_body(text, issues)
 
     priority = sum(issue.severity for issue in issues)
     return FileReport(
@@ -338,6 +403,56 @@ def inspect_usage(header: dict[str, Any], issues: list[Issue], high_query_count:
             issues.append(Issue("high_use_empty_keywords", 14, "high query_count but empty keywords"))
 
 
+def inspect_body(text: str, issues: list[Issue]) -> None:
+    body = body_without_header(text)
+    visible_body = remove_agent_blocks(body)
+    structural_hits = pattern_hits(visible_body, STRUCTURAL_PATTERNS, limit=3)
+    if structural_hits:
+        issues.append(
+            Issue(
+                "structural_filler_candidate",
+                8,
+                "structural filler candidate: " + " | ".join(structural_hits),
+            )
+        )
+    maintenance_hits = pattern_hits(visible_body, VISIBLE_MAINTENANCE_PATTERNS, limit=3)
+    if maintenance_hits:
+        issues.append(
+            Issue(
+                "visible_maintenance_marker",
+                10,
+                "visible maintenance marker: " + " | ".join(maintenance_hits),
+            )
+        )
+
+
+def body_without_header(text: str) -> str:
+    header_text, unterminated = extract_header(text)
+    if header_text is None or unterminated:
+        return text
+    end = text.find("\n---", 4)
+    return text[end + 4 :]
+
+
+def remove_agent_blocks(text: str) -> str:
+    return re.sub(r"%%\s*agent\b.*?%%", "", text, flags=re.DOTALL | re.IGNORECASE)
+
+
+def pattern_hits(text: str, patterns: list[str], limit: int) -> list[str]:
+    hits: list[str] = []
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        for pattern in patterns:
+            if re.search(pattern, line):
+                hits.append(line[:120])
+                break
+        if len(hits) >= limit:
+            break
+    return hits
+
+
 def duplicate_topics(files: list[Path]) -> set[str]:
     counts: dict[str, int] = {}
     for path in files:
@@ -373,7 +488,7 @@ def report_markdown(reports: list[FileReport], args: argparse.Namespace) -> None
     if args.index:
         print(f"- Index: `{', '.join(args.index)}`")
     print(f"- Files: {len(reports)}")
-    print("- Body text: not inspected\n")
+    print(f"- Body text: {'candidate scan enabled' if args.body_scan else 'not inspected'}\n")
     print("| 优先级 | 文件 | topic | last_updated | query_count | index | 证据 |")
     print("|---|---|---|---|---|---|---|")
     for report in reports:
@@ -414,17 +529,22 @@ def report_json(reports: list[FileReport]) -> None:
 def main() -> None:
     args = parse_args()
     root = Path(args.root).resolve()
-    files = markdown_files(args.scope, root)
+    files = filter_files(markdown_files(args.scope, root), root, args.exclude)
     duplicate_topic_values = duplicate_topics(files)
     indexed_links = index_links(args.index, root) if args.index else None
+    index_check_excludes = DEFAULT_INDEX_CHECK_EXCLUDES + args.exclude_index_check
+    body_scan_excludes = DEFAULT_INDEX_CHECK_EXCLUDES + args.exclude_body_scan
     reports = [
         inspect_file(
             path=path,
             root=root,
             indexed_links=indexed_links,
+            index_check_excludes=index_check_excludes,
+            body_scan_excludes=body_scan_excludes,
             stale_days=args.stale_days,
             high_query_count=args.high_query_count,
             duplicate_topics=duplicate_topic_values,
+            body_scan=args.body_scan,
         )
         for path in files
     ]

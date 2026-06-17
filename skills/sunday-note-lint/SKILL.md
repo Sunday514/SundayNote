@@ -8,7 +8,7 @@ description: 检查知识库健康度并降低熵。用于清理、合并、去�
 ## 工作流
 
 1. 读取当前任务明确提供的规则、路径映射和写入边界。
-2. 对明确指定的范围，可先运行 `scripts/lint_headers.py --scope <文件或目录>`，用 header 和指定 index 链接生成维护优先级候选。
+2. 对明确指定的范围，可先运行 `scripts/lint_headers.py --scope <文件或目录>`，用 header、指定 index 链接和可选正文候选扫描生成维护优先级候选。
 3. 读取指定范围内的 Wiki index；必要时读取 maintenance log 和相关框架文档。
 4. 按用户指定范围检查，不默认扫描全库。
 5. 按当前任务提供的 Wiki header 契约检查 header、结构、来源、链接、时效性、边界和个人增量。
@@ -44,4 +44,5 @@ description: 检查知识库健康度并降低熵。用于清理、合并、去�
 - 不 lint Journal，除非用户明确要求。
 - maintenance log 是 Wiki 维护元数据，不是普通 journal。
 - Lint 不自动触发 ingest 或 query。
-- `scripts/lint_headers.py` 只做可流程化的粗筛：检查 header 字段、日期、计数、来源、topic、keywords、重复 topic、可选 index 链接和维护优先级；不读取正文语义，不判断个人增量，不替代最终 lint 判断。
+- `scripts/lint_headers.py` 只做可流程化的粗筛：检查 header 字段、日期、计数、来源、topic、keywords、重复 topic、可选 index 链接和维护优先级；默认不把 index、maintenance log 和待维护列表当成普通未索引页。
+- `scripts/lint_headers.py --body-scan` 只用正则扫描结构性空话和可见维护标记候选，默认跳过 index、maintenance log 和待维护列表；不做正文语义判断，不判断个人增量，不替代最终 lint 判断。
