@@ -29,3 +29,8 @@ templates:
 automation:
   quickadd_scripts: ".sunday-note-agent/quickadd"
   quickadd_rollups: ".sunday-note-agent/config/quickadd-rollups.json"
+
+components:
+  paper_summarizer:
+    conda_env: "papers"
+    output_dir: "10_原始材料/论文"

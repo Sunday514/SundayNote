@@ -4,18 +4,21 @@ set -euo pipefail
 PROJECT_DIR_NAME="SundayNoteAgent"
 VAULT_ROOT=""
 INIT_CONTENT_SCAFFOLD=1
+WITH_PAPER_SUMMARIZER=0
 
 usage() {
   cat <<'USAGE'
 Usage:
   install.sh
   install.sh --vault-root <vault-dir>
+  install.sh [--vault-root <vault-dir>] --with-paper-summarizer
 
 Configure a vault that already contains this project under SundayNoteAgent/.
 Without --vault-root, the installer initializes the standard Sunday Note
 directory skeleton around the project. With --vault-root, it configures an
 existing vault and does not create or reshape content-layer directories.
 It does not migrate or rewrite existing personal notes.
+Paper summarizer is optional because it requires a docling-capable environment.
 USAGE
 }
 
@@ -26,6 +29,10 @@ while [ "$#" -gt 0 ]; do
       VAULT_ROOT="$2"
       INIT_CONTENT_SCAFFOLD=0
       shift 2
+      ;;
+    --with-paper-summarizer)
+      WITH_PAPER_SUMMARIZER=1
+      shift
       ;;
     -h|--help)
       usage
@@ -83,6 +90,51 @@ link_or_replace() {
   fi
   mkdir -p "$(dirname -- "$link_path")"
   ln -s "$target" "$link_path"
+}
+
+ensure_skills_export_dir() {
+  if [ -L .agents/skills ]; then
+    rm -f .agents/skills
+  fi
+  if [ -e .agents/skills ] && [ ! -d .agents/skills ]; then
+    echo ".agents/skills exists and is not a directory; refusing to replace it" >&2
+    exit 1
+  fi
+  mkdir -p .agents/skills
+}
+
+move_existing_skill_aside() {
+  local skill_name="$1"
+  local skill_path=".agents/skills/$skill_name"
+  local backup_dir=".agents/skills/.replaced-by-symlink/$(date +%Y%m%d-%H%M%S)"
+
+  mkdir -p "$backup_dir"
+  mv "$skill_path" "$backup_dir/$skill_name"
+}
+
+link_skill() {
+  local skill_name="$1"
+  local link_path=".agents/skills/$skill_name"
+  local target="../../$PROJECT_DIR_NAME/skills/$skill_name"
+
+  if [ -e "$link_path" ] && [ ! -L "$link_path" ]; then
+    move_existing_skill_aside "$skill_name"
+  elif [ -L "$link_path" ]; then
+    rm -f "$link_path"
+  fi
+
+  ln -s "$target" "$link_path"
+}
+
+unlink_optional_skill() {
+  local skill_name="$1"
+  local link_path=".agents/skills/$skill_name"
+
+  if [ -L "$link_path" ]; then
+    rm -f "$link_path"
+  elif [ -e "$link_path" ]; then
+    move_existing_skill_aside "$skill_name"
+  fi
 }
 
 ensure_vault_dirs() {
@@ -182,7 +234,15 @@ export_agents_payload() {
 
   mkdir -p .sunday-note-agent/config
   mkdir -p .claudian
-  link_or_replace "../$PROJECT_DIR_NAME/skills" ".agents/skills"
+  ensure_skills_export_dir
+  link_skill sunday-note-ingest
+  link_skill sunday-note-lint
+  link_skill sunday-note-query
+  if [ "$WITH_PAPER_SUMMARIZER" -eq 1 ]; then
+    link_skill paper-summarizer
+  else
+    unlink_optional_skill paper-summarizer
+  fi
   link_or_replace "../$PROJECT_DIR_NAME/automation/quickadd" ".sunday-note-agent/quickadd"
   copy_if_missing "$SOURCE_ROOT/config/sunday-note-vault.yaml" ".sunday-note-agent/config/sunday-note-vault.yaml"
   copy_if_missing "$SOURCE_ROOT/config/quickadd-rollups.json" ".sunday-note-agent/config/quickadd-rollups.json"

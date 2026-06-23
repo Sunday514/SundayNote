@@ -55,6 +55,8 @@ Routine 是用户主导的过程记录层，不等同于“工作”。Daily、W
 
 Wiki 是 agent 可维护的长期记忆层。Wiki 页面使用 YAML header 记录 `last_updated`、`update_count`、`last_queried`、`query_count`、`sources`、`topic` 和 `keywords`，用于 query、ingest 和 lint 判断时效、维护次数、使用次数、来源、主题归属和检索入口。`30_知识库/个人上下文.md` 属于本地 Wiki，用于保存长期兴趣、近期计划、推荐偏好和当前项目，不放入 `SundayNoteAgent/`。
 
+论文整理按信息层分工：单篇论文总结进入 Raw，例如 `10_原始材料/论文/...`；跨论文技术对比、方法谱系和选型准则进入 Wiki；带具体项目目标、约束、决策和下一步计划的调研报告或方案设计进入 `23_项目复盘/`。项目验证后沉淀出的稳定经验再回写 Wiki。
+
 ## 框架与个人内容
 
 框架项目由 `README.md`、`AGENTS.md`、`CLAUDE.md`、`SundayNoteAgent/`、`首页.md`、本地模板、必要 Obsidian 配置和脱敏 Claudian 默认配置组成。`SundayNoteAgent/` 是可公开的工具项目，不保存个人内容、个人模板正文或本地运行状态。
@@ -87,4 +89,4 @@ QuickAdd 是模板、捕获和例行维护动作的主要入口。创建 Daily�
 - 命令行辅助脚本: `SundayNoteAgent/scripts/`
 - 迁移辅助工具: `SundayNoteAgent/migration/`
 - QuickAdd 自动化源文件: `SundayNoteAgent/automation/quickadd/`
-- 安装后 skill 发现入口: `.agents/skills/`，软链接到 `SundayNoteAgent/skills/`
+- 安装后 skill 发现入口: `.agents/skills/`，其中每个 skill 软链接到 `SundayNoteAgent/skills/<skill-name>/`

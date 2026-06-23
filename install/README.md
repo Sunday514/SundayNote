@@ -10,7 +10,10 @@
 安装器设置工具入口和本地默认配置：
 
 ```text
-.agents/skills/                                  -> ../SundayNoteAgent/skills
+.agents/skills/sunday-note-ingest                  -> ../../SundayNoteAgent/skills/sunday-note-ingest
+.agents/skills/sunday-note-lint                    -> ../../SundayNoteAgent/skills/sunday-note-lint
+.agents/skills/sunday-note-query                   -> ../../SundayNoteAgent/skills/sunday-note-query
+.agents/skills/paper-summarizer                    -> ../../SundayNoteAgent/skills/paper-summarizer，可选
 .sunday-note-agent/config/sunday-note-vault.yaml
 .sunday-note-agent/config/quickadd-rollups.json
 .sunday-note-agent/quickadd/                     -> ../SundayNoteAgent/automation/quickadd
@@ -42,6 +45,12 @@ bash SundayNoteAgent/install/install.sh
 bash SundayNoteAgent/install/install.sh --vault-root .
 ```
 
+论文总结是可选组件，依赖可运行 docling 的 Python 环境。需要启用时增加参数：
+
+```bash
+bash SundayNoteAgent/install/install.sh --vault-root . --with-paper-summarizer
+```
+
 ## 生成内容
 
 不带 `--vault-root` 的新 vault 初始化会创建：
@@ -59,7 +68,8 @@ bash SundayNoteAgent/install/install.sh --vault-root .
 
 使用 `--vault-root` 配置已有 vault 时，安装器不会补建、移动、重命名或整理上述内容层目录，只设置工具入口：
 
-- 父 vault `.agents/skills` 软链接，指向 `SundayNoteAgent/skills`。
+- 父 vault `.agents/skills/` 下的基础 skill 软链接：`sunday-note-ingest`、`sunday-note-lint`、`sunday-note-query`。
+- 传入 `--with-paper-summarizer` 时，额外导出 `paper-summarizer` skill。
 - 父 vault `.sunday-note-agent/config/` 下的本地路径配置。
 - 父 vault `.sunday-note-agent/config/quickadd-rollups.json` 下的 QuickAdd 统计配置；仅在缺失时创建。
 - 父 vault `.sunday-note-agent/quickadd` 软链接，指向 `SundayNoteAgent/automation/quickadd`。
@@ -67,7 +77,7 @@ bash SundayNoteAgent/install/install.sh --vault-root .
 
 如果已有 vault 中存在 `30_知识库/`，安装器会在缺失时补建空的 `30_知识库/个人上下文.md`；已有文件不会被覆盖。
 
-安装器只在新 vault 初始化时创建 `个人模板/` 目录，不打包个人模板正文。Daily / Weekly / Monthly 模板内容由私人知识库维护；自动化脚本通过 `.sunday-note-agent/config/sunday-note-vault.yaml` 读取模板路径。路径配置是父 vault 本地文件，安装器只在缺失时创建，不会覆盖已有配置。
+安装器只在新 vault 初始化时创建 `个人模板/` 目录，不打包个人模板正文。Daily / Weekly / Monthly 模板内容由私人知识库维护；自动化脚本通过 `.sunday-note-agent/config/sunday-note-vault.yaml` 读取模板路径。路径配置是父 vault 本地文件，安装器只在缺失时创建，不会覆盖已有配置。`components.paper_summarizer` 默认使用 `papers` conda 环境，产物目录为 `10_原始材料/论文`。如果 `.agents/skills/` 下已有同名真实目录，安装器会先移到 `.agents/skills/.replaced-by-symlink/` 再创建软链接，避免删除旧内容。
 
 ## Claudian
 

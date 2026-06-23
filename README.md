@@ -23,6 +23,12 @@ git clone git@github.com:Sunday514/SundayNoteAgent.git SundayNoteAgent
 bash SundayNoteAgent/install/install.sh --vault-root .
 ```
 
+需要启用论文总结时，在安装命令中增加可选组件：
+
+```bash
+bash SundayNoteAgent/install/install.sh --vault-root . --with-paper-summarizer
+```
+
 本地验证或使用 fork 时：
 
 ```bash
@@ -37,14 +43,17 @@ bash SundayNoteAgent/install/install.sh
 安装器会创建父知识库骨架、必要 Obsidian 基线配置，并设置 agent 工具入口：
 
 ```text
-.agents/skills/                                  -> ../SundayNoteAgent/skills
+.agents/skills/sunday-note-ingest                  -> ../../SundayNoteAgent/skills/sunday-note-ingest
+.agents/skills/sunday-note-lint                    -> ../../SundayNoteAgent/skills/sunday-note-lint
+.agents/skills/sunday-note-query                   -> ../../SundayNoteAgent/skills/sunday-note-query
+.agents/skills/paper-summarizer                    -> ../../SundayNoteAgent/skills/paper-summarizer，可选
 .sunday-note-agent/config/sunday-note-vault.yaml
 .sunday-note-agent/config/quickadd-rollups.json
 .sunday-note-agent/quickadd/                     -> ../SundayNoteAgent/automation/quickadd
 30_知识库/个人上下文.md                          -> 空 Wiki 页面，后续写入真实兴趣和计划
 ```
 
-`skills` 和 `quickadd` 使用软链接，父知识库会直接使用 `SundayNoteAgent/` 中的最新工具源码。路径配置文件和统计配置是父知识库本地文件，只在不存在时由安装器创建，方便使用者按自己的 vault 目录、模板路径和统计规则调整。
+基础 skills、可选 skills 和 `quickadd` 使用软链接，父知识库会直接使用 `SundayNoteAgent/` 中的最新工具源码。论文总结 skill 只在传入 `--with-paper-summarizer` 时导出；它依赖可运行 docling 的 Python 环境，默认配置复用 `papers` conda 环境。路径配置文件和统计配置是父知识库本地文件，只在不存在时由安装器创建，方便使用者按自己的 vault 目录、模板路径和统计规则调整。
 
 ## 更新
 

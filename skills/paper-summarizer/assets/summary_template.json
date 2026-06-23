@@ -1,0 +1,69 @@
+{
+  "name": "summary-template",
+  "version": "v1",
+  "language": "zh-CN",
+  "description": "Project-level template configuration for markdown paper summaries.",
+  "top_level_title": "# {{ title }}",
+  "header_fields": [
+    "作者",
+    "发布时间",
+    "论文链接"
+  ],
+  "optional_header_fields": [
+    "代码链接"
+  ],
+  "core_conclusion": {
+    "prefix": "> 核心结论：",
+    "position": "after_header_fields",
+    "description": "用一句话说明论文最重要的贡献、方法抓手和结果。"
+  },
+  "writer_role": "以技术讲解者的视角，像论文作者向读者解释工作一样写：直接说明为什么做、怎么做、证据如何支持结论；不要使用第一人称，不要用第三视角介绍文章。",
+  "writing_rules": [
+    "事实性判断必须来自解析文本或 metadata；如果信息不明确，就说明未明确，而不是补全。",
+    "每节先给出核心判断，再用机制、证据或数据支撑。"
+  ],
+  "sections": [
+    {
+      "heading": "## 1. 研究背景与动机",
+      "description": "对应 Introduction：用 SCQA 的思路写清问题设定、现有方法的 gap，以及本文的核心主张。",
+      "items": [
+        "问题发生在什么任务、系统或研究背景下？",
+        "为什么这个问题值得解决？",
+        "现有方法的关键局限是什么？",
+        "本文给出的核心解答是什么？"
+      ]
+    },
+    {
+      "heading": "## 2. 技术方法",
+      "description": "对应 Methods：先建立方法主线，再按论文贡献拆解支撑主线的关键机制；二级标题应按论文内容命名。",
+      "organization": [
+        {
+          "role": "方法主线",
+          "description": "用一个总览型二级小节说明方法如何解决问题，以及关键对象、接口、流程或假设如何连接。",
+          "items": [
+            "标题使用论文方法或流程的具体名称，而不是固定写成“整体框架”。"
+          ]
+        },
+        {
+          "role": "关键机制",
+          "description": "设置 2-5 个机制型二级小节，解释支撑方法主线的核心设计。",
+          "items": [
+            "标题使用具体模块、策略、目标、数据构造、系统组件或交互流程名称。",
+            "不要照搬论文目录，也不要把过细实现步骤拆成独立子节。",
+            "只呈现真正影响方法成立的公式、代码或伪代码。"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "## 3. 实验结果与分析",
+      "description": "合并 Results 和 Discussion：先说明实验支持或削弱了哪些结论，再用任务、数据、基线、指标、关键结果和边界支撑。",
+      "items": [
+        "实验覆盖哪些任务、数据、基线和指标？",
+        "最关键的数值结果或定性发现是什么？",
+        "这些结果如何支撑作者的解释？",
+        "论文明确指出了哪些局限或不足？"
+      ]
+    }
+  ]
+}
