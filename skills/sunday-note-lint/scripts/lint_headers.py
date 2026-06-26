@@ -530,10 +530,11 @@ def main() -> None:
     args = parse_args()
     root = Path(args.root).resolve()
     files = filter_files(markdown_files(args.scope, root), root, args.exclude)
-    duplicate_topic_values = duplicate_topics(files)
     indexed_links = index_links(args.index, root) if args.index else None
     index_check_excludes = DEFAULT_INDEX_CHECK_EXCLUDES + args.exclude_index_check
     body_scan_excludes = DEFAULT_INDEX_CHECK_EXCLUDES + args.exclude_body_scan
+    duplicate_topic_files = filter_files(files, root, DEFAULT_INDEX_CHECK_EXCLUDES)
+    duplicate_topic_values = duplicate_topics(duplicate_topic_files)
     reports = [
         inspect_file(
             path=path,

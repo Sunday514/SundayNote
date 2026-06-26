@@ -25,6 +25,7 @@ description: 检查知识库健康度并降低熵。用于清理、合并、去�
 - 结构性空话：正文中大量出现“本文 / 本章 / 本节 / 第二章 / 主要介绍 / 内容包括 / 围绕……展开”等只描述材料结构、不包含具体知识增量的句子。
 - 个人上下文页面缺失、过期、缺少真实兴趣词 / 方向词 / 项目词，或混入对话流水、未确认推断和过期计划。
 - 个人上下文分散在多个零散偏好、兴趣、计划页面中；指定检查范围内出现稳定兴趣、近期计划、推荐偏好或项目状态变化，但尚未沉淀到个人上下文。
+- 个人上下文候选必须来自用户明确表达、Routine / Project / Wiki 中稳定重复出现的事实，或用户确认过的判断；不要从单次对话语气、孤立偏好词或模型推断中归纳人格画像。
 - Raw / Routine / Wiki / Journal / Schema 边界混淆。
 - Wiki 正文中可见的 agent 维护内容，如待继续编译、待确认或复查线索，应迁入 `%% agent ... %%` 注释块。
 
@@ -44,5 +45,7 @@ description: 检查知识库健康度并降低熵。用于清理、合并、去�
 - 不 lint Journal，除非用户明确要求。
 - maintenance log 是 Wiki 维护元数据，不是普通 journal。
 - Lint 不自动触发 ingest 或 query。
-- `scripts/lint_headers.py` 只做可流程化的粗筛：检查 header 字段、日期、计数、来源、topic、keywords、重复 topic、可选 index 链接和维护优先级；默认不把 index、maintenance log 和待维护列表当成普通未索引页。
-- `scripts/lint_headers.py --body-scan` 只用正则扫描结构性空话和可见维护标记候选，默认跳过 index、maintenance log 和待维护列表；不做正文语义判断，不判断个人增量，不替代最终 lint 判断。
+- 空白 scaffold 页面可以作为待填候选，但不应被视为普通低质量 Wiki；只有页面已有正文或被用户指定检查时，才判断其个人上下文质量。
+- index 检查以 Obsidian `[[wikilink]]` 为准。
+- `scripts/lint_headers.py` 只做可流程化的粗筛：检查 header 字段、日期、计数、来源、topic、keywords、重复 topic、可选 index 链接和维护优先级；默认不把 index、maintenance log 和待维护列表当成普通未索引页或重复 topic 来源。
+- `scripts/lint_headers.py --body-scan` 只用正则扫描结构性空话和可见维护标记候选，默认跳过 index、maintenance log 和待维护列表；结构性空话命中只是候选，最终判断要看句子是否包含事实、判断、关系或约束；不做正文语义判断，不判断个人增量，不替代最终 lint 判断。
