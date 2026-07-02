@@ -1,6 +1,6 @@
 ---
-last_updated: 2026-05-24
-update_count: 1
+last_updated: 2026-07-03
+update_count: 2
 last_queried: ""
 query_count: 0
 sources:
@@ -9,107 +9,78 @@ sources:
 topic: "Sunday Note 路线图"
 keywords:
   - "路线图"
-  - "micro-skill"
-  - "ingest"
-  - "query"
   - "lint"
-  - "Wiki 索引"
-  - "Project Hub"
+  - "audit"
+  - "编排器"
+  - "知识库有效性"
+  - "subagent"
+  - "Wiki 维护"
 ---
 
 # 路线图
 
 ## 摘要
 
-Sunday Note 的目标是持续降低 agent 理解用户、项目和判断方式的成本。路线图优先强化个人知识库与 SundayNoteAgent 工具层的边界，让 ingest、query、lint 三个 micro-skill 围绕个人增量、低熵维护和可追溯链接工作。
+SundayNoteAgent 的当前重点是降低知识库维护任务的上下文压力，让 skill 保持窄职责、可验证、可迁移。`ingest`、`query` 和 `lint` 已形成基础闭环；后续开发优先改进维护编排和知识库有效性评估，不扩大日常 ingest / query 的默认流程。
 
-## P1：强化三个 micro-skill
+## P0：将 lint 调整为维护编排器
 
-目标：让 skill 的输出直接支持个人增量判断和低上下文成本。
+目标：`sunday-note-lint` 默认只做诊断、分解和维护计划，不承担多文件长上下文读写任务。
 
-### sunday-note-ingest
+- Lint 读取用户指定范围和必要索引，不默认扫描全库，不默认改写 Wiki。
+- Lint 输出维护任务列表，而不是一次性完成所有修复。
+- 每个维护任务包含：`task_id`、目标、涉及文件、需要读取的证据、建议动作、风险、验证方式、是否适合分派 subagent。
+- 用户确认具体任务后，再由窄范围执行任务读取和修改文件。
+- 长文件、多文件合并、索引重组、结构性空话清理、个人上下文整理等任务优先拆分给独立 subagent；每个 subagent 只处理一个明确任务，不自行扩大范围。
+- `lint_headers.py` 继续作为机械粗筛工具，只提供 header、index、重复 topic、body pattern 和维护优先级候选。
+- `lint_headers.py --body-scan` 可增加过程性写入包装候选，例如“本次补充 / 基于以上 / 下面整理 / 我将更新”，保持低权重候选，不做语义裁决。
 
-- 增加输出字段：个人增量、搜索可替代性、Agent 使用价值。
-- 保留来源、摘要、事实、推断、待确认问题、Wiki 入库判断、canonical 页面建议。
-- 输出链接、索引和维护日志更新建议，但不直接写入 Wiki。
+验收：
 
-### sunday-note-query
+- `sunday-note-lint/SKILL.md` 明确 lint 是维护计划编排器。
+- Lint 输出格式能直接转成单个维护任务。
+- 对同一范围执行 lint 时，用户能选择只执行某个任务，而不是被迫接受整批修改。
+- 脚本仍不自动改写 Wiki。
 
-- 明确读取顺序：根 `AGENTS.md`、路径映射 yaml、Wiki index、canonical Wiki、Project、必要 Routine、必要 Raw。
-- 输出区分：个人知识库依据、通用推理、待确认内容、是否建议写回。
-- 写回建议只在回答产生稳定个人判断时提出。
-- 明确 `query_search.py` 的位置和用途，避免相对路径歧义。
+## P0：新增 sunday-note-audit
 
-### sunday-note-lint
+目标：新增 `sunday-note-audit` skill，用于抽样评估个人知识库和工具链是否提供普通搜索无法替代的个人增量。
 
-- 增加降熵检查项：通用内容、缺少个人增量、低 Agent 使用价值、上下文拖累、过度摄取。
-- 保留重复主题、未索引页面、缺 sources/last_updated/update_count/last_queried/query_count/topic/keywords、弱链接和边界混淆检查。
-- 只输出修复计划和维护日志建议，不默认改写页面。
+- Audit 不用于日常 ingest、普通 query 或常规 lint 修复。
+- Audit 用于开发优化、知识库质量抽查、怀疑 Wiki 低增量、评估 query / ingest / lint 是否有效时。
+- Audit 可抽样 3-5 个 Wiki 页面、topic 或真实问题。
+- 对每个问题生成两个独立回答：一个允许读取 Wiki / query 并可搜索，另一个不允许读取 Wiki 但可搜索。
+- 第三个 evaluator 比较两者回答，只看具体 claim、证据来源、用户语境匹配度、决策影响和误用个人上下文风险。
+- Audit 输出高增量页面、低增量页面、query 检索失败、ingest 写入质量问题、lint 可新增检查模式和建议维护任务。
+- Audit 默认只评估和建议，不修改 Wiki，不更新 header，不写维护日志。
 
-验证：
+验收：
 
-- 每个 skill 的 `SKILL.md` frontmatter 只包含 `name` 和 `description`。
-- 三个 skill 仍保持窄触发，不合并、不自动链式调用。
+- 新增 `skills/sunday-note-audit/SKILL.md`，frontmatter 只包含 `name` 和 `description`。
+- Skill 描述能与 `sunday-note-lint` 区分：lint 管维护健康度，audit 评估知识库有效性。
+- Audit 工作流明确三方对照：KB-enabled、KB-blind、evaluator。
+- Audit 输出能转成 lint 维护任务，但不自动触发 lint 或 ingest。
 
-## P1：补强 Wiki 索引
+## P1：保持维护日志为建议项
 
-目标：让 `30_知识库/索引.md` 成为 agent query 的高价值导航入口。
+目标：维护日志记录知识库演化，但不成为自动写入负担。
 
-- 只放核心方法、核心工作流、核心概念、核心经验、长期项目背景和待复查页面。
-- 不把索引做成全量目录。
-- 将重要 canonical Wiki 页面按查询价值加入索引。
-- 将缺个人判断、长期未 query 或需要降熵的页面列入待复查。
+- Ingest、query、lint 和 audit 只有在涉及长期结构变化时才建议维护日志。
+- 建议记录操作、范围、变更、进入索引的页面、待复查项。
+- 不记录一次性聊天、临时命令输出、个人正文或 agent 运行流水。
 
-验证：
+验收：
 
-- query 可以先读索引，再定位少量 canonical 页面。
-- 未进入索引的页面默认不被视为核心长期知识。
+- Skill 只输出维护日志建议，不默认写入维护日志。
+- 维护日志建议能说明为什么这次变化值得长期记录。
 
-## P1：建立 Project Hub
+## 持续约束
 
-目标：让项目状态查询优先读取 Project 页面，而不是翻 Daily。
-
-- 为长期项目建立少量 Project 页面，例如 Sunday Note 和 SundayNoteAgent。
-- 每个 Project 页面维护目标、当前状态、最近进展、风险、下一步、相关 Weekly / Monthly / Wiki 链接。
-- Project 页面作为 Routine 中的项目上下文 hub，不替代 Wiki 的长期判断。
-
-验证：
-
-- 用户问项目状态时，agent 能先读 Project 页面。
-- Project 页面能回链到近期 Routine 和相关 canonical Wiki。
-
-## P2：规范维护日志
-
-目标：让维护日志记录知识库演化，而不是普通聊天流水。
-
-- 每条维护记录包含：操作、范围、变更、进入索引的页面、待复查项。
-- 记录 ingest、query、lint、schema 带来的长期知识库变化。
-- 不记录一次性聊天、临时命令输出或个人正文。
-
-验证：
-
-- lint 输出能直接生成维护日志建议。
-- query 能通过维护日志理解最近的知识库演化。
-
-## P3：暂缓通用模板
-
-目标：避免模板反向规定内容结构。
-
-- `templates/` 仅保留占位。
-- 父 vault 的 `个人模板/` 继续保存本地实际模板正文。
-- 不维护通用 Wiki、论文、书籍或课程模板。
-- Ingest 根据材料自身逻辑设计结构，按 SCQA 和金字塔原则组织写作。
-- 只有当真实使用中出现稳定、重复、可迁移的结构，再评估新增通用模板。
-
-验证：
-
-- 工具层不保存个人模板正文。
-- Ingest 不依赖固定模板也能生成清晰的写入计划。
-
-## 持续检查
-
-- 根目录规则只约束个人知识库，不放具体 skill 输出格式或插件细节。
-- `SundayNoteAgent/AGENTS.md` 只约束工具开发，不写入个人数据。
-- skills 默认不触发，一个请求默认最多触发一个 skill。
-- Obsidian 链接遵守 `index -> canonical Wiki -> sources / Project / Routine`。
-- Wiki 只保存能提升 agent 判断能力的个人增量。
+- 不新增复杂 Dream 自动任务。
+- 不让 lint 自动改写 Wiki。
+- 不让 query 自动写回 header 或正文。
+- 不把知识库有效性抽检放入每次 ingest 默认流程。
+- 不新增 `density_score`、`value_score` 等 header 字段。
+- 不把个人上下文拆成多个偏好页。
+- 不把 `lint_headers.py` 做成语义判断器。
+- 机械检查交给脚本，语义判断交给 skill，写入交给用户确认。
