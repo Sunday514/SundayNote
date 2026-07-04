@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rank Markdown files by header-level maintenance signals."""
+"""Rank Markdown files by header and body-scan maintenance signals."""
 
 from __future__ import annotations
 
@@ -39,6 +39,13 @@ STRUCTURAL_PATTERNS = [
     r"主要介绍",
     r"内容包括",
     r"围绕[^。；\n]{0,30}展开",
+]
+PROCESS_WRAPPER_PATTERNS = [
+    r"本次补充",
+    r"基于以上",
+    r"下面整理",
+    r"我将更新",
+    r"以下是整理",
 ]
 VISIBLE_MAINTENANCE_PATTERNS = [
     r"待继续编译",
@@ -83,6 +90,18 @@ def parse_args() -> argparse.Namespace:
         help="Optional Markdown index file used to detect unindexed pages.",
     )
     parser.add_argument(
+        "--entry",
+        action="append",
+        default=[],
+        help="Optional Markdown entry file or directory used for reachability checks.",
+    )
+    parser.add_argument(
+        "--max-link-depth",
+        type=int,
+        default=6,
+        help="Maximum wikilink depth allowed from supplied entry files.",
+    )
+    parser.add_argument(
         "--root",
         default=".",
         help="Root used for relative output paths.",
@@ -120,7 +139,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--body-scan",
         action="store_true",
-        help="Scan body text for structural filler and visible maintenance markers.",
+        help="Scan body text for structural filler, process wrappers, and visible maintenance markers.",
     )
     parser.add_argument(
         "--format",
@@ -134,7 +153,10 @@ def parse_args() -> argparse.Namespace:
         default=0,
         help="Maximum rows to output. 0 means no limit.",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.max_link_depth < 0:
+        parser.error("--max-link-depth must be a non-negative integer")
+    return args
 
 
 def markdown_files(scopes: list[str], root: Path) -> list[Path]:
@@ -251,6 +273,63 @@ def wiki_links(text: str) -> set[str]:
     return links
 
 
+def link_aliases(path: Path, root: Path) -> set[str]:
+    try:
+        relative_without_suffix = str(path.relative_to(root).with_suffix(""))
+    except ValueError:
+        relative_without_suffix = str(path.with_suffix(""))
+    normalized_relative = relative_without_suffix.replace("\\", "/").strip("/")
+    return {path.stem, normalized_relative}
+
+
+def resolve_wiki_link(link: str, alias_map: dict[str, set[Path]]) -> Path | None:
+    normalized = link.replace("\\", "/").strip().strip("/")
+    if normalized.endswith(".md"):
+        normalized = normalized[:-3]
+    matches = alias_map.get(normalized)
+    if matches and len(matches) == 1:
+        return next(iter(matches))
+    return None
+
+
+def reachable_depths(entry_paths: list[str], root: Path, graph_files: list[Path]) -> dict[Path, int]:
+    entries = markdown_files(entry_paths, root)
+    if not entries:
+        return {}
+
+    graph_set = set(graph_files)
+    alias_map: dict[str, set[Path]] = {}
+    for path in graph_files:
+        for alias in link_aliases(path, root):
+            alias_map.setdefault(alias, set()).add(path)
+
+    graph: dict[Path, set[Path]] = {}
+    for path in graph_files:
+        targets: set[Path] = set()
+        for link in wiki_links(read_text(path)):
+            target = resolve_wiki_link(link, alias_map)
+            if target in graph_set:
+                targets.add(target)
+        graph[path] = targets
+
+    depths: dict[Path, int] = {}
+    queue: list[tuple[Path, int]] = []
+    for entry in entries:
+        if entry in graph_set and entry not in depths:
+            depths[entry] = 0
+            queue.append((entry, 0))
+
+    cursor = 0
+    while cursor < len(queue):
+        path, depth = queue[cursor]
+        cursor += 1
+        for target in graph.get(path, set()):
+            if target not in depths:
+                depths[target] = depth + 1
+                queue.append((target, depth + 1))
+    return depths
+
+
 def index_links(index_paths: list[str], root: Path) -> set[str]:
     links: set[str] = set()
     for raw_path in index_paths:
@@ -274,8 +353,10 @@ def inspect_file(
     path: Path,
     root: Path,
     indexed_links: set[str] | None,
+    entry_depths: dict[Path, int] | None,
     index_check_excludes: list[str],
     body_scan_excludes: list[str],
+    max_link_depth: int,
     stale_days: int,
     high_query_count: int,
     duplicate_topics: set[str],
@@ -307,6 +388,18 @@ def inspect_file(
         in_index = linked_by_index(path, root, indexed_links)
         if not in_index:
             issues.append(Issue("not_indexed", 12, "not linked from supplied index"))
+    if entry_depths is not None and not matches_any(path, root, index_check_excludes):
+        depth = entry_depths.get(path)
+        if depth is None:
+            issues.append(Issue("not_reachable_from_entries", 12, "not reachable from supplied entries"))
+        elif depth > max_link_depth:
+            issues.append(
+                Issue(
+                    "deep_reachable_from_entries",
+                    6,
+                    f"reachable from supplied entries at depth {depth}, over max {max_link_depth}",
+                )
+            )
     if body_scan and not matches_any(path, root, body_scan_excludes):
         inspect_body(text, issues)
 
@@ -415,6 +508,15 @@ def inspect_body(text: str, issues: list[Issue]) -> None:
                 "structural filler candidate: " + " | ".join(structural_hits),
             )
         )
+    process_hits = pattern_hits(visible_body, PROCESS_WRAPPER_PATTERNS, limit=3)
+    if process_hits:
+        issues.append(
+            Issue(
+                "process_wrapper_candidate",
+                8,
+                "process wrapper candidate: " + " | ".join(process_hits),
+            )
+        )
     maintenance_hits = pattern_hits(visible_body, VISIBLE_MAINTENANCE_PATTERNS, limit=3)
     if maintenance_hits:
         issues.append(
@@ -487,6 +589,9 @@ def report_markdown(reports: list[FileReport], args: argparse.Namespace) -> None
     print(f"- Scope: `{', '.join(args.scope)}`")
     if args.index:
         print(f"- Index: `{', '.join(args.index)}`")
+    if args.entry:
+        print(f"- Entry: `{', '.join(args.entry)}`")
+        print(f"- Max link depth: {args.max_link_depth}")
     print(f"- Files: {len(reports)}")
     print(f"- Body text: {'candidate scan enabled' if args.body_scan else 'not inspected'}\n")
     print("| 优先级 | 文件 | topic | last_updated | query_count | index | 证据 |")
@@ -531,6 +636,8 @@ def main() -> None:
     root = Path(args.root).resolve()
     files = filter_files(markdown_files(args.scope, root), root, args.exclude)
     indexed_links = index_links(args.index, root) if args.index else None
+    graph_files = markdown_files([str(root)], root) if args.entry else []
+    entry_depths = reachable_depths(args.entry, root, graph_files) if args.entry else None
     index_check_excludes = DEFAULT_INDEX_CHECK_EXCLUDES + args.exclude_index_check
     body_scan_excludes = DEFAULT_INDEX_CHECK_EXCLUDES + args.exclude_body_scan
     duplicate_topic_files = filter_files(files, root, DEFAULT_INDEX_CHECK_EXCLUDES)
@@ -540,8 +647,10 @@ def main() -> None:
             path=path,
             root=root,
             indexed_links=indexed_links,
+            entry_depths=entry_depths,
             index_check_excludes=index_check_excludes,
             body_scan_excludes=body_scan_excludes,
+            max_link_depth=args.max_link_depth,
             stale_days=args.stale_days,
             high_query_count=args.high_query_count,
             duplicate_topics=duplicate_topic_values,

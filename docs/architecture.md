@@ -1,6 +1,6 @@
 ---
-last_updated: 2026-07-02
-update_count: 4
+last_updated: 2026-07-04
+update_count: 5
 last_queried: ""
 query_count: 0
 sources:
@@ -127,7 +127,7 @@ keywords: [] # 检索提示词，用于 query 候选匹配
 Header 用于三个动作：
 
 - Ingest 根据 header 判断是否已有同主题页面，并维护 `last_updated`、`update_count`、`sources`、`topic` 和 `keywords`。
-- Query 根据 header 判断时效、主题匹配、检索命中和证据链，并建议更新 `last_queried` 和 `query_count`。
+- Query 根据 header 判断时效、主题匹配、检索命中和证据链；实际使用 Wiki 作为证据时，直接更新 `last_queried` 和 `query_count`，只改 header，不改正文。
 - Lint 检查缺字段、日期格式、计数值、缺来源、缺 `topic`、缺 `keywords` 和 topic / keyword 冲突。
 
 ## 个人上下文
