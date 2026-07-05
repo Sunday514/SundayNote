@@ -22,7 +22,7 @@ from typing import Any
 
 
 BASE_URL = "https://open.feishu.cn/open-apis"
-DEFAULT_OUTPUT = "10_原始材料/飞书云文档导出"
+DEFAULT_OUTPUT = "00_导入暂存"
 DOC_TYPES = {"doc", "docx"}
 
 

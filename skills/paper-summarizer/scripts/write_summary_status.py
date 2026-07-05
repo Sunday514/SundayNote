@@ -21,15 +21,16 @@ def write_json(path: Path, payload: dict[str, object]) -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Aggregate one Raw paper summary workspace status.")
-    parser.add_argument("paper_dir", type=Path, help="Raw paper directory")
+    parser = argparse.ArgumentParser(description="Aggregate one paper summary status.")
+    parser.add_argument("paper_dir", type=Path, help="Raw paper summary directory")
+    parser.add_argument("--work-dir", type=Path, help="Import workspace _work directory")
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
     paper_dir = args.paper_dir.expanduser().resolve()
-    work_dir = paper_dir / "_work"
+    work_dir = args.work_dir.expanduser().resolve() if args.work_dir else paper_dir / "_work"
     parse_status_path = work_dir / "parse" / "status.json"
     validation_path = work_dir / "summarize" / "validation.json"
     summary_path = paper_dir / "摘要.md"

@@ -14,6 +14,7 @@ def parse_args() -> argparse.Namespace:
         description="Validate a markdown paper summary against the bundled template."
     )
     parser.add_argument("summary", type=Path, help="Path to 摘要.md")
+    parser.add_argument("--work-dir", type=Path, help="Import workspace _work directory")
     parser.add_argument("--template", type=Path, default=DEFAULT_TEMPLATE_PATH, help="Template JSON path")
     return parser.parse_args()
 
@@ -21,8 +22,9 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     summary_path = args.summary.expanduser().resolve()
+    work_dir = args.work_dir.expanduser().resolve() if args.work_dir else summary_path.parent / "_work"
     template_path = args.template.expanduser().resolve()
-    validation_path = summary_path.parent / "_work" / "summarize" / "validation.json"
+    validation_path = work_dir / "summarize" / "validation.json"
 
     result: dict[str, object] = {
         "summary_path": str(summary_path),

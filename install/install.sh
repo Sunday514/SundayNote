@@ -5,6 +5,7 @@ PROJECT_DIR_NAME="SundayNoteAgent"
 VAULT_ROOT=""
 INIT_CONTENT_SCAFFOLD=1
 WITH_PAPER_SUMMARIZER=0
+WIKI_DIR_EXISTED=0
 
 usage() {
   cat <<'USAGE'
@@ -16,7 +17,7 @@ Usage:
 Configure a vault that already contains this project under SundayNoteAgent/.
 Without --vault-root, the installer initializes the standard Sunday Note
 directory skeleton around the project. With --vault-root, it configures an
-existing vault and does not create or reshape content-layer directories.
+existing vault and creates any missing top-level architecture directories.
 It does not migrate or rewrite existing personal notes.
 Paper summarizer is optional because it requires a docling-capable environment.
 USAGE
@@ -140,8 +141,8 @@ unlink_optional_skill() {
 ensure_vault_dirs() {
   mkdir -p \
     "$VAULT_ROOT/.agents" \
-    "$VAULT_ROOT/10_原始材料/收件箱" \
-    "$VAULT_ROOT/10_原始材料/Codex记录" \
+    "$VAULT_ROOT/00_导入暂存" \
+    "$VAULT_ROOT/10_原始材料" \
     "$VAULT_ROOT/20_每日记录" \
     "$VAULT_ROOT/21_每周记录" \
     "$VAULT_ROOT/22_每月记录" \
@@ -151,14 +152,11 @@ ensure_vault_dirs() {
     "$VAULT_ROOT/个人模板" \
     "$VAULT_ROOT/.sunday-note-agent/config" \
     "$VAULT_ROOT/.sunday-note-agent/quickadd" \
-    "$VAULT_ROOT/assets/figures" \
-    "$VAULT_ROOT/assets/figures/原始材料" \
-    "$VAULT_ROOT/assets/figures/知识库"
+    "$VAULT_ROOT/assets/figures"
 
   touch \
+    "$VAULT_ROOT/00_导入暂存/.gitkeep" \
     "$VAULT_ROOT/10_原始材料/.gitkeep" \
-    "$VAULT_ROOT/10_原始材料/收件箱/.gitkeep" \
-    "$VAULT_ROOT/10_原始材料/Codex记录/.gitkeep" \
     "$VAULT_ROOT/20_每日记录/.gitkeep" \
     "$VAULT_ROOT/21_每周记录/.gitkeep" \
     "$VAULT_ROOT/22_每月记录/.gitkeep" \
@@ -166,9 +164,7 @@ ensure_vault_dirs() {
     "$VAULT_ROOT/30_知识库/.gitkeep" \
     "$VAULT_ROOT/40_个人写作/.gitkeep" \
     "$VAULT_ROOT/个人模板/.gitkeep" \
-    "$VAULT_ROOT/assets/figures/.gitkeep" \
-    "$VAULT_ROOT/assets/figures/原始材料/.gitkeep" \
-    "$VAULT_ROOT/assets/figures/知识库/.gitkeep"
+    "$VAULT_ROOT/assets/figures/.gitkeep"
 }
 
 ensure_personal_context_file() {
@@ -209,13 +205,12 @@ EOF
 install_scaffold() {
   copy_scaffold_file AGENTS.md
   copy_scaffold_file CLAUDE.md
-  copy_scaffold_file README.md
   copy_scaffold_file 首页.md
   copy_scaffold_file .gitignore
 
-  if [ "$INIT_CONTENT_SCAFFOLD" -eq 1 ]; then
-    ensure_vault_dirs
+  ensure_vault_dirs
 
+  if [ "$INIT_CONTENT_SCAFFOLD" -eq 1 ]; then
     copy_if_missing "$SOURCE_ROOT/config/obsidian/app.json" "$VAULT_ROOT/.obsidian/app.json"
     copy_if_missing "$SOURCE_ROOT/config/obsidian/appearance.json" "$VAULT_ROOT/.obsidian/appearance.json"
     copy_if_missing "$SOURCE_ROOT/config/obsidian/community-plugins.json" "$VAULT_ROOT/.obsidian/community-plugins.json"
@@ -276,11 +271,17 @@ if [ ! -d "$VAULT_ROOT" ]; then
   exit 1
 fi
 
+if [ -d "$VAULT_ROOT/30_知识库" ]; then
+  WIKI_DIR_EXISTED=1
+fi
+
 ensure_agent_sources
 cd "$VAULT_ROOT"
 
 install_scaffold
-ensure_personal_context_file
+if [ "$INIT_CONTENT_SCAFFOLD" -eq 1 ] || [ "$WIKI_DIR_EXISTED" -eq 1 ]; then
+  ensure_personal_context_file
+fi
 export_agents_payload
 
 echo "Installed Sunday Note vault at: $VAULT_ROOT"

@@ -13,6 +13,8 @@ layers:
     skills: ".agents/skills"
     config: ".sunday-note-agent/config/sunday-note-vault.yaml"
 
+import_tmp: "00_导入暂存"
+
 wiki:
   index: "30_知识库/索引.md"
   maintenance_log: "30_知识库/知识库维护日志.md"
@@ -33,4 +35,5 @@ automation:
 components:
   paper_summarizer:
     conda_env: "papers"
-    output_dir: "10_原始材料/论文"
+    import_dir: "00_导入暂存"
+    output_dir: "10_原始材料"

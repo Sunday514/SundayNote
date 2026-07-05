@@ -50,7 +50,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("-o", "--output-dir", help="Directory for generated Markdown")
     parser.add_argument(
         "--assets-dir",
-        default="assets/figures/原始材料/docx",
+        default="assets/figures",
         help="Image directory relative to the current working directory",
     )
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing Markdown files")
@@ -77,7 +77,7 @@ class DocxConverter:
     def __init__(self, docx_path: Path, md_path: Path, assets_dir: str) -> None:
         self.docx_path = docx_path
         self.md_path = md_path
-        self.assets_dir = Path(assets_dir.strip("/\\") or "assets/figures/原始材料/docx")
+        self.assets_dir = Path(assets_dir.strip("/\\") or "assets/figures")
         self.asset_root = self.assets_dir / slug(docx_path.stem)
         self.image_count = 0
         self.archive: zipfile.ZipFile

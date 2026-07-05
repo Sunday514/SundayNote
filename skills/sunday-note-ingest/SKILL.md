@@ -1,6 +1,6 @@
 ---
 name: sunday-note-ingest
-description: 当任务涉及 ingest / 资料摄取：整理、吸收或处理外部资料、收件箱材料或 Raw source，并判断是否值得长期保留、应放入哪一层、如何形成可复用结论时使用。
+description: 当任务涉及 ingest / 资料摄取：整理、吸收或处理外部资料、待处理材料或 Raw source，并判断是否值得长期保留、应放入哪一层、如何形成可复用结论时使用。
 ---
 
 # Ingest

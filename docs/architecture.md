@@ -1,10 +1,9 @@
 ---
-last_updated: 2026-07-04
-update_count: 5
+last_updated: 2026-07-05
+update_count: 6
 last_queried: ""
 query_count: 0
 sources:
-  - "[[README]]"
   - "[[AGENTS]]"
   - "[[Karpathy LLM Wiki]]"
 topic: "Sunday Note 架构"
@@ -39,14 +38,14 @@ Schema = 规则
 
 ## 分层
 
-- Raw 对应 `10_原始材料/`。它保存来源、截图、日志、命令输出和未澄清材料，默认不改写。
+- Raw 对应 `10_原始材料/`。它保存已转换成 Obsidian / LLM 可读形态的来源材料，默认不改写。
 - Routine 对应 `20_每日记录/`、`21_每周记录/`、`22_每月记录/`、`23_项目复盘/`。它是用户主导的过程记录层。
 - Wiki 对应 `30_知识库/`。它是 agent 可维护的长期记忆层，只保存已确认、可复用、能减少未来解释成本的内容。
 - Journal 对应可选的 `40_个人写作/` 骨架。具体内容和内部结构由用户自行定义，agent 默认只读。
 - Schema 对应 `AGENTS.md`、`CLAUDE.md`、`.agents/`、`.sunday-note-agent/`、`SundayNoteAgent/`、`首页.md`、`个人模板/` 和必要 `.obsidian` 配置。它是规则、配置、模板和工具控制面。
 - `SundayNoteAgent/config/sunday-note-vault.yaml` 是机器可读路径映射的默认值；安装器会在父 vault 缺少配置时创建 `.sunday-note-agent/config/sunday-note-vault.yaml`，负责把 Raw、Routine、Wiki、Journal 和 Schema 术语映射到当前 vault 的实际目录名。
 
-`README.md` 是用户说明，不作为 agent 规则来源。
+`00_导入暂存/` 是导入工作目录，不属于知识分层；PDF、docx、网页导出、解析中间产物和临时日志先放这里，转换后的 Markdown 来源材料再进入 Raw。
 
 ## Routine
 
@@ -70,27 +69,29 @@ agent 默认只读 Journal，不主动创建、改写、润色、搬运、压缩
 常规信息流是：
 
 ```text
-Raw -> Routine -> Wiki
-```
-
-更具体地说：
-
-```text
-10_原始材料
+00_导入暂存
+  -> 10_原始材料
   -> 20_每日记录
   -> 21_每周记录 / 22_每月记录
   -> 23_项目复盘 / 30_知识库
 ```
 
-这不是要求所有内容都完整走完链路。它的含义是：
+导入暂存不是必经知识层。这条链路的含义是：
 
-- Raw 保留证据。
+- 导入暂存保存可清理的导入过程文件。
+- Raw 保留长期可读来源材料。
 - Routine 维护当前上下文。
 - Wiki 保存长期记忆，由 agent 自动化维护。
 - Journal 独立存在，只在用户明确要求时被引用。
 - Schema 约束维护方式。
 
-论文整理使用同一分层规则：单篇论文总结属于 Raw，作为来源摘要和证据保存在 `10_原始材料/论文/`；跨论文技术对比、方法框架、trade-off 和选型准则进入 Wiki；服务具体项目的调研报告和方案设计进入 `23_项目复盘/`。Project 阶段结束后，如果产生可复用判断或验证经验，再回写 Wiki。
+常规知识流也可简写为：
+
+```text
+Raw -> Routine -> Wiki
+```
+
+论文整理使用同一分工：PDF 原文、解析输出和工作日志属于导入暂存；单篇论文总结属于 Raw，作为来源摘要和证据保存在 `10_原始材料/`；跨论文技术对比、方法框架、trade-off 和选型准则进入 Wiki；服务具体项目的调研报告和方案设计进入 `23_项目复盘/`。Project 阶段结束后，如果产生可复用判断或验证经验，再回写 Wiki。
 
 ## Wiki 进入门槛
 
@@ -108,6 +109,7 @@ Wiki 正文不保存来源结构复述；每个段落应承载可复用事实、
 - 未验证猜测。
 - 没有个人判断的摘录。
 - 完整命令输出或原始日志。
+- PDF、docx、解析中间产物和导入过程日志。
 - 未经用户明确要求的 Journal 内容。
 
 ## Wiki Header
@@ -151,6 +153,7 @@ Header 用于三个动作：
 ## 维护原则
 
 - Raw 可以多，Wiki 必须少。
+- 导入暂存可以清理，不作为知识层维护。
 - Routine 记录事实和压缩上下文。
 - Wiki 保存长期稳定记忆，不重复归档 Routine。
 - Journal 由用户自行维护，agent 默认只读。
@@ -164,7 +167,6 @@ Header 用于三个动作：
 ## 相关链接
 
 - [[AGENTS]]
-- [[README]]
 - [[directory-structure]]
 - [[Karpathy LLM Wiki]]
 - [[roadmap]]

@@ -4,8 +4,8 @@
 
 安装器有两种模式：
 
-- 新 vault 初始化：创建标准目录骨架、必要 Obsidian 基线配置，并设置工具入口。
-- 已有 vault 配置：只写入缺失的入口文件和工具链接，不创建或调整内容层目录结构。
+- 新 vault 初始化：创建标准一级目录骨架、必要 Obsidian 基线配置，并设置工具入口。
+- 已有 vault 配置：补建缺失的标准一级目录和工具入口，不移动、重命名或整理已有内容。
 
 安装器设置工具入口和本地默认配置：
 
@@ -57,16 +57,15 @@ bash SundayNoteAgent/install/install.sh --vault-root . --with-paper-summarizer
 
 - `AGENTS.md`：安装后的私人 vault 根规则。
 - `CLAUDE.md`：Claude Code 适配入口。
-- `README.md`：私人 vault 简短说明。
 - `首页.md`：vault 首页。
-- `10_原始材料/`、`20_每日记录/`、`21_每周记录/`、`22_每月记录/`、`23_项目复盘/`、`30_知识库/`、`40_个人写作/`、`个人模板/`。
+- `00_导入暂存/`、`10_原始材料/`、`20_每日记录/`、`21_每周记录/`、`22_每月记录/`、`23_项目复盘/`、`30_知识库/`、`40_个人写作/`、`个人模板/`。
 - `30_知识库/个人上下文.md`：空的个人上下文 Wiki 页面，`keywords` 初始为空，后续只记录真实兴趣词、方向词、项目词或常用问法。
 - 必要 `.obsidian` 基线配置；Obsidian 默认通过 Claudian 调用 agent，workspace 和 Claudian 会话状态由每台设备本地维护。
 - `SundayNoteAgent/` 工具层目录。
 
-其中 `40_个人写作/` 只是空目录骨架，安装器不定义其中内容，也不维护其内部结构。
+其中 `00_导入暂存/` 是 PDF、docx、网页导出和解析中间产物的临时导入目录；`40_个人写作/` 只是空目录骨架，安装器不定义其中内容，也不维护其内部结构。
 
-使用 `--vault-root` 配置已有 vault 时，安装器不会补建、移动、重命名或整理上述内容层目录，只设置工具入口：
+使用 `--vault-root` 配置已有 vault 时，安装器会补建缺失的标准一级目录，但不会创建二级结构，也不会移动、重命名或整理已有内容。它还会设置工具入口：
 
 - 父 vault `.agents/skills/` 下的基础 skill 软链接：`sunday-note-ingest`、`sunday-note-lint`、`sunday-note-query`。
 - 传入 `--with-paper-summarizer` 时，额外导出 `paper-summarizer` skill。
@@ -75,9 +74,9 @@ bash SundayNoteAgent/install/install.sh --vault-root . --with-paper-summarizer
 - 父 vault `.sunday-note-agent/quickadd` 软链接，指向 `SundayNoteAgent/automation/quickadd`。
 - 父 vault `.claudian/claudian-settings.json` 的脱敏默认配置；仅在缺失时创建。
 
-如果已有 vault 中存在 `30_知识库/`，安装器会在缺失时补建空的 `30_知识库/个人上下文.md`；已有文件不会被覆盖。
+如果运行前已有 vault 中存在 `30_知识库/`，安装器会在缺失时补建空的 `30_知识库/个人上下文.md`；已有文件不会被覆盖。若 `30_知识库/` 是本次安装新建的目录，则不额外创建个人上下文文件。
 
-安装器只在新 vault 初始化时创建 `个人模板/` 目录，不打包个人模板正文。Daily / Weekly / Monthly 模板内容由私人知识库维护；自动化脚本通过 `.sunday-note-agent/config/sunday-note-vault.yaml` 读取模板路径。路径配置是父 vault 本地文件，安装器只在缺失时创建，不会覆盖已有配置。`components.paper_summarizer` 默认使用 `papers` conda 环境，产物目录为 `10_原始材料/论文`。如果 `.agents/skills/` 下已有同名真实目录，安装器会先移到 `.agents/skills/.replaced-by-symlink/` 再创建软链接，避免删除旧内容。
+安装器只在新 vault 初始化时创建一级目录骨架，不打包个人模板正文，也不预设 Raw 或导入暂存的二级结构。Daily / Weekly / Monthly 模板内容由私人知识库维护；自动化脚本通过 `.sunday-note-agent/config/sunday-note-vault.yaml` 读取模板路径。路径配置是父 vault 本地文件，安装器只在缺失时创建，不会覆盖已有配置。`components.paper_summarizer` 默认使用 `papers` conda 环境，导入工作目录为 `00_导入暂存`，摘要目录为 `10_原始材料`。如果 `.agents/skills/` 下已有同名真实目录，安装器会先移到 `.agents/skills/.replaced-by-symlink/` 再创建软链接，避免删除旧内容。
 
 ## Claudian
 

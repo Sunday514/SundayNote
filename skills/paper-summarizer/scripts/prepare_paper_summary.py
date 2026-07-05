@@ -9,7 +9,8 @@ import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 
-DEFAULT_OUTPUT_DIR = "10_原始材料/论文"
+DEFAULT_IMPORT_DIR = "00_导入暂存"
+DEFAULT_OUTPUT_DIR = "10_原始材料"
 DEFAULT_CONDA_ENV = "papers"
 UNKNOWN = "未明确"
 
@@ -45,7 +46,12 @@ def component_config(vault_root: Path) -> dict[str, object]:
     if not isinstance(components, dict):
         return {}
     paper = components.get("paper_summarizer")
-    return paper if isinstance(paper, dict) else {}
+    if not isinstance(paper, dict):
+        return {}
+    result = dict(paper)
+    if "import_dir" not in result and isinstance(config.get("import_tmp"), str):
+        result["import_dir"] = config["import_tmp"]
+    return result
 
 
 def clean_filename(value: str, max_len: int = 120) -> str:
@@ -139,7 +145,7 @@ def run_docling_parse(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Prepare a Raw-layer workspace for one PDF paper summary."
+        description="Prepare import workspace and Raw summary target for one PDF paper."
     )
     parser.add_argument("--vault-root", type=Path, default=Path("."), help="Vault root path")
     parser.add_argument("--pdf", type=Path, required=True, help="Input paper PDF")
@@ -150,6 +156,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--paper-link", help="Optional paper link")
     parser.add_argument("--code-link", help="Optional code link")
     parser.add_argument("--slug", help="Optional output directory name")
+    parser.add_argument("--import-dir", type=Path, help="Import workspace directory relative to vault root")
     parser.add_argument("--output-dir", type=Path, help="Raw paper output directory relative to vault root")
     parser.add_argument("--device", default="auto", help="Docling accelerator device")
     parser.add_argument("--ocr", action="store_true", help="Enable OCR in docling")
@@ -173,30 +180,36 @@ def main() -> int:
         raise FileNotFoundError(f"vault root not found: {vault_root}")
 
     cfg = component_config(vault_root)
+    configured_import = cfg.get("import_dir")
     configured_output = cfg.get("output_dir")
+    import_dir = args.import_dir or Path(str(configured_import or DEFAULT_IMPORT_DIR))
     output_dir = args.output_dir or Path(str(configured_output or DEFAULT_OUTPUT_DIR))
     metadata = merge_metadata(args, args.metadata, pdf_path)
     title = str(metadata.get("title") or "")
     slug = slug_from_pdf(pdf_path, title, args.slug)
 
     paper_dir = (vault_root / output_dir / slug).resolve()
-    work_dir = paper_dir / "_work"
+    import_workspace = (vault_root / import_dir / slug).resolve()
+    work_dir = import_workspace / "_work"
     parse_dir = work_dir / "parse"
     summarize_dir = work_dir / "summarize"
     figures_dir = paper_dir / "figures"
     summary_path = paper_dir / "摘要.md"
-    workspace_pdf = paper_dir / "paper.pdf"
+    metadata_path = import_workspace / "metadata.json"
+    workspace_pdf = import_workspace / "paper.pdf"
 
     paper_dir.mkdir(parents=True, exist_ok=True)
     summarize_dir.mkdir(parents=True, exist_ok=True)
     copy_pdf(pdf_path, workspace_pdf)
-    write_json(paper_dir / "metadata.json", metadata)
+    write_json(metadata_path, metadata)
 
     status: dict[str, object] = {
         "status": "prepared",
         "updated_at": utc_now_iso(),
+        "import_dir": str(import_workspace),
         "paper_dir": str(paper_dir),
         "summary_path": str(summary_path),
+        "metadata_path": str(metadata_path),
         "parse_dir": str(parse_dir),
         "figures_dir": str(figures_dir),
         "conda_env": str(cfg.get("conda_env") or DEFAULT_CONDA_ENV),
@@ -225,8 +238,11 @@ def main() -> int:
             raise
 
     write_json(work_dir / "status.json", status)
+    print(f"import_dir={import_workspace}")
     print(f"paper_dir={paper_dir}")
     print(f"summary_path={summary_path}")
+    print(f"metadata_path={metadata_path}")
+    print(f"work_dir={work_dir}")
     print(f"parse_dir={parse_dir}")
     return 0
 

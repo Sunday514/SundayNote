@@ -12,10 +12,10 @@
 - 飞书 folder、wiki、doc 或 docx URL：通过 `--url` 或 `FEISHU_ROOT_URL` 传入。
 - 可选输出目录：通过 `--output-dir` 或 `FEISHU_EXPORT_OUT` 传入。
 
-默认输出：
+默认输出到导入暂存：
 
 ```text
-10_原始材料/飞书云文档导出
+00_导入暂存
 ```
 
-导出前先使用 `--dry-run` 检查目标。脚本会在输出目录写入 `manifest.jsonl`，但不会把凭据写入磁盘。
+导出前先使用 `--dry-run` 检查目标。脚本会在输出目录写入 `manifest.jsonl`，但不会把凭据写入磁盘。转换后的 Markdown 来源材料再进入 `10_原始材料/`。
