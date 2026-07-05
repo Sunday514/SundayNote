@@ -1,6 +1,6 @@
 ---
-last_updated: 2026-07-05
-update_count: 6
+last_updated: 2026-07-06
+update_count: 7
 last_queried: ""
 query_count: 0
 sources:
@@ -45,7 +45,7 @@ Schema = 规则
 - Schema 对应 `AGENTS.md`、`CLAUDE.md`、`.agents/`、`.sunday-note-agent/`、`SundayNoteAgent/`、`首页.md`、`个人模板/` 和必要 `.obsidian` 配置。它是规则、配置、模板和工具控制面。
 - `SundayNoteAgent/config/sunday-note-vault.yaml` 是机器可读路径映射的默认值；安装器会在父 vault 缺少配置时创建 `.sunday-note-agent/config/sunday-note-vault.yaml`，负责把 Raw、Routine、Wiki、Journal 和 Schema 术语映射到当前 vault 的实际目录名。
 
-`00_导入暂存/` 是导入工作目录，不属于知识分层；PDF、docx、网页导出、解析中间产物和临时日志先放这里，转换后的 Markdown 来源材料再进入 Raw。
+`.import_files/` 是隐藏导入工作目录，不属于知识分层；PDF、docx、网页导出、解析中间产物和临时日志先放这里，转换后的 Markdown 来源材料再进入 Raw。
 
 ## Routine
 
@@ -69,16 +69,17 @@ agent 默认只读 Journal，不主动创建、改写、润色、搬运、压缩
 常规信息流是：
 
 ```text
-00_导入暂存
+导入文件
+  -> .import_files
   -> 10_原始材料
   -> 20_每日记录
   -> 21_每周记录 / 22_每月记录
   -> 23_项目复盘 / 30_知识库
 ```
 
-导入暂存不是必经知识层。这条链路的含义是：
+导入工作区不是必经知识层。这条链路的含义是：
 
-- 导入暂存保存可清理的导入过程文件。
+- 导入工作区保存可清理的导入过程文件。
 - Raw 保留长期可读来源材料。
 - Routine 维护当前上下文。
 - Wiki 保存长期记忆，由 agent 自动化维护。
@@ -91,7 +92,7 @@ agent 默认只读 Journal，不主动创建、改写、润色、搬运、压缩
 Raw -> Routine -> Wiki
 ```
 
-论文整理使用同一分工：PDF 原文、解析输出和工作日志属于导入暂存；单篇论文总结属于 Raw，作为来源摘要和证据保存在 `10_原始材料/`；跨论文技术对比、方法框架、trade-off 和选型准则进入 Wiki；服务具体项目的调研报告和方案设计进入 `23_项目复盘/`。Project 阶段结束后，如果产生可复用判断或验证经验，再回写 Wiki。
+论文整理使用同一分工：PDF 原文、解析输出和工作日志属于导入工作区；单篇论文总结属于 Raw，作为来源摘要和证据保存在 `10_原始材料/`；跨论文技术对比、方法框架、trade-off 和选型准则进入 Wiki；服务具体项目的调研报告和方案设计进入 `23_项目复盘/`。Project 阶段结束后，如果产生可复用判断或验证经验，再回写 Wiki。
 
 ## Wiki 进入门槛
 
@@ -153,7 +154,7 @@ Header 用于三个动作：
 ## 维护原则
 
 - Raw 可以多，Wiki 必须少。
-- 导入暂存可以清理，不作为知识层维护。
+- 导入工作区可以清理，不作为知识层维护。
 - Routine 记录事实和压缩上下文。
 - Wiki 保存长期稳定记忆，不重复归档 Routine。
 - Journal 由用户自行维护，agent 默认只读。

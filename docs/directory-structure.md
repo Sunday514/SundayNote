@@ -1,6 +1,6 @@
 ---
-last_updated: "2026-07-05"
-update_count: 3
+last_updated: "2026-07-06"
+update_count: 4
 last_queried: ""
 query_count: 0
 sources:
@@ -15,17 +15,16 @@ keywords:
   - "Journal"
   - "Schema"
   - "路径映射"
-  - "导入暂存"
+  - "导入工作区"
 ---
 
 # 目录说明
 
-本 vault 的一级架构目录按用途编号；`00_导入暂存/` 是导入工作目录，不属于知识分层。`SundayNoteAgent/` 是维护目录，不参与内容层编号。
+本 vault 的一级架构目录按用途编号；`.import_files/` 是隐藏导入工作目录，不属于知识分层或编号体系。`SundayNoteAgent/` 是维护目录，不参与内容层编号。
 
 ## 编号逻辑
 
 - `首页.md`: Schema，知识库导航入口。
-- `00_导入暂存/`: 导入工作目录，保存可清理的 PDF、docx、网页导出、解析中间产物和临时日志。
 - `10_原始材料/`: Raw，长期可读来源材料层。
 - `20_每日记录/`: Routine，当天视图。
 - `21_每周记录/`: Routine，每周视图。
@@ -50,7 +49,7 @@ Journal = 写作
 Schema = 规则
 ```
 
-`00_导入暂存/` 不是知识分层。不可直接长期引用的导入文件先放入这里；转换后的 Markdown 来源材料进入 Raw。
+`.import_files/` 不是知识分层。不可直接长期引用的导入文件先放入这个隐藏目录；转换后的 Markdown 来源材料进入 Raw。
 
 Routine 是用户主导的过程记录层，不等同于“工作”。Daily、Weekly、Monthly 和 Project 是 Routine 内部的不同视图。agent 写入或改写 Routine 前需要确认。
 
@@ -58,13 +57,13 @@ Routine 是用户主导的过程记录层，不等同于“工作”。Daily、W
 
 Raw 保存已转换成 Obsidian / LLM 可读形态的来源材料，例如论文总结、读书笔记、课程转写和网页整理稿。Wiki 是 agent 可维护的长期记忆层。Wiki 页面使用 YAML header 记录 `last_updated`、`update_count`、`last_queried`、`query_count`、`sources`、`topic` 和 `keywords`，用于 query、ingest 和 lint 判断时效、维护次数、使用次数、来源、主题归属和检索入口。`30_知识库/个人上下文.md` 属于本地 Wiki，用于保存长期兴趣、近期计划、推荐偏好和当前项目，不放入 `SundayNoteAgent/`。
 
-论文整理按信息层分工：PDF 原文和解析中间产物进入 `00_导入暂存/`；单篇论文总结进入 Raw，例如 `10_原始材料/...`；跨论文技术对比、方法谱系和选型准则进入 Wiki；带具体项目目标、约束、决策和下一步计划的调研报告或方案设计进入 `23_项目复盘/`。项目验证后沉淀出的稳定经验再回写 Wiki。
+论文整理按信息层分工：PDF 原文和解析中间产物进入 `.import_files/`；单篇论文总结进入 Raw，例如 `10_原始材料/...`；跨论文技术对比、方法谱系和选型准则进入 Wiki；带具体项目目标、约束、决策和下一步计划的调研报告或方案设计进入 `23_项目复盘/`。项目验证后沉淀出的稳定经验再回写 Wiki。
 
 ## 框架与个人内容
 
 框架项目由 `AGENTS.md`、`CLAUDE.md`、`SundayNoteAgent/`、`首页.md`、本地模板、必要 Obsidian 配置和脱敏 Claudian 默认配置组成。`SundayNoteAgent/` 是可公开的工具项目，不保存个人内容、个人模板正文或本地运行状态。
 
-`SundayNoteAgent/config/sunday-note-vault.yaml` 保存机器可读的目录映射默认值；安装器会在父 vault 缺少配置时创建 `.sunday-note-agent/config/sunday-note-vault.yaml`。人读文档仍直接使用当前目录名；skills 和未来脚本优先读取父 vault `.sunday-note-agent/` 下的本地配置，避免把 Raw、Wiki 等语义层和中文目录名绑定。`00_导入暂存/` 使用独立路径配置，不属于 `layers`。
+`SundayNoteAgent/config/sunday-note-vault.yaml` 保存机器可读的目录映射默认值；安装器会在父 vault 缺少配置时创建 `.sunday-note-agent/config/sunday-note-vault.yaml`。人读文档仍直接使用当前目录名；skills 和未来脚本优先读取父 vault `.sunday-note-agent/` 下的本地配置，避免把 Raw、Wiki 等语义层和中文目录名绑定。`.import_files/` 使用独立路径配置，不属于 `layers`。
 
 `30_知识库/索引.md`、`30_知识库/知识库维护日志.md` 和个人上下文页面属于本地 Wiki 维护文件。索引是核心导航入口，不重复 header 信息；维护日志记录 ingest / query / lint 带来的状态变化；个人上下文集中保存能降低 agent 沟通成本的稳定个人偏好和计划。这些文件默认不进入 Git。
 
@@ -76,11 +75,11 @@ QuickAdd 是模板、捕获和例行维护动作的主要入口。创建 Daily�
 
 当前不提供通用笔记模板。`SundayNoteAgent/templates/` 只保留占位，不维护 Wiki、论文、书籍或课程模板。`个人模板/` 保存 Daily / Weekly / Monthly 等个人模板正文，由私人知识库管理。Templater 可以作为可选增强，但不作为迁移必需依赖。
 
-`SundayNoteAgent/migration/` 保存可复用的知识库迁移辅助工具，例如从外部知识源导出导入暂存文件或转换成 Raw 来源材料。迁移工具不得保存密钥、个人正文或一次性运行状态。
+`SundayNoteAgent/migration/` 保存可复用的知识库迁移辅助工具，例如从外部知识源导出导入工作区文件或转换成 Raw 来源材料。迁移工具不得保存密钥、个人正文或一次性运行状态。
 
 ## 图像归属
 
-图像文件统一放在 vault 根目录的 `assets/figures/` 下。无法确认归属的临时图片先放入 `00_导入暂存/`。
+图像文件统一放在 vault 根目录的 `assets/figures/` 下。无法确认归属的临时图片先放入 `.import_files/`。
 
 ## 常用入口
 

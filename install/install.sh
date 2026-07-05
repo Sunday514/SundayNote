@@ -141,7 +141,7 @@ unlink_optional_skill() {
 ensure_vault_dirs() {
   mkdir -p \
     "$VAULT_ROOT/.agents" \
-    "$VAULT_ROOT/00_导入暂存" \
+    "$VAULT_ROOT/.import_files" \
     "$VAULT_ROOT/10_原始材料" \
     "$VAULT_ROOT/20_每日记录" \
     "$VAULT_ROOT/21_每周记录" \
@@ -155,7 +155,7 @@ ensure_vault_dirs() {
     "$VAULT_ROOT/assets/figures"
 
   touch \
-    "$VAULT_ROOT/00_导入暂存/.gitkeep" \
+    "$VAULT_ROOT/.import_files/.gitkeep" \
     "$VAULT_ROOT/10_原始材料/.gitkeep" \
     "$VAULT_ROOT/20_每日记录/.gitkeep" \
     "$VAULT_ROOT/21_每周记录/.gitkeep" \

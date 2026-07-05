@@ -9,7 +9,7 @@ import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 
-DEFAULT_IMPORT_DIR = "00_导入暂存"
+DEFAULT_IMPORT_DIR = ".import_files"
 DEFAULT_OUTPUT_DIR = "10_原始材料"
 DEFAULT_CONDA_ENV = "papers"
 UNKNOWN = "未明确"

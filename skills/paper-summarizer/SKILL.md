@@ -1,13 +1,13 @@
 ---
 name: paper-summarizer
-description: 当任务涉及从本地 PDF 论文生成单篇论文摘要、解析论文正文和图表、整理论文贡献/方法/实验/局限，并把单篇论文总结保存到 Raw 层时使用。PDF 和解析过程进入导入暂存，只处理单篇论文 source 摘要，不用于跨论文技术对比、Wiki 沉淀、项目调研报告或方案设计。
+description: 当任务涉及从本地 PDF 论文生成单篇论文摘要、解析论文正文和图表、整理论文贡献/方法/实验/局限，并把单篇论文总结保存到 Raw 层时使用。PDF 和解析过程进入导入工作区，只处理单篇论文 source 摘要，不用于跨论文技术对比、Wiki 沉淀、项目调研报告或方案设计。
 ---
 
 # Paper Summarizer
 
 ## 边界
 
-- PDF、metadata 和解析过程写入导入暂存：默认 `00_导入暂存/<paper-slug>/`。
+- PDF、metadata 和解析过程写入导入工作区：默认 `.import_files/<paper-slug>/`。
 - 单篇论文总结写入 Raw：默认 `10_原始材料/<paper-slug>/摘要.md`。
 - 跨论文技术对比、方法谱系和选型准则属于 Wiki，不由本 skill 直接写入。
 - 带项目目标、约束、决策和下一步计划的调研报告属于 Project，不由本 skill 直接写入。
@@ -24,7 +24,7 @@ description: 当任务涉及从本地 PDF 论文生成单篇论文摘要、解�
 ## 工作流
 
 1. 从父 vault 根目录运行脚本；不要在 `SundayNoteAgent/` 内写入论文产物。
-2. 读取 `.sunday-note-agent/config/sunday-note-vault.yaml`；缺少配置时使用默认导入目录 `00_导入暂存` 和默认 Raw 目录 `10_原始材料`。
+2. 读取 `.sunday-note-agent/config/sunday-note-vault.yaml`；缺少配置时使用默认导入目录 `.import_files` 和默认 Raw 目录 `10_原始材料`。
 3. 用配置中的 conda 环境运行脚本；默认环境名是 `papers`。
 4. 准备论文工作区：
 
