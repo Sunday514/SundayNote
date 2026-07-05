@@ -8,7 +8,7 @@ description: 检查知识库健康度并编排 lint 维护。用于用户明确�
 ## 工作流
 
 1. 读取用户指定范围、路径映射、写入边界和相关规则；不默认扫描全库。
-2. 必要时运行 `scripts/lint_headers.py --scope <文件或目录>`；需要入口审计时加 `--entry <入口> --max-link-depth 6`。
+2. 必要时运行 `scripts/lint_headers.py --scope <文件或目录>`；需要完整入口导航审计、Markdown link 审计、零入链或未解析链接报告时，运行 `scripts/audit_reachability.py --entry <入口> --scope <范围>`。
 3. 按检查项生成本轮维护计划，并写入 `30_知识库/知识库维护日志.md` 的 lint 运行段。
 4. 为每个具体写入任务创建一个 worker subagent；同一文件任务串行执行。
 5. 复核文件 diff、验证结果和遗留问题，更新维护日志并输出汇总。
@@ -74,3 +74,4 @@ description: 检查知识库健康度并编排 lint 维护。用于用户明确�
 - 空白 scaffold 页面只作为待填候选；已有正文或用户指定检查时，才判断其个人上下文质量。
 - index 检查以 Obsidian `[[wikilink]]` 为准。
 - `scripts/lint_headers.py` 只做粗筛：header、日期、计数、来源、topic、keywords、重复 topic、index 链接、入口可达性和 body-scan 候选；不做正文语义判断，不判断个人增量，不替代最终 lint 判断。
+- `scripts/audit_reachability.py` 只在需要完整导航审计时运行；`zero_inlinks` 是候选问题，不单独作为明确问题。

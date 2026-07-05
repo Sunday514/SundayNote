@@ -304,7 +304,7 @@ function renderAutoBlock(spec, rows, stats, context) {
   for (const section of spec.sections || ["links", "table"]) {
     if (section === "links" && spec.links) {
       parts.push(`## ${spec.links.heading}`, "");
-      parts.push(rows.map((row) => `- [[${row.id}]]${row.exists ? "" : "（未创建）"}`).join("\n"), "");
+      parts.push(rows.map((row) => `- [[${row.path}|${row.id}]]${row.exists ? "" : "（未创建）"}`).join("\n"), "");
     }
     if (section === "table") {
       parts.push(`## ${spec.table.heading}`, "");
