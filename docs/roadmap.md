@@ -1,6 +1,6 @@
 ---
-last_updated: 2026-07-04
-update_count: 5
+last_updated: 2026-07-07
+update_count: 6
 last_queried: ""
 query_count: 0
 sources:
@@ -21,7 +21,7 @@ keywords:
 
 ## 摘要
 
-SundayNoteAgent 的当前重点是降低知识库维护任务的上下文压力，让 skill 保持窄职责、可验证、可迁移。`ingest`、`query` 和 `lint` 已形成基础闭环；后续开发优先补齐 audit 抽检，并继续压低日常 ingest / query 的默认成本。
+SundayNoteAgent 的当前重点是保持 ingest / query / lint 的低复杂度闭环。`lint` 已具备维护编排、header 粗筛和可选入口可达性审计；`query` 已能自动更新实际使用 Wiki 的 header；`ingest` 已收紧搜索核验触发条件。后续只保留一个明确扩展方向：最小版 audit 抽检。
 
 ## P0：新增最小版 sunday-note-audit
 
@@ -45,20 +45,6 @@ SundayNoteAgent 的当前重点是降低知识库维护任务的上下文压力�
 - Audit 不用于日常 ingest、普通 query 或常规 lint 修复。
 - Audit 输出可以被人工转成 lint 维护任务。
 - Audit 不进入日常 ingest / query 默认流程。
-
-## P1：收紧 ingest 的搜索核验触发条件
-
-目标：避免 ingest 过度搜索，保持轻量。
-
-需要改动：
-
-- 将 `sunday-note-ingest/SKILL.md` 的搜索核验规则收紧为：仅当需要判断普通搜索可替代性或外部事实可靠性时搜索。
-- 如果资料价值来自用户项目上下文、个人事实或已确认判断，可不搜索。
-
-验收：
-
-- 用户提供明显个人上下文或项目决策时，不默认搜索。
-- 外部资料价值不明时，可以搜索核验是否普通互联网可替代。
 
 ## 持续约束
 
