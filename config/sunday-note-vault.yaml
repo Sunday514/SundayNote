@@ -34,6 +34,5 @@ automation:
 
 components:
   paper_summarizer:
-    conda_env: "papers"
     import_dir: ".import_files"
     output_dir: "10_原始材料"

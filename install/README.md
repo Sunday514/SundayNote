@@ -77,7 +77,7 @@ bash SundayNoteAgent/install/install.sh --vault-root . --with-paper-summarizer
 
 如果运行前已有 vault 中存在 `30_知识库/`，安装器会在缺失时补建空的 `30_知识库/个人上下文.md`；已有文件不会被覆盖。若 `30_知识库/` 是本次安装新建的目录，则不额外创建个人上下文文件。
 
-安装器只在新 vault 初始化时创建一级目录骨架，不打包个人模板正文，也不预设 Raw 或导入工作区的二级结构。Daily / Weekly / Monthly 模板内容由私人知识库维护；自动化脚本通过 `.sunday-note-agent/config/sunday-note-vault.yaml` 读取模板路径。路径配置是父 vault 本地文件，安装器只在缺失时创建，不会覆盖已有配置。`components.paper_summarizer` 默认使用 `papers` conda 环境，导入工作目录为 `.import_files`，摘要目录为 `10_原始材料`。如果 `.agents/skills/` 下已有同名真实目录，安装器会先移到 `.agents/skills/.replaced-by-symlink/` 再创建软链接，避免删除旧内容。
+安装器只在新 vault 初始化时创建一级目录骨架，不打包个人模板正文，也不预设 Raw 或导入工作区的二级结构。Daily / Weekly / Monthly 模板内容由私人知识库维护；自动化脚本通过 `.sunday-note-agent/config/sunday-note-vault.yaml` 读取模板路径。路径配置是父 vault 本地文件，安装器只在缺失时创建，不会覆盖已有配置。论文总结脚本使用当前 Python 环境，导入工作目录为 `.import_files`，摘要目录为 `10_原始材料`。如果 `.agents/skills/` 下已有同名真实目录，安装器会先移到 `.agents/skills/.replaced-by-symlink/` 再创建软链接，避免删除旧内容。
 
 ## Claudian
 

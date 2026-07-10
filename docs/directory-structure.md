@@ -57,7 +57,7 @@ Routine 是用户主导的过程记录层，不等同于“工作”。Daily、W
 
 Raw 保存已转换成 Obsidian / LLM 可读形态的来源材料，例如论文总结、读书笔记、课程转写和网页整理稿。Wiki 是 agent 可维护的长期记忆层。Wiki 页面使用 YAML header 记录 `last_updated`、`update_count`、`last_queried`、`query_count`、`sources`、`topic` 和 `keywords`，用于 query、ingest 和 lint 判断时效、维护次数、使用次数、来源、主题归属和检索入口。`30_知识库/个人上下文.md` 属于本地 Wiki，用于保存长期兴趣、近期计划、推荐偏好和当前项目，不放入 `SundayNoteAgent/`。
 
-论文整理按信息层分工：PDF 原文和解析中间产物进入 `.import_files/`；单篇论文总结进入 Raw，例如 `10_原始材料/...`；跨论文技术对比、方法谱系和选型准则进入 Wiki；带具体项目目标、约束、决策和下一步计划的调研报告或方案设计进入 `23_项目复盘/`。项目验证后沉淀出的稳定经验再回写 Wiki。
+论文整理按信息层分工：PDF 原文和全部解析过程产物进入 `.import_files/`；单篇论文总结以 `10_原始材料/<论文标题>.md` 保存，引用图像进入 `assets/figures/`；跨论文技术对比、方法谱系和选型准则进入 Wiki；带具体项目目标、约束、决策和下一步计划的调研报告或方案设计进入 `23_项目复盘/`。项目验证后沉淀出的稳定经验再回写 Wiki。
 
 ## 框架与个人内容
 

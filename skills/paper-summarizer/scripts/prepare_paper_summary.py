@@ -11,7 +11,7 @@ from pathlib import Path
 
 DEFAULT_IMPORT_DIR = ".import_files"
 DEFAULT_OUTPUT_DIR = "10_原始材料"
-DEFAULT_CONDA_ENV = "papers"
+DEFAULT_FIGURES_DIR = "assets/figures"
 UNKNOWN = "未明确"
 
 
@@ -51,6 +51,13 @@ def component_config(vault_root: Path) -> dict[str, object]:
     result = dict(paper)
     if "import_dir" not in result and isinstance(config.get("import_tmp"), str):
         result["import_dir"] = config["import_tmp"]
+    assets = config.get("assets")
+    if (
+        "figures_dir" not in result
+        and isinstance(assets, dict)
+        and isinstance(assets.get("figures"), str)
+    ):
+        result["figures_dir"] = assets["figures"]
     return result
 
 
@@ -58,9 +65,9 @@ def clean_filename(value: str, max_len: int = 120) -> str:
     cleaned = value.strip()
     cleaned = re.sub(r"\\(?:texttt|textbf|textit|textrm|mathrm|mathbf|mathit|mathtt)\{([^{}]*)\}", r"\1", cleaned)
     cleaned = cleaned.replace("$", "")
-    cleaned = unicodedata.normalize("NFKD", cleaned).encode("ascii", "ignore").decode("ascii")
+    cleaned = unicodedata.normalize("NFKC", cleaned)
     cleaned = re.sub(r"[\\/:*?\"<>|]+", " - ", cleaned)
-    cleaned = re.sub(r"[^A-Za-z0-9._ -]+", " ", cleaned)
+    cleaned = re.sub(r"[\x00-\x1f\x7f]+", " ", cleaned)
     cleaned = re.sub(r"\s+", " ", cleaned).strip(" .-")
     return cleaned[:max_len].strip(" .-") or "paper"
 
@@ -109,21 +116,6 @@ def copy_pdf(pdf_path: Path, destination: Path) -> None:
         shutil.copy2(pdf_path, destination)
 
 
-def sync_figures(parse_dir: Path, figures_dir: Path) -> list[str]:
-    source_dir = parse_dir / "figures"
-    if not source_dir.exists():
-        return []
-    figures_dir.mkdir(parents=True, exist_ok=True)
-    copied: list[str] = []
-    for source in sorted(source_dir.iterdir()):
-        if not source.is_file():
-            continue
-        destination = figures_dir / source.name
-        shutil.copy2(source, destination)
-        copied.append(destination.name)
-    return copied
-
-
 def run_docling_parse(
     *,
     pdf_path: Path,
@@ -157,7 +149,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--code-link", help="Optional code link")
     parser.add_argument("--slug", help="Optional output directory name")
     parser.add_argument("--import-dir", type=Path, help="Import workspace directory relative to vault root")
-    parser.add_argument("--output-dir", type=Path, help="Raw paper output directory relative to vault root")
+    parser.add_argument("--output-dir", type=Path, help="Raw summary directory relative to vault root")
+    parser.add_argument("--figures-dir", type=Path, help="Final figure directory relative to vault root")
     parser.add_argument("--device", default="auto", help="Docling accelerator device")
     parser.add_argument("--ocr", action="store_true", help="Enable OCR in docling")
     parser.add_argument(
@@ -182,23 +175,27 @@ def main() -> int:
     cfg = component_config(vault_root)
     configured_import = cfg.get("import_dir")
     configured_output = cfg.get("output_dir")
+    configured_figures = cfg.get("figures_dir")
     import_dir = args.import_dir or Path(str(configured_import or DEFAULT_IMPORT_DIR))
     output_dir = args.output_dir or Path(str(configured_output or DEFAULT_OUTPUT_DIR))
+    figures_root = args.figures_dir or Path(str(configured_figures or DEFAULT_FIGURES_DIR))
     metadata = merge_metadata(args, args.metadata, pdf_path)
     title = str(metadata.get("title") or "")
     slug = slug_from_pdf(pdf_path, title, args.slug)
+    summary_name = f"{clean_filename(title or pdf_path.stem)}.md"
 
-    paper_dir = (vault_root / output_dir / slug).resolve()
+    raw_dir = (vault_root / output_dir).resolve()
     import_workspace = (vault_root / import_dir / slug).resolve()
     work_dir = import_workspace / "_work"
     parse_dir = work_dir / "parse"
     summarize_dir = work_dir / "summarize"
-    figures_dir = paper_dir / "figures"
-    summary_path = paper_dir / "摘要.md"
+    figure_source_dir = parse_dir / "figures"
+    figures_dir = (vault_root / figures_root / slug).resolve()
+    summary_path = raw_dir / summary_name
     metadata_path = import_workspace / "metadata.json"
     workspace_pdf = import_workspace / "paper.pdf"
 
-    paper_dir.mkdir(parents=True, exist_ok=True)
+    raw_dir.mkdir(parents=True, exist_ok=True)
     summarize_dir.mkdir(parents=True, exist_ok=True)
     copy_pdf(pdf_path, workspace_pdf)
     write_json(metadata_path, metadata)
@@ -207,12 +204,12 @@ def main() -> int:
         "status": "prepared",
         "updated_at": utc_now_iso(),
         "import_dir": str(import_workspace),
-        "paper_dir": str(paper_dir),
+        "raw_dir": str(raw_dir),
         "summary_path": str(summary_path),
         "metadata_path": str(metadata_path),
         "parse_dir": str(parse_dir),
+        "figure_source_dir": str(figure_source_dir),
         "figures_dir": str(figures_dir),
-        "conda_env": str(cfg.get("conda_env") or DEFAULT_CONDA_ENV),
         "error": None,
     }
 
@@ -225,9 +222,12 @@ def main() -> int:
                 device=args.device,
                 artifacts_path=args.artifacts_path,
             )
-            copied_figures = sync_figures(parse_dir, figures_dir)
             status["status"] = "parsed"
-            status["copied_figures"] = copied_figures
+            status["extracted_figures"] = (
+                [path.name for path in sorted(figure_source_dir.iterdir()) if path.is_file()]
+                if figure_source_dir.exists()
+                else []
+            )
         except Exception as exc:
             status["status"] = "failed"
             status["error"] = {
@@ -239,11 +239,13 @@ def main() -> int:
 
     write_json(work_dir / "status.json", status)
     print(f"import_dir={import_workspace}")
-    print(f"paper_dir={paper_dir}")
+    print(f"raw_dir={raw_dir}")
     print(f"summary_path={summary_path}")
     print(f"metadata_path={metadata_path}")
     print(f"work_dir={work_dir}")
     print(f"parse_dir={parse_dir}")
+    print(f"figure_source_dir={figure_source_dir}")
+    print(f"figures_dir={figures_dir}")
     return 0
 
 
