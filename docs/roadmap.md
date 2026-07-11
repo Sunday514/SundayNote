@@ -1,6 +1,6 @@
 ---
-last_updated: 2026-07-11
-update_count: 9
+last_updated: 2026-07-12
+update_count: 11
 last_queried: ""
 query_count: 0
 sources:
@@ -29,7 +29,6 @@ SundayNoteAgent 已具备安装导出、ingest、query、lint、QuickAdd rollup�
 
 - `query_search.py` 把关键词当正则表达式交给 `rg`；`C++`、`.NET`、`[` 等词会产生误匹配或切换到不同搜索语义。
 - `update_query_header.py` 不验证 Wiki 路径，并且多文件更新会在后续文件校验失败时留下部分写入。
-- `rollup.js` 会按中英文冒号拆分 checkbox 文本，把不同完整项目合并成同一统计项。
 - `lint_headers.py --entry` 会读取 vault 根目录下全部 Markdown，并可通过 scope 外文件判定 scope 内页面可达；这与显式 scope 和 `audit_reachability.py` 的结果不一致。
 - `lint_headers.py` 同时承担 header、index、reachability、正文正则候选和使用次数评分，已超出机械 header 粗筛职责。
 - 仓库没有自动化回归测试；当前只有语法、JSON 解析和人工 fixture 检查。
@@ -72,25 +71,6 @@ SundayNoteAgent 已具备安装导出、ingest、query、lint、QuickAdd rollup�
 - query 仍只检索配置中的 Wiki 和 Routine，证据文件上限保持不变。
 - 普通 query 全程只读，不再因为被查询而产生高频 header diff。
 - 删除 telemetry 后不影响候选检索、证据读取和个人上下文语义触发。
-
-## P0：修正 checkbox 统计身份
-
-目标：每一条 checkbox 的完整文本就是统计项目，只由 checkbox 状态决定完成数。
-
-需要改动：
-
-- 删除中英文冒号拆分和未使用的 note 解析；项目名使用 checkbox 后的完整去空文本。
-- 保留 Daily 模板顺序，并继续收纳实际 Daily 中额外出现的完整项目。
-- 对 Markdown 表格单元格中的 `|` 等必要字符做最小转义。
-- 保持 rollup 只更新已存在文档的自动块，不负责创建 Weekly / Monthly 文档。
-- 不扩展新的 source / extract DSL；先稳定当前配置支持的两级聚合。
-
-验收：
-
-- `运动：跑步` 与 `运动：游泳` 是两个独立项目。
-- 缺少某项目的日期不进入该项目分母；checkbox 选中状态是唯一完成依据。
-- 月统计继续按配置的 `week_rule` 聚合下辖周，默认规则仍是周日落在目标月份。
-- 取消或缺少 required context 时不写目标文件。
 
 ## P1：把 lint 收缩为诊断与显式维护
 
@@ -186,6 +166,6 @@ SundayNoteAgent 已具备安装导出、ingest、query、lint、QuickAdd rollup�
 - 不新增 `density_score`、`value_score` 等主观评分字段。
 - 不把个人上下文拆成多个偏好页。
 - 不为 subagent 建通用框架，不把特定运行时参数写成跨 agent 契约。
-- 不恢复 Weekly / Monthly 专用脚本；创建具体 Routine 文档和模板继续由父 vault 维护。
+- 不恢复 Weekly / Monthly 专用脚本；rollup 可从最小模板创建缺失的周/月目标，具体 QuickAdd choice 和个人模板内容继续由父 vault 维护。
 - 不扩展 rollup 为任意工作流 DSL；新增配置能力必须来自已出现的第二个真实复用场景。
 - 机械检查交给小脚本，语义判断留给 skill 或用户；能删除旧机制时不并行增加新机制。

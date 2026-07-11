@@ -1,6 +1,6 @@
 ---
-last_updated: "2026-07-06"
-update_count: 4
+last_updated: "2026-07-12"
+update_count: 6
 last_queried: ""
 query_count: 0
 sources:
@@ -69,11 +69,11 @@ Raw 保存已转换成 Obsidian / LLM 可读形态的来源材料，例如论文
 
 必要 Obsidian 配置是可迁移基线，不是插件安装包。仓库保存 `config/` 下的框架级配置、脱敏 Claudian 默认配置和布局快照，不保存社区插件的 `main.js`、`manifest.json`、`styles.css`，也不保存 Daily Notes、Calendar、Templates、QuickAdd actions、terminal wrapper、workspace、Claudian sessions、设备 ID、CLI 绝对路径、环境变量或代理等本地配置。Obsidian 内默认通过 Claudian（`realclaudian`）调用 agent，Codex provider 使用当前设备可见的 `codex` 命令或本机 Claudian 设置。恢复 `config/layout-snapshots/` 中的布局快照前，用户需要先在 Obsidian 中安装并启用必备插件。
 
-QuickAdd 是模板、捕获和例行维护动作的主要入口。创建 Daily、Weekly、Monthly 等具体文档的动作配置属于父 vault 本地模板配置；本仓库只提供可复用统计入口 `SundayNoteAgent/automation/quickadd/rollup.js`。统计项由父 vault `.sunday-note-agent/config/quickadd-rollups.json` 配置；默认配置中，周统计按 ISO week 自动推导 7 天 Daily，月统计通过 `week_rule` 配置下辖 ISO weeks，默认按周日所在月份选择。统计脚本只更新已存在目标文档中的自动块，不负责创建、移动或维护周/月记录正文。
+QuickAdd 是模板、捕获和例行维护动作的主要入口。本仓库提供最小 Routine 模板和统计入口 `SundayNoteAgent/automation/quickadd/rollup.js`；具体 QuickAdd choice 仍由父 vault 配置。统计项由父 vault `.sunday-note-agent/config/quickadd-rollups.json` 配置；周统计按 ISO week 推导 7 天 Daily，month pack 包含周日落在该自然月的 ISO weeks。周或 month pack 目标缺失时，rollup 先用配置模板创建文档，再只维护标记之间的自动块；人工计划和总结区域不会被改写。
 
-具体打卡项保存在本地 Daily 模板中。Daily 创建统一使用个人模板中的 `每日记录.md`；某天不参与统计的项目可以直接从当天 Daily 中删除。Weekly 统计优先按 Daily 模板中的 checkbox 顺序输出，同时兼容历史 Daily 中额外出现的打卡项。
+具体打卡项保存在本地 Daily 模板中。Daily 创建统一使用个人模板中的 `每日记录.md`；模板中以冒号结尾的 checkbox 定义可填每日详情的稳定统计类别，其他 checkbox 使用完整文本作为统计身份。某天不参与统计的项目可以直接从当天 Daily 中删除。Weekly 统计优先按 Daily 模板中的 checkbox 顺序输出，同时兼容历史 Daily 中额外出现的完整打卡项。
 
-当前不提供通用笔记模板。`个人模板/` 保存 Daily / Weekly / Monthly 等个人模板正文，由私人知识库管理。Templater 可以作为可选增强，但不作为迁移必需依赖。
+`SundayNoteAgent/templates/` 只保存无具体条目的 Daily、Weekly 和 month pack 最小骨架。`个人模板/` 是父 vault 的实际副本；安装器只在缺失时创建，之后可由用户添加打卡类别和个人段落。周/月模板只定义人工区域和自动块标记，标记内容统一由 rollup 生成，避免模板与脚本重复维护。
 
 `SundayNoteAgent/migration/` 保存可复用的知识库迁移辅助工具，例如从外部知识源导出导入工作区文件或转换成 Raw 来源材料。迁移工具不得保存密钥、个人正文或一次性运行状态。
 

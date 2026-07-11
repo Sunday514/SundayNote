@@ -1,6 +1,6 @@
 ---
-last_updated: 2026-07-06
-update_count: 7
+last_updated: 2026-07-12
+update_count: 8
 last_queried: ""
 query_count: 0
 sources:
@@ -44,6 +44,7 @@ Schema = 规则
 - Journal 对应可选的 `40_个人写作/` 骨架。具体内容和内部结构由用户自行定义，agent 默认只读。
 - Schema 对应 `AGENTS.md`、`CLAUDE.md`、`.agents/`、`.sunday-note-agent/`、`SundayNoteAgent/`、`首页.md`、`个人模板/` 和必要 `.obsidian` 配置。它是规则、配置、模板和工具控制面。
 - `SundayNoteAgent/config/sunday-note-vault.yaml` 是机器可读路径映射的默认值；安装器会在父 vault 缺少配置时创建 `.sunday-note-agent/config/sunday-note-vault.yaml`，负责把 Raw、Routine、Wiki、Journal 和 Schema 术语映射到当前 vault 的实际目录名。
+- `SundayNoteAgent/templates/` 保存 Daily、Weekly 和 month pack 的最小结构契约，不包含具体打卡项或个人正文；安装器只在父 vault 对应模板缺失时创建副本。
 
 `.import_files/` 是隐藏导入工作目录，不属于知识分层；PDF、docx、网页导出、解析中间产物和临时日志先放这里，转换后的 Markdown 来源材料再进入 Raw。
 

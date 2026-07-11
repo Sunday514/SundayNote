@@ -19,7 +19,8 @@
         "template": "daily_template"
       },
       "target": {
-        "path": "{weekly}/{week}.md"
+        "path": "{weekly}/{week}.md",
+        "template": "weekly_template"
       },
       "block": {
         "start": "<!-- SN:weekly:auto:start -->",
@@ -46,29 +47,17 @@
           "variable": "month",
           "infer_from_active_file": true,
           "active_folder": "monthly",
-          "filename_patterns": [
-            {
-              "regex": "^(\\d{4})-(\\d{1,2})",
-              "template": "{1}-{2:pad2}"
-            },
-            {
-              "regex": "^(\\d{1,2})月记录$",
-              "template": "{current_year}-{1:pad2}"
-            }
-          ],
           "default": "{current_month}"
         },
         "weeks": {
           "variable": "weeks",
-          "from_month": "month",
-          "week_rule": "sunday_in_month"
+          "from_month": "month"
         },
         "label": {
           "variable": "label",
           "infer_from_active_file": true,
           "active_folder": "monthly",
-          "default": "{month}",
-          "prompt": false
+          "default": "{month}"
         }
       },
       "source": {
@@ -80,7 +69,8 @@
         "heading": "打卡统计"
       },
       "target": {
-        "path": "{monthly}/{label}.md"
+        "path": "{monthly}/{label}.md",
+        "template": "monthly_template"
       },
       "block": {
         "start": "<!-- SN:month-pack:auto:start -->",

@@ -57,6 +57,7 @@ bash SundayNoteAgent/install/install.sh --vault-root . --with-paper-summarizer
 - `首页.md`：vault 首页。
 - `.import_files/`：隐藏导入工作目录。
 - `10_原始材料/`、`20_每日记录/`、`21_每周记录/`、`22_每月记录/`、`23_项目复盘/`、`30_知识库/`、`40_个人写作/`、`个人模板/`。
+- `个人模板/每日记录.md`、`周记录.md`、`月记录.md`：无具体打卡项的最小 Routine 骨架，只在缺失时创建。
 - `30_知识库/个人上下文.md`：空的个人上下文 Wiki 页面，`keywords` 初始为空，后续只记录真实兴趣词、方向词、项目词或常用问法。
 - `.obsidian/community-plugins.json` 基线；Obsidian 默认通过 Claudian 调用 agent，workspace 和 Claudian 会话状态由每台设备本地维护。
 - `SundayNoteAgent/` 工具层目录。
@@ -74,7 +75,7 @@ bash SundayNoteAgent/install/install.sh --vault-root . --with-paper-summarizer
 
 只要 `30_知识库/个人上下文.md` 缺失，安装器就创建空 scaffold；已有文件不会被覆盖。
 
-安装器不打包个人模板正文，也不预设 Raw 或导入工作区的二级结构。Daily / Weekly / Monthly 模板内容由私人知识库维护；自动化脚本通过 `.sunday-note-agent/config/sunday-note-vault.yaml` 读取模板路径。论文总结脚本使用当前 Python 环境，导入工作目录为 `.import_files`，摘要目录为 `10_原始材料`。旧版安装器创建的 skill 和 QuickAdd 软链接会在重跑时转换为普通目录，不删除链接目标。
+项目模板只保存稳定结构和自动块标记，不包含具体打卡类别或个人正文。父 vault 的模板副本创建后不再覆盖；自动化脚本通过 `.sunday-note-agent/config/sunday-note-vault.yaml` 读取实际模板路径。论文总结脚本使用当前 Python 环境，导入工作目录为 `.import_files`，摘要目录为 `10_原始材料`。旧版安装器创建的 skill 和 QuickAdd 软链接会在重跑时转换为普通目录，不删除链接目标。
 
 ## Claudian
 
@@ -104,7 +105,8 @@ Terminal 插件只作为本机可选工具，不作为 agent 默认入口。需�
 - 当前 v0.1 提供 QuickAdd 自动化脚本与配置基线（`SundayNoteAgent/automation/quickadd` 及安装器托管副本），不预置 vault 内可直接执行的 QuickAdd choices/actions。
 - `automation/quickadd/rollup.js` 是通用统计入口；具体统计项由 `.sunday-note-agent/config/quickadd-rollups.json` 决定。
 - vault 本地 QuickAdd choice 可以通过本地 wrapper、URI 或变量传入 `rollup=weekly_checkins` / `rollup=month_pack_checkins` 来选择统计配置。
-- 默认统计配置中，周统计按 ISO week 自动推导 7 天 Daily；月统计通过 `week_rule` 配置下辖 ISO weeks，默认按周日所在月份选择。
-- 统计脚本只更新已存在目标文档中的自动块；Daily / Weekly / Monthly 等具体文档的创建、模板正文和 QuickAdd choice 由父 vault 本地维护。
+- 默认统计配置中，周统计按 ISO week 自动推导 7 天 Daily；month pack 包含周日落在该自然月的 ISO weeks。
+- 周或 month pack 目标缺失时，统计脚本先从配置的最小模板创建文档，再更新自动块；Daily 创建和 QuickAdd choice 仍由父 vault 本地维护。
+- 安装器不覆盖已有 `quickadd-rollups.json`；旧 vault 需手动合并默认配置中的 `target.template` 才会启用缺失目标创建。
 - Daily Notes core plugin 只负责日期入口，模板和例行动作建议由 QuickAdd 与 `个人模板/` 组合实现。
 - 如果你需要隐藏运行产物目录，可选安装并启用 `OA-file-hider`（不作为安装器硬依赖）。

@@ -1,8 +1,8 @@
 # SundayNoteAgent
 
-SundayNoteAgent 是一套用于 Obsidian 知识库的 agent 工具层。它提供安装器、Codex / agent skills、QuickAdd 自动化脚本、路径配置和框架文档，适合放在私人知识库中的 `SundayNoteAgent/` 目录下作为工具层独立 repo 使用。
+SundayNoteAgent 是一套用于 Obsidian 知识库的 agent 工具层。它提供安装器、Codex / agent skills、QuickAdd 自动化脚本、路径配置、最小 Routine 模板和框架文档，适合放在私人知识库中的 `SundayNoteAgent/` 目录下作为工具层独立 repo 使用。
 
-个人笔记、个人模板、附件、图片、本地 Obsidian 工作流配置和运行状态由父知识库管理，不属于本仓库。
+个人笔记、带具体条目的个人模板、附件、图片、本地 Obsidian 工作流配置和运行状态由父知识库管理，不属于本仓库。
 
 ## 安装
 
@@ -50,6 +50,7 @@ bash SundayNoteAgent/install/install.sh
 .sunday-note-agent/config/sunday-note-vault.yaml
 .sunday-note-agent/config/quickadd-rollups.json
 .sunday-note-agent/quickadd/                       # 安装器托管副本
+个人模板/每日记录.md、周记录.md、月记录.md              # 最小骨架，只在缺失时创建
 30_知识库/个人上下文.md                          # 空 Wiki 页面，只在缺失时创建
 ```
 
@@ -78,9 +79,10 @@ docs/                     # 框架说明和维护文档
 install/                  # 安装器和父知识库 scaffold
 migration/                # 可复用知识库迁移辅助工具
 skills/                   # Codex / agent skills
+templates/                # 无具体条目的 Routine 最小模板
 ```
 
-`config/claudian/` 保存脱敏的 Claudian 默认配置；其中不包含设备 ID、CLI 绝对路径、环境变量、代理或会话状态。`config/layout-snapshots/` 保存手动恢复用的 Obsidian 布局快照，不由安装器自动导出。当前不提供通用笔记模板。
+`templates/` 保存 Daily、Weekly 和 month pack 的最小结构契约；安装器只在父 vault 对应模板缺失时创建副本，之后由父 vault 添加具体打卡类别和个人内容。`config/claudian/` 保存脱敏的 Claudian 默认配置；`config/layout-snapshots/` 保存手动恢复用的 Obsidian 布局快照，不由安装器自动导出。
 
 Obsidian 内默认使用 Claudian（`realclaudian`）作为 agent 入口，Codex provider 在 Claudian 中启用；各 provider 使用当前设备可见的 CLI 命令或本地 Claudian 设置。共享配置不写系统绝对路径、设备 ID、环境变量或代理；`.obsidian/workspace.json`、`.obsidian/workspace-mobile.json` 和 `.claudian/sessions/` 按设备本地维护；Terminal 插件只作为本机可选工具。
 
@@ -97,7 +99,7 @@ Obsidian 内默认使用 Claudian（`realclaudian`）作为 agent 入口，Codex
 本仓库只保存可复用工具层，不保存个人知识库正文。不要把以下内容提交到 SundayNoteAgent：
 
 - 个人笔记正文
-- 个人模板正文
+- 带具体条目的个人模板正文
 - 私有附件、截图或图片
 - token、API key、本机绝对路径
 - Obsidian workspace 运行状态

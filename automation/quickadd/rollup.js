@@ -1,32 +1,25 @@
 module.exports = async function rollup(params) {
-  const { app, quickAddApi, variables = {} } = params;
+  const { app, variables = {} } = params;
   const vaultConfig = await readVaultConfig(app);
   const rollupConfig = await readRollupConfig(app);
-  const rollupName = String(rollupNameFromParams(params) || rollupConfig.default_rollup || "").trim();
+  const rollupName = String(variables.rollup || "").trim();
   const spec = rollupConfig.rollups && rollupConfig.rollups[rollupName];
 
   if (!rollupName || !spec) {
     throw new Error(`Unknown rollup: ${rollupName || "(empty)"}`);
   }
 
-  const context = await buildContext(app, quickAddApi, variables, spec, vaultConfig);
+  const context = buildContext(app, variables, spec, vaultConfig);
   if (!hasRequiredContext(spec, context)) return;
   const rows = await readSourceRows(app, vaultConfig, spec, context);
   const items = await collectItems(app, vaultConfig, spec, rows);
   const stats = aggregateRows(spec, rows, items);
   const autoBlock = renderAutoBlock(spec, rows, stats, context);
   const targetPath = renderTemplate(spec.target.path, { ...vaultConfig, ...context });
-  const content = await nextTargetContent(app, targetPath, spec, autoBlock);
+  const content = await nextTargetContent(app, targetPath, spec, autoBlock, vaultConfig, context);
   const file = await writeFile(app, targetPath, content);
   await app.workspace.getLeaf(false).openFile(file);
 };
-
-function rollupNameFromParams(params) {
-  if (params.variables && params.variables.rollup) return params.variables.rollup;
-  if (params.settings && params.settings.rollup) return params.settings.rollup;
-  if (params.rollup) return params.rollup;
-  return "";
-}
 
 function hasRequiredContext(spec, context) {
   for (const key of spec.required_context || []) {
@@ -45,6 +38,8 @@ async function readVaultConfig(app) {
     weekly: getYamlValue(text, "weekly", "21_每周记录"),
     monthly: getYamlValue(text, "monthly", "22_每月记录"),
     daily_template: getYamlValue(text, "daily_template", "个人模板/每日记录.md"),
+    weekly_template: getYamlValue(text, "weekly_template", "个人模板/周记录.md"),
+    monthly_template: getYamlValue(text, "monthly_template", "个人模板/月记录.md"),
   };
 }
 
@@ -59,7 +54,7 @@ function getYamlValue(text, key, fallback) {
   return match ? match[1] : fallback;
 }
 
-async function buildContext(app, quickAddApi, variables, spec, vaultConfig) {
+function buildContext(app, variables, spec, vaultConfig) {
   const context = { ...variables };
 
   if (spec.context && spec.context.date) {
@@ -75,12 +70,11 @@ async function buildContext(app, quickAddApi, variables, spec, vaultConfig) {
   }
 
   if (spec.context && spec.context.weeks) {
-    context.weeks = await getWeeks(quickAddApi, variables, spec.context.weeks, context);
-    context.weeks_yaml = context.weeks.map((week) => `  - ${week}`).join("\n");
+    context.weeks = getWeeks(variables, spec.context.weeks, context);
   }
 
   if (spec.context && spec.context.label) {
-    context.label = await getLabel(app, quickAddApi, variables, spec.context.label, vaultConfig, context);
+    context.label = getLabel(app, variables, spec.context.label, vaultConfig, context);
   }
 
   return context;
@@ -110,53 +104,30 @@ function getMonthFromContext(app, variables, options, vaultConfig) {
   if (raw) return normalizeMonth(raw);
 
   const active = app.workspace.getActiveFile && app.workspace.getActiveFile();
-  const patternContext = {
-    current_year: String(new Date().getFullYear()),
-    current_month: currentMonth(),
-  };
-
   if (active && options.infer_from_active_file && activeFileInFolder(active, vaultConfig, options.active_folder)) {
-    for (const pattern of options.filename_patterns || []) {
-      const match = active.basename.match(new RegExp(pattern.regex));
-      if (!match) continue;
-      const values = { ...patternContext };
-      match.slice(1).forEach((value, index) => {
-        values[String(index + 1)] = value;
-      });
-      return normalizeMonth(renderTemplate(pattern.template, values));
-    }
-
     return normalizeMonth(active.basename);
   }
 
   if (options.default) {
-    return normalizeMonth(renderTemplate(options.default, patternContext));
+    return normalizeMonth(renderTemplate(options.default, { current_month: currentMonth() }));
   }
 
   return "";
 }
 
-async function getWeeks(quickAddApi, variables, options, context) {
+function getWeeks(variables, options, context) {
   const variable = options.variable || "weeks";
   const fromVars = parseWeeks(variables && variables[variable] ? String(variables[variable]) : "");
   if (fromVars.length > 0) return fromVars;
 
   if (options.from_month && context[options.from_month]) {
-    return isoWeeksInMonth(context[options.from_month], options.week_rule || options.include || "overlap");
+    return isoWeeksInMonth(context[options.from_month]);
   }
 
-  if (!quickAddApi || !quickAddApi.inputPrompt) return [];
-
-  const defaultWeeks = recentIsoWeeks(new Date(), options.default_recent || 4);
-  const input = await quickAddApi.inputPrompt(
-    options.prompt_title || "周列表",
-    options.prompt_placeholder || "用逗号分隔",
-    defaultWeeks.join(", "),
-  );
-  return parseWeeks(input || "");
+  return [];
 }
 
-async function getLabel(app, quickAddApi, variables, options, vaultConfig, context) {
+function getLabel(app, variables, options, vaultConfig, context) {
   const variable = options.variable || "label";
   const fromVars = variables && variables[variable] ? sanitizeFileName(String(variables[variable])) : "";
   if (fromVars) return fromVars;
@@ -170,32 +141,19 @@ async function getLabel(app, quickAddApi, variables, options, vaultConfig, conte
     return sanitizeFileName(active.basename);
   }
 
-  const defaultLabel = renderTemplate(options.default || "{weeks_first}--{weeks_last}", {
-    ...context,
-    weeks_first: context.weeks && context.weeks[0],
-    weeks_last: context.weeks && context.weeks[context.weeks.length - 1],
-  });
-  if (options.prompt === false) return sanitizeFileName(defaultLabel);
-  if (!quickAddApi || !quickAddApi.inputPrompt) return sanitizeFileName(defaultLabel);
-
-  const input = await quickAddApi.inputPrompt(
-    options.prompt_title || "文件名",
-    options.prompt_placeholder || "用于目标目录下的文件名",
-    defaultLabel,
-  );
-  return sanitizeFileName(input || "");
+  const defaultLabel = renderTemplate(options.default || "{month}", context);
+  return sanitizeFileName(defaultLabel);
 }
 
 async function readSourceRows(app, vaultConfig, spec, context) {
   if (spec.source.type === "iso_week_days") {
-    const weekStart = context.week ? mondayOfIsoWeek(context.week) : startOfIsoWeek(parseDate(context.date));
+    const weekStart = mondayOfIsoWeek(context.week);
     const days = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
     return readFiles(app, days.map((day) => {
       const id = formatDate(day);
       return {
         id,
         path: `${resolvePath(vaultConfig, spec.source.folder)}/${id}.md`,
-        weekday: weekdayName(day),
       };
     }));
   }
@@ -227,13 +185,15 @@ async function collectItems(app, vaultConfig, spec, rows) {
   if (spec.extract.type !== "checkbox_section") return [];
 
   const templatePath = spec.extract.template ? resolvePath(vaultConfig, spec.extract.template) : "";
-  const templateItems = templatePath ? await readTemplateCheckboxItems(app, templatePath, spec.extract.heading) : [];
+  const templateDefinitions = templatePath
+    ? await readTemplateCheckboxDefinitions(app, templatePath, spec.extract.heading)
+    : [];
   const seen = new Set();
   const items = [];
 
-  for (const item of templateItems) addItem(items, seen, item);
+  for (const definition of templateDefinitions) addItem(items, seen, definition.item);
   for (const row of rows) {
-    row.values = parseCheckboxSection(row.text, spec.extract.heading);
+    row.values = parseCheckboxSection(row.text, spec.extract.heading, templateDefinitions);
     for (const item of row.values.keys()) addItem(items, seen, item);
   }
   return items;
@@ -245,9 +205,19 @@ function addItem(items, seen, item) {
   items.push(item);
 }
 
-async function readTemplateCheckboxItems(app, templatePath, heading) {
+async function readTemplateCheckboxDefinitions(app, templatePath, heading) {
   try {
-    return Array.from(parseCheckboxSection(await app.vault.adapter.read(templatePath), heading).keys());
+    const rawItems = parseCheckboxSection(await app.vault.adapter.read(templatePath), heading).keys();
+    const definitions = [];
+    const seen = new Set();
+    for (const rawItem of rawItems) {
+      const acceptsDetail = /[:：]\s*$/.test(rawItem);
+      const item = acceptsDetail ? rawItem.replace(/[:：]\s*$/, "").trim() : rawItem;
+      if (!item || seen.has(item)) continue;
+      seen.add(item);
+      definitions.push({ item, acceptsDetail });
+    }
+    return definitions;
   } catch {
     return [];
   }
@@ -310,7 +280,7 @@ function renderAutoBlock(spec, rows, stats, context) {
       parts.push(`## ${spec.table.heading}`, "");
       parts.push("| 项目 | 完成 | 应统计 | 完成率 |");
       parts.push("| --- | ---: | ---: | ---: |");
-      parts.push(stats.map((stat) => `| ${stat.item} | ${stat.done} | ${stat.total} | ${stat.rate} |`).join("\n"));
+      parts.push(stats.map((stat) => `| ${escapeTableCell(stat.item)} | ${stat.done} | ${stat.total} | ${stat.rate} |`).join("\n"));
       parts.push("");
     }
   }
@@ -318,12 +288,18 @@ function renderAutoBlock(spec, rows, stats, context) {
   return parts.join("\n");
 }
 
-async function nextTargetContent(app, path, spec, autoBlock) {
+async function nextTargetContent(app, path, spec, autoBlock, vaultConfig, context) {
   const existing = app.vault.getAbstractFileByPath(path);
-  if (!existing) {
+  let oldContent;
+  if (existing) {
+    oldContent = await app.vault.read(existing);
+  } else if (spec.target.template) {
+    const templatePath = resolvePath(vaultConfig, spec.target.template);
+    const template = await app.vault.adapter.read(templatePath);
+    oldContent = renderTemplate(template, { ...vaultConfig, ...context });
+  } else {
     throw new Error(`Rollup target does not exist: ${path}`);
   }
-  const oldContent = await app.vault.read(existing);
   return upsertAutoBlock(oldContent, spec.block, autoBlock);
 }
 
@@ -349,15 +325,14 @@ function activeFileInFolder(active, vaultConfig, folderKey) {
 }
 
 function renderTemplate(template, context) {
-  return String(template || "").replace(/\{([A-Za-z0-9_]+)(?::([A-Za-z0-9_]+))?\}/g, (_match, key, format) => {
+  return String(template || "").replace(/\{([A-Za-z0-9_]+)\}/g, (_match, key) => {
     const value = context[key];
     if (value === undefined || value === null) return "";
-    if (format === "pad2") return String(value).padStart(2, "0");
     return String(value);
   });
 }
 
-function parseCheckboxSection(text, heading) {
+function parseCheckboxSection(text, heading, templateDefinitions = []) {
   const values = new Map();
   const lines = text.split(/\r?\n/);
   let inSection = false;
@@ -370,28 +345,31 @@ function parseCheckboxSection(text, heading) {
     if (!inSection) continue;
     const match = line.match(/^- \[([ xX])\]\s*(.*)$/);
     if (!match) continue;
-    const parsed = parseCheckboxText(match[2]);
-    if (!parsed.item) continue;
-    values.set(parsed.item, {
+    const item = checkboxItem(match[2], templateDefinitions);
+    if (!item) continue;
+    values.set(item, {
       done: match[1].toLowerCase() === "x",
-      note: parsed.note,
     });
   }
   return values;
 }
 
-function parseCheckboxText(text) {
+function checkboxItem(text, templateDefinitions) {
   const trimmed = text.trim();
-  const colonIndexes = [trimmed.indexOf("："), trimmed.indexOf(":")]
-    .filter((index) => index >= 0);
-  const splitAt = colonIndexes.length > 0 ? Math.min(...colonIndexes) : -1;
-  if (splitAt < 0) {
-    return { item: trimmed, note: "" };
+  for (const definition of templateDefinitions) {
+    if (trimmed === definition.item) return definition.item;
+    if (
+      definition.acceptsDetail
+      && (trimmed.startsWith(`${definition.item}：`) || trimmed.startsWith(`${definition.item}:`))
+    ) {
+      return definition.item;
+    }
   }
-  return {
-    item: trimmed.slice(0, splitAt).trim(),
-    note: trimmed.slice(splitAt + 1).trim(),
-  };
+  return trimmed;
+}
+
+function escapeTableCell(text) {
+  return String(text).replace(/\|/g, "&#124;");
 }
 
 function parseStatsTable(text, heading) {
@@ -459,13 +437,6 @@ function addDays(date, amount) {
   return next;
 }
 
-function startOfIsoWeek(date) {
-  const start = new Date(date);
-  const day = start.getDay() || 7;
-  start.setDate(start.getDate() - day + 1);
-  return start;
-}
-
 function mondayOfIsoWeek(weekId) {
   const match = weekId.match(/^(\d{4})-W(\d{2})$/);
   if (!match) throw new Error(`Invalid week id: ${weekId}`);
@@ -487,15 +458,7 @@ function isoWeekId(date) {
   return `${utc.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
 }
 
-function recentIsoWeeks(anchor, count) {
-  const currentStart = startOfIsoWeek(anchor);
-  return Array.from({ length: count }, (_item, index) => {
-    const weekStart = addDays(currentStart, (index - count + 1) * 7);
-    return isoWeekId(weekStart);
-  });
-}
-
-function isoWeeksInMonth(monthText, weekRule) {
+function isoWeeksInMonth(monthText) {
   const match = monthText.match(/^(\d{4})-(\d{2})$/);
   if (!match) return [];
 
@@ -506,16 +469,11 @@ function isoWeeksInMonth(monthText, weekRule) {
   const weekIds = new Set();
 
   for (let day = new Date(first); day <= last; day = addDays(day, 1)) {
-    if (weekRule === "monday_in_month" && (day.getDay() || 7) !== 1) continue;
-    if (weekRule === "sunday_in_month" && day.getDay() !== 0) continue;
+    if (day.getDay() !== 0) continue;
     weekIds.add(isoWeekId(day));
   }
 
   return Array.from(weekIds);
-}
-
-function weekdayName(date) {
-  return ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][date.getDay()];
 }
 
 function escapeRegExp(text) {
@@ -523,8 +481,22 @@ function escapeRegExp(text) {
 }
 
 async function writeFile(app, path, content) {
-  const file = app.vault.getAbstractFileByPath(path);
-  if (!file) throw new Error(`Rollup target does not exist: ${path}`);
-  await app.vault.modify(file, content);
-  return file;
+  const existing = app.vault.getAbstractFileByPath(path);
+  if (existing) {
+    await app.vault.modify(existing, content);
+    return existing;
+  }
+  await ensureFolder(app, path.split("/").slice(0, -1).join("/"));
+  return app.vault.create(path, content);
+}
+
+async function ensureFolder(app, folderPath) {
+  const parts = folderPath.split("/").filter(Boolean);
+  let current = "";
+  for (const part of parts) {
+    current = current ? `${current}/${part}` : part;
+    if (!app.vault.getAbstractFileByPath(current)) {
+      await app.vault.createFolder(current);
+    }
+  }
 }
