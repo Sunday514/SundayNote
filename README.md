@@ -43,17 +43,17 @@ bash SundayNoteAgent/install/install.sh
 安装器会创建父知识库骨架、必要 Obsidian 基线配置，并设置 agent 工具入口：
 
 ```text
-.agents/skills/sunday-note-ingest                  -> ../../SundayNoteAgent/skills/sunday-note-ingest
-.agents/skills/sunday-note-lint                    -> ../../SundayNoteAgent/skills/sunday-note-lint
-.agents/skills/sunday-note-query                   -> ../../SundayNoteAgent/skills/sunday-note-query
-.agents/skills/paper-summarizer                    -> ../../SundayNoteAgent/skills/paper-summarizer，可选
+.agents/skills/sunday-note-ingest                  # 安装器托管副本
+.agents/skills/sunday-note-lint                    # 安装器托管副本
+.agents/skills/sunday-note-query                   # 安装器托管副本
+.agents/skills/paper-summarizer                    # 安装器托管副本，可选
 .sunday-note-agent/config/sunday-note-vault.yaml
 .sunday-note-agent/config/quickadd-rollups.json
-.sunday-note-agent/quickadd/                     -> ../SundayNoteAgent/automation/quickadd
-30_知识库/个人上下文.md                          -> 空 Wiki 页面，后续写入真实兴趣和计划
+.sunday-note-agent/quickadd/                       # 安装器托管副本
+30_知识库/个人上下文.md                          # 空 Wiki 页面，只在缺失时创建
 ```
 
-基础 skills、可选 skills 和 `quickadd` 使用软链接，父知识库会直接使用 `SundayNoteAgent/` 中的最新工具源码。论文总结 skill 只在传入 `--with-paper-summarizer` 时导出；运行前需确保当前 Python 环境已安装 docling 等依赖。路径配置文件和统计配置是父知识库本地文件，只在不存在时由安装器创建，方便使用者按自己的 vault 目录、模板路径和统计规则调整。
+重复运行安装器会从 `SundayNoteAgent/` 覆盖根规则、skills 和 QuickAdd 脚本中的同名文件，但保留目标目录中的其他文件。论文总结 skill 首次启用时传入 `--with-paper-summarizer`；启用后普通重跑也会继续更新。路径、统计、Claudian 和 Obsidian 配置是 vault 本地文件，只在缺失时创建。
 
 ## 更新
 
@@ -61,12 +61,12 @@ bash SundayNoteAgent/install/install.sh
 
 ```bash
 cd ~/Notes/MyVault/SundayNoteAgent
-git pull
+git pull --ff-only
 cd ..
 bash SundayNoteAgent/install/install.sh --vault-root .
 ```
 
-工具层更新在 `SundayNoteAgent/` 内完成，重新运行安装器即可刷新导出内容。
+安装器只部署当前 checkout，不自动执行 Git 操作。
 
 ## 目录
 
@@ -77,12 +77,10 @@ config/                   # 路径配置源文件和配置类快照
 docs/                     # 框架说明和维护文档
 install/                  # 安装器和父知识库 scaffold
 migration/                # 可复用知识库迁移辅助工具
-scripts/                  # 可复用命令行辅助脚本
 skills/                   # Codex / agent skills
-templates/                # 模板占位目录
 ```
 
-`config/claudian/` 保存脱敏的 Claudian 默认配置；其中不包含设备 ID、CLI 绝对路径、环境变量、代理或会话状态。`config/layout-snapshots/` 保存可迁移的 Obsidian 布局快照。当前不提供通用笔记模板；`templates/` 仅保留占位，不保存个人模板正文。
+`config/claudian/` 保存脱敏的 Claudian 默认配置；其中不包含设备 ID、CLI 绝对路径、环境变量、代理或会话状态。`config/layout-snapshots/` 保存手动恢复用的 Obsidian 布局快照，不由安装器自动导出。当前不提供通用笔记模板。
 
 Obsidian 内默认使用 Claudian（`realclaudian`）作为 agent 入口，Codex provider 在 Claudian 中启用；各 provider 使用当前设备可见的 CLI 命令或本地 Claudian 设置。共享配置不写系统绝对路径、设备 ID、环境变量或代理；`.obsidian/workspace.json`、`.obsidian/workspace-mobile.json` 和 `.claudian/sessions/` 按设备本地维护；Terminal 插件只作为本机可选工具。
 

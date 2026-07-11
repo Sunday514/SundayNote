@@ -3,9 +3,7 @@ set -euo pipefail
 
 PROJECT_DIR_NAME="SundayNoteAgent"
 VAULT_ROOT=""
-INIT_CONTENT_SCAFFOLD=1
 WITH_PAPER_SUMMARIZER=0
-WIKI_DIR_EXISTED=0
 
 usage() {
   cat <<'USAGE'
@@ -14,11 +12,9 @@ Usage:
   install.sh --vault-root <vault-dir>
   install.sh [--vault-root <vault-dir>] --with-paper-summarizer
 
-Configure a vault that already contains this project under SundayNoteAgent/.
-Without --vault-root, the installer initializes the standard Sunday Note
-directory skeleton around the project. With --vault-root, it configures an
-existing vault and creates any missing top-level architecture directories.
-It does not migrate or rewrite existing personal notes.
+Install or update SundayNoteAgent-managed files from the current checkout.
+Without --vault-root, the vault root is the parent of SundayNoteAgent/.
+The installer creates missing vault-local files but does not overwrite them.
 Paper summarizer is optional because it requires a docling-capable environment.
 USAGE
 }
@@ -28,7 +24,6 @@ while [ "$#" -gt 0 ]; do
     --vault-root)
       [ "$#" -ge 2 ] || { echo "missing value for --vault-root" >&2; exit 2; }
       VAULT_ROOT="$2"
-      INIT_CONTENT_SCAFFOLD=0
       shift 2
       ;;
     --with-paper-summarizer)
@@ -56,86 +51,102 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 SCAFFOLD_DIR="$SCRIPT_DIR/scaffold"
 
-abs_path() {
+if [ -n "$VAULT_ROOT" ]; then
+  if [ ! -d "$VAULT_ROOT" ]; then
+    echo "missing vault root: $VAULT_ROOT" >&2
+    exit 1
+  fi
+  VAULT_ROOT="$(cd -- "$VAULT_ROOT" && pwd)"
+else
+  VAULT_ROOT="$(cd -- "$SOURCE_ROOT/.." && pwd)"
+fi
+
+require_source_file() {
   local path="$1"
-  mkdir -p "$(dirname -- "$path")"
-  local parent
-  parent="$(cd -- "$(dirname -- "$path")" && pwd)"
-  printf '%s/%s\n' "$parent" "$(basename -- "$path")"
+  if [ ! -f "$path" ]; then
+    echo "missing installer source file: $path" >&2
+    exit 1
+  fi
+}
+
+require_source_dir() {
+  local path="$1"
+  if [ ! -d "$path" ]; then
+    echo "missing installer source directory: $path" >&2
+    exit 1
+  fi
+}
+
+preflight_container_dir() {
+  local path="$1"
+  if [ -L "$path" ]; then
+    echo "installer container is a symlink; refusing to write through it: $path" >&2
+    exit 1
+  fi
+  if [ -e "$path" ] && [ ! -d "$path" ]; then
+    echo "installer container exists and is not a directory: $path" >&2
+    exit 1
+  fi
+}
+
+preflight_managed_file() {
+  local path="$1"
+  if [ -L "$path" ]; then
+    echo "managed file destination is a symlink; refusing to replace it: $path" >&2
+    exit 1
+  fi
+  if [ -e "$path" ] && [ ! -f "$path" ]; then
+    echo "managed file destination exists and is not a file: $path" >&2
+    exit 1
+  fi
+}
+
+preflight_local_file() {
+  local path="$1"
+  if [ -L "$path" ]; then
+    return
+  fi
+  if [ -e "$path" ] && [ ! -f "$path" ]; then
+    echo "vault-local file destination exists and is not a file: $path" >&2
+    exit 1
+  fi
+}
+
+preflight_managed_dir() {
+  local path="$1"
+  if [ -e "$path" ] && [ ! -d "$path" ] && [ ! -L "$path" ]; then
+    echo "managed directory destination exists and is not a directory: $path" >&2
+    exit 1
+  fi
+}
+
+copy_managed_file() {
+  local src="$1"
+  local dst="$2"
+  mkdir -p "$(dirname -- "$dst")"
+  cp "$src" "$dst"
+  chmod u+rw "$dst" 2>/dev/null || true
 }
 
 copy_if_missing() {
   local src="$1"
   local dst="$2"
-  if [ -e "$src" ] && [ ! -e "$dst" ]; then
-    mkdir -p "$(dirname -- "$dst")"
-    cp -R "$src" "$dst"
-    if [ -f "$dst" ]; then
-      chmod u+rw "$dst" 2>/dev/null || true
-    fi
+  if [ -e "$dst" ] || [ -L "$dst" ]; then
+    return
   fi
+  mkdir -p "$(dirname -- "$dst")"
+  cp "$src" "$dst"
+  chmod u+rw "$dst" 2>/dev/null || true
 }
 
-copy_scaffold_file() {
-  local name="$1"
-  copy_if_missing "$SCAFFOLD_DIR/$name" "$VAULT_ROOT/$name"
-}
-
-link_or_replace() {
-  local target="$1"
-  local link_path="$2"
-  if [ -e "$link_path" ] && [ ! -L "$link_path" ]; then
-    rm -rf "$link_path"
-  elif [ -L "$link_path" ]; then
-    rm -f "$link_path"
+copy_managed_dir() {
+  local src="$1"
+  local dst="$2"
+  if [ -L "$dst" ]; then
+    rm -f "$dst"
   fi
-  mkdir -p "$(dirname -- "$link_path")"
-  ln -s "$target" "$link_path"
-}
-
-ensure_skills_export_dir() {
-  if [ -L .agents/skills ]; then
-    rm -f .agents/skills
-  fi
-  if [ -e .agents/skills ] && [ ! -d .agents/skills ]; then
-    echo ".agents/skills exists and is not a directory; refusing to replace it" >&2
-    exit 1
-  fi
-  mkdir -p .agents/skills
-}
-
-move_existing_skill_aside() {
-  local skill_name="$1"
-  local skill_path=".agents/skills/$skill_name"
-  local backup_dir=".agents/skills/.replaced-by-symlink/$(date +%Y%m%d-%H%M%S)"
-
-  mkdir -p "$backup_dir"
-  mv "$skill_path" "$backup_dir/$skill_name"
-}
-
-link_skill() {
-  local skill_name="$1"
-  local link_path=".agents/skills/$skill_name"
-  local target="../../$PROJECT_DIR_NAME/skills/$skill_name"
-
-  if [ -e "$link_path" ] && [ ! -L "$link_path" ]; then
-    move_existing_skill_aside "$skill_name"
-  elif [ -L "$link_path" ]; then
-    rm -f "$link_path"
-  fi
-
-  ln -s "$target" "$link_path"
-}
-
-unlink_optional_skill() {
-  local skill_name="$1"
-  local link_path=".agents/skills/$skill_name"
-
-  if [ -L "$link_path" ]; then
-    rm -f "$link_path"
-  elif [ -e "$link_path" ]; then
-    move_existing_skill_aside "$skill_name"
-  fi
+  mkdir -p "$dst"
+  cp -R "$src/." "$dst/"
 }
 
 ensure_vault_dirs() {
@@ -150,8 +161,6 @@ ensure_vault_dirs() {
     "$VAULT_ROOT/30_知识库" \
     "$VAULT_ROOT/40_个人写作" \
     "$VAULT_ROOT/个人模板" \
-    "$VAULT_ROOT/.sunday-note-agent/config" \
-    "$VAULT_ROOT/.sunday-note-agent/quickadd" \
     "$VAULT_ROOT/assets/figures"
 
   touch \
@@ -168,11 +177,10 @@ ensure_vault_dirs() {
 }
 
 ensure_personal_context_file() {
-  local wiki_dir="$VAULT_ROOT/30_知识库"
-  local target="$wiki_dir/个人上下文.md"
+  local target="$VAULT_ROOT/30_知识库/个人上下文.md"
   local current_date
 
-  if [ ! -d "$wiki_dir" ] || [ -e "$target" ]; then
+  if [ -e "$target" ] || [ -L "$target" ]; then
     return
   fi
 
@@ -202,87 +210,77 @@ keywords: []
 EOF
 }
 
-install_scaffold() {
-  copy_scaffold_file AGENTS.md
-  copy_scaffold_file CLAUDE.md
-  copy_scaffold_file 首页.md
-  copy_scaffold_file .gitignore
-
-  ensure_vault_dirs
-
-  if [ "$INIT_CONTENT_SCAFFOLD" -eq 1 ]; then
-    copy_if_missing "$SOURCE_ROOT/config/obsidian/app.json" "$VAULT_ROOT/.obsidian/app.json"
-    copy_if_missing "$SOURCE_ROOT/config/obsidian/appearance.json" "$VAULT_ROOT/.obsidian/appearance.json"
-    copy_if_missing "$SOURCE_ROOT/config/obsidian/community-plugins.json" "$VAULT_ROOT/.obsidian/community-plugins.json"
-    copy_if_missing "$SOURCE_ROOT/assets/figures/obsidian-layout.png" "$VAULT_ROOT/assets/figures/obsidian-layout.png"
-  fi
-}
-
-export_agents_payload() {
-  cd "$VAULT_ROOT"
-  mkdir -p .agents
-
-  if [ -e .sunday-note-agent/config/sunday-note-vault.yaml ] && [ ! -f .sunday-note-agent/config/sunday-note-vault.yaml ]; then
-    echo ".sunday-note-agent/config/sunday-note-vault.yaml exists and is not a file; refusing to replace it" >&2
-    exit 1
-  fi
-
-  mkdir -p .sunday-note-agent/config
-  mkdir -p .claudian
-  ensure_skills_export_dir
-  link_skill sunday-note-ingest
-  link_skill sunday-note-lint
-  link_skill sunday-note-query
-  if [ "$WITH_PAPER_SUMMARIZER" -eq 1 ]; then
-    link_skill paper-summarizer
-  else
-    unlink_optional_skill paper-summarizer
-  fi
-  link_or_replace "../$PROJECT_DIR_NAME/automation/quickadd" ".sunday-note-agent/quickadd"
-  copy_if_missing "$SOURCE_ROOT/config/sunday-note-vault.yaml" ".sunday-note-agent/config/sunday-note-vault.yaml"
-  copy_if_missing "$SOURCE_ROOT/config/quickadd-rollups.json" ".sunday-note-agent/config/quickadd-rollups.json"
-  copy_if_missing "$SOURCE_ROOT/config/claudian/claudian-settings.json" ".claudian/claudian-settings.json"
-  copy_if_missing "$SOURCE_ROOT/config/obsidian/community-plugins.json" ".obsidian/community-plugins.json"
-}
-
-ensure_agent_sources() {
-  if [ ! -d "$VAULT_ROOT/$PROJECT_DIR_NAME" ]; then
-    echo "missing $PROJECT_DIR_NAME directory under vault root: $VAULT_ROOT" >&2
-    exit 1
-  fi
-  if [ ! -d "$VAULT_ROOT/$PROJECT_DIR_NAME/skills" ]; then
-    echo "missing $PROJECT_DIR_NAME/skills under vault root: $VAULT_ROOT" >&2
-    exit 1
-  fi
-  if [ ! -d "$VAULT_ROOT/$PROJECT_DIR_NAME/automation/quickadd" ]; then
-    echo "missing $PROJECT_DIR_NAME/automation/quickadd under vault root: $VAULT_ROOT" >&2
-    exit 1
-  fi
-}
-
-if [ -n "$VAULT_ROOT" ]; then
-  VAULT_ROOT="$(abs_path "$VAULT_ROOT")"
-else
-  VAULT_ROOT="$(cd -- "$SOURCE_ROOT/.." && pwd)"
+paper_skill_path="$VAULT_ROOT/.agents/skills/paper-summarizer"
+install_paper_summarizer=0
+if [ "$WITH_PAPER_SUMMARIZER" -eq 1 ] || [ -e "$paper_skill_path" ] || [ -L "$paper_skill_path" ]; then
+  install_paper_summarizer=1
 fi
 
-if [ ! -d "$VAULT_ROOT" ]; then
-  echo "missing vault root: $VAULT_ROOT" >&2
+require_source_file "$SCAFFOLD_DIR/AGENTS.md"
+require_source_file "$SCAFFOLD_DIR/CLAUDE.md"
+require_source_file "$SCAFFOLD_DIR/首页.md"
+require_source_file "$SCAFFOLD_DIR/.gitignore"
+require_source_file "$SOURCE_ROOT/config/sunday-note-vault.yaml"
+require_source_file "$SOURCE_ROOT/config/quickadd-rollups.json"
+require_source_file "$SOURCE_ROOT/config/claudian/claudian-settings.json"
+require_source_file "$SOURCE_ROOT/config/obsidian/community-plugins.json"
+require_source_dir "$SOURCE_ROOT/automation/quickadd"
+require_source_dir "$SOURCE_ROOT/skills/sunday-note-ingest"
+require_source_dir "$SOURCE_ROOT/skills/sunday-note-lint"
+require_source_dir "$SOURCE_ROOT/skills/sunday-note-query"
+if [ "$install_paper_summarizer" -eq 1 ]; then
+  require_source_dir "$SOURCE_ROOT/skills/paper-summarizer"
+fi
+
+if [ ! -d "$VAULT_ROOT/$PROJECT_DIR_NAME" ]; then
+  echo "missing $PROJECT_DIR_NAME directory under vault root: $VAULT_ROOT" >&2
   exit 1
 fi
 
-if [ -d "$VAULT_ROOT/30_知识库" ]; then
-  WIKI_DIR_EXISTED=1
+preflight_container_dir "$VAULT_ROOT/.agents"
+preflight_container_dir "$VAULT_ROOT/.agents/skills"
+preflight_container_dir "$VAULT_ROOT/.sunday-note-agent"
+preflight_container_dir "$VAULT_ROOT/.sunday-note-agent/config"
+preflight_container_dir "$VAULT_ROOT/.claudian"
+preflight_container_dir "$VAULT_ROOT/.obsidian"
+
+preflight_managed_file "$VAULT_ROOT/AGENTS.md"
+preflight_managed_file "$VAULT_ROOT/CLAUDE.md"
+preflight_local_file "$VAULT_ROOT/首页.md"
+preflight_local_file "$VAULT_ROOT/.gitignore"
+preflight_local_file "$VAULT_ROOT/.sunday-note-agent/config/sunday-note-vault.yaml"
+preflight_local_file "$VAULT_ROOT/.sunday-note-agent/config/quickadd-rollups.json"
+preflight_local_file "$VAULT_ROOT/.claudian/claudian-settings.json"
+preflight_local_file "$VAULT_ROOT/.obsidian/community-plugins.json"
+
+preflight_managed_dir "$VAULT_ROOT/.agents/skills/sunday-note-ingest"
+preflight_managed_dir "$VAULT_ROOT/.agents/skills/sunday-note-lint"
+preflight_managed_dir "$VAULT_ROOT/.agents/skills/sunday-note-query"
+preflight_managed_dir "$VAULT_ROOT/.sunday-note-agent/quickadd"
+if [ "$install_paper_summarizer" -eq 1 ]; then
+  preflight_managed_dir "$paper_skill_path"
 fi
 
-ensure_agent_sources
-cd "$VAULT_ROOT"
+ensure_vault_dirs
+copy_managed_file "$SCAFFOLD_DIR/AGENTS.md" "$VAULT_ROOT/AGENTS.md"
+copy_managed_file "$SCAFFOLD_DIR/CLAUDE.md" "$VAULT_ROOT/CLAUDE.md"
+copy_if_missing "$SCAFFOLD_DIR/首页.md" "$VAULT_ROOT/首页.md"
+copy_if_missing "$SCAFFOLD_DIR/.gitignore" "$VAULT_ROOT/.gitignore"
+ensure_personal_context_file
 
-install_scaffold
-if [ "$INIT_CONTENT_SCAFFOLD" -eq 1 ] || [ "$WIKI_DIR_EXISTED" -eq 1 ]; then
-  ensure_personal_context_file
+copy_managed_dir "$SOURCE_ROOT/skills/sunday-note-ingest" "$VAULT_ROOT/.agents/skills/sunday-note-ingest"
+copy_managed_dir "$SOURCE_ROOT/skills/sunday-note-lint" "$VAULT_ROOT/.agents/skills/sunday-note-lint"
+copy_managed_dir "$SOURCE_ROOT/skills/sunday-note-query" "$VAULT_ROOT/.agents/skills/sunday-note-query"
+if [ "$install_paper_summarizer" -eq 1 ]; then
+  copy_managed_dir "$SOURCE_ROOT/skills/paper-summarizer" "$paper_skill_path"
 fi
-export_agents_payload
+copy_managed_dir "$SOURCE_ROOT/automation/quickadd" "$VAULT_ROOT/.sunday-note-agent/quickadd"
 
-echo "Installed Sunday Note vault at: $VAULT_ROOT"
-echo "Agent directory: $PROJECT_DIR_NAME"
+copy_if_missing "$SOURCE_ROOT/config/sunday-note-vault.yaml" "$VAULT_ROOT/.sunday-note-agent/config/sunday-note-vault.yaml"
+copy_if_missing "$SOURCE_ROOT/config/quickadd-rollups.json" "$VAULT_ROOT/.sunday-note-agent/config/quickadd-rollups.json"
+copy_if_missing "$SOURCE_ROOT/config/claudian/claudian-settings.json" "$VAULT_ROOT/.claudian/claudian-settings.json"
+copy_if_missing "$SOURCE_ROOT/config/obsidian/community-plugins.json" "$VAULT_ROOT/.obsidian/community-plugins.json"
+
+echo "Installed or updated Sunday Note vault at: $VAULT_ROOT"
+echo "Managed rules, skills, and QuickAdd files were refreshed from: $PROJECT_DIR_NAME"
+echo "Vault-local content and existing configuration were preserved."

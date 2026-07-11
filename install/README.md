@@ -2,21 +2,18 @@
 
 本目录用于把 SundayNoteAgent 安装到私人 Obsidian vault。
 
-安装器有两种模式：
-
-- 新 vault 初始化：创建标准一级目录骨架、必要 Obsidian 基线配置，并设置工具入口。
-- 已有 vault 配置：补建缺失的标准一级目录和工具入口，不移动、重命名或整理已有内容。
+同一脚本同时用于首次安装和更新：补建缺失的 vault 骨架和本地基线文件，并用当前 checkout 覆盖安装器托管内容。它不移动、重命名或整理已有个人内容，也不自动执行 Git 操作。
 
 安装器设置工具入口和本地默认配置：
 
 ```text
-.agents/skills/sunday-note-ingest                  -> ../../SundayNoteAgent/skills/sunday-note-ingest
-.agents/skills/sunday-note-lint                    -> ../../SundayNoteAgent/skills/sunday-note-lint
-.agents/skills/sunday-note-query                   -> ../../SundayNoteAgent/skills/sunday-note-query
-.agents/skills/paper-summarizer                    -> ../../SundayNoteAgent/skills/paper-summarizer，可选
+.agents/skills/sunday-note-ingest                  # 安装器托管副本
+.agents/skills/sunday-note-lint                    # 安装器托管副本
+.agents/skills/sunday-note-query                   # 安装器托管副本
+.agents/skills/paper-summarizer                    # 安装器托管副本，可选
 .sunday-note-agent/config/sunday-note-vault.yaml
 .sunday-note-agent/config/quickadd-rollups.json
-.sunday-note-agent/quickadd/                     -> ../SundayNoteAgent/automation/quickadd
+.sunday-note-agent/quickadd/                       # 安装器托管副本
 .claudian/claudian-settings.json
 ```
 
@@ -53,7 +50,7 @@ bash SundayNoteAgent/install/install.sh --vault-root . --with-paper-summarizer
 
 ## 生成内容
 
-不带 `--vault-root` 的新 vault 初始化会创建：
+安装器会创建缺失的：
 
 - `AGENTS.md`：安装后的私人 vault 根规则。
 - `CLAUDE.md`：Claude Code 适配入口。
@@ -61,23 +58,23 @@ bash SundayNoteAgent/install/install.sh --vault-root . --with-paper-summarizer
 - `.import_files/`：隐藏导入工作目录。
 - `10_原始材料/`、`20_每日记录/`、`21_每周记录/`、`22_每月记录/`、`23_项目复盘/`、`30_知识库/`、`40_个人写作/`、`个人模板/`。
 - `30_知识库/个人上下文.md`：空的个人上下文 Wiki 页面，`keywords` 初始为空，后续只记录真实兴趣词、方向词、项目词或常用问法。
-- 必要 `.obsidian` 基线配置；Obsidian 默认通过 Claudian 调用 agent，workspace 和 Claudian 会话状态由每台设备本地维护。
+- `.obsidian/community-plugins.json` 基线；Obsidian 默认通过 Claudian 调用 agent，workspace 和 Claudian 会话状态由每台设备本地维护。
 - `SundayNoteAgent/` 工具层目录。
 
 其中 `.import_files/` 是 PDF、docx、网页导出和解析中间产物的临时导入目录；`40_个人写作/` 只是空目录骨架，安装器不定义其中内容，也不维护其内部结构。
 
-使用 `--vault-root` 配置已有 vault 时，安装器会补建缺失的标准一级目录和 `.import_files/`，但不会创建二级结构，也不会移动、重命名或整理已有内容。它还会设置工具入口：
+不论是新 vault 还是已有 vault，安装器都会补建缺失的标准一级目录和 `.import_files/`，但不创建二级结构，也不整理已有内容。工具入口的维护方式是：
 
-- 父 vault `.agents/skills/` 下的基础 skill 软链接：`sunday-note-ingest`、`sunday-note-lint`、`sunday-note-query`。
-- 传入 `--with-paper-summarizer` 时，额外导出 `paper-summarizer` skill。
-- 父 vault `.sunday-note-agent/config/` 下的本地路径配置。
+- 每次覆盖父 vault 的 `AGENTS.md`、`CLAUDE.md`、三个基础 skill 和 `.sunday-note-agent/quickadd/` 中的同名源文件。
+- 传入 `--with-paper-summarizer` 时首次导出 `paper-summarizer`；已导出时，普通重跑也会刷新它。
+- 托管目录中不与源仓库同名的额外文件会保留。
+- 父 vault `.sunday-note-agent/config/` 下的本地路径配置只在缺失时创建。
 - 父 vault `.sunday-note-agent/config/quickadd-rollups.json` 下的 QuickAdd 统计配置；仅在缺失时创建。
-- 父 vault `.sunday-note-agent/quickadd` 软链接，指向 `SundayNoteAgent/automation/quickadd`。
 - 父 vault `.claudian/claudian-settings.json` 的脱敏默认配置；仅在缺失时创建。
 
-如果运行前已有 vault 中存在 `30_知识库/`，安装器会在缺失时补建空的 `30_知识库/个人上下文.md`；已有文件不会被覆盖。若 `30_知识库/` 是本次安装新建的目录，则不额外创建个人上下文文件。
+只要 `30_知识库/个人上下文.md` 缺失，安装器就创建空 scaffold；已有文件不会被覆盖。
 
-安装器只在新 vault 初始化时创建一级目录骨架，不打包个人模板正文，也不预设 Raw 或导入工作区的二级结构。Daily / Weekly / Monthly 模板内容由私人知识库维护；自动化脚本通过 `.sunday-note-agent/config/sunday-note-vault.yaml` 读取模板路径。路径配置是父 vault 本地文件，安装器只在缺失时创建，不会覆盖已有配置。论文总结脚本使用当前 Python 环境，导入工作目录为 `.import_files`，摘要目录为 `10_原始材料`。如果 `.agents/skills/` 下已有同名真实目录，安装器会先移到 `.agents/skills/.replaced-by-symlink/` 再创建软链接，避免删除旧内容。
+安装器不打包个人模板正文，也不预设 Raw 或导入工作区的二级结构。Daily / Weekly / Monthly 模板内容由私人知识库维护；自动化脚本通过 `.sunday-note-agent/config/sunday-note-vault.yaml` 读取模板路径。论文总结脚本使用当前 Python 环境，导入工作目录为 `.import_files`，摘要目录为 `10_原始材料`。旧版安装器创建的 skill 和 QuickAdd 软链接会在重跑时转换为普通目录，不删除链接目标。
 
 ## Claudian
 
@@ -104,7 +101,7 @@ Terminal 插件只作为本机可选工具，不作为 agent 默认入口。需�
 
 ## QuickAdd 与插件说明
 
-- 当前 v0.1 提供 QuickAdd 自动化脚本与配置基线（`SundayNoteAgent/automation/quickadd` 及导出软链接），不预置 vault 内可直接执行的 QuickAdd choices/actions。
+- 当前 v0.1 提供 QuickAdd 自动化脚本与配置基线（`SundayNoteAgent/automation/quickadd` 及安装器托管副本），不预置 vault 内可直接执行的 QuickAdd choices/actions。
 - `automation/quickadd/rollup.js` 是通用统计入口；具体统计项由 `.sunday-note-agent/config/quickadd-rollups.json` 决定。
 - vault 本地 QuickAdd choice 可以通过本地 wrapper、URI 或变量传入 `rollup=weekly_checkins` / `rollup=month_pack_checkins` 来选择统计配置。
 - 默认统计配置中，周统计按 ISO week 自动推导 7 天 Daily；月统计通过 `week_rule` 配置下辖 ISO weeks，默认按周日所在月份选择。

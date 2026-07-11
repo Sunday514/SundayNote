@@ -73,7 +73,7 @@ QuickAdd 是模板、捕获和例行维护动作的主要入口。创建 Daily�
 
 具体打卡项保存在本地 Daily 模板中。Daily 创建统一使用个人模板中的 `每日记录.md`；某天不参与统计的项目可以直接从当天 Daily 中删除。Weekly 统计优先按 Daily 模板中的 checkbox 顺序输出，同时兼容历史 Daily 中额外出现的打卡项。
 
-当前不提供通用笔记模板。`SundayNoteAgent/templates/` 只保留占位，不维护 Wiki、论文、书籍或课程模板。`个人模板/` 保存 Daily / Weekly / Monthly 等个人模板正文，由私人知识库管理。Templater 可以作为可选增强，但不作为迁移必需依赖。
+当前不提供通用笔记模板。`个人模板/` 保存 Daily / Weekly / Monthly 等个人模板正文，由私人知识库管理。Templater 可以作为可选增强，但不作为迁移必需依赖。
 
 `SundayNoteAgent/migration/` 保存可复用的知识库迁移辅助工具，例如从外部知识源导出导入工作区文件或转换成 Raw 来源材料。迁移工具不得保存密钥、个人正文或一次性运行状态。
 
@@ -87,7 +87,6 @@ QuickAdd 是模板、捕获和例行维护动作的主要入口。创建 Daily�
 - 架构设计: [[architecture]]
 - 未来待办: [[roadmap]]
 - Agent skills 源文件: `SundayNoteAgent/skills/`
-- 命令行辅助脚本: `SundayNoteAgent/scripts/`
 - 迁移辅助工具: `SundayNoteAgent/migration/`
 - QuickAdd 自动化源文件: `SundayNoteAgent/automation/quickadd/`
-- 安装后 skill 发现入口: `.agents/skills/`，其中每个 skill 软链接到 `SundayNoteAgent/skills/<skill-name>/`
+- 安装后 skill 发现入口: `.agents/skills/`，其中的托管副本由安装器从 `SundayNoteAgent/skills/<skill-name>/` 覆盖更新

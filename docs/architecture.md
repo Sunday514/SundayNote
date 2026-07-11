@@ -60,7 +60,7 @@ Daily 属于 Routine，不属于 Journal。agent 写入或改写 Routine 前需�
 
 ## Journal
 
-Journal 是可选个人写作层。SundayNoteAgent 只在新 vault 初始化时提供 `40_个人写作/` 空目录骨架，不定义其中应保存什么内容，也不维护其内部结构。
+Journal 是可选个人写作层。安装器在目录缺失时提供 `40_个人写作/` 空目录骨架，不定义其中应保存什么内容，也不维护其内部结构。
 
 agent 默认只读 Journal，不主动创建、改写、润色、搬运、压缩或编译到 Wiki。只有用户明确要求时，agent 才能处理其中内容。
 

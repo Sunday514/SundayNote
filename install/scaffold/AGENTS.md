@@ -47,6 +47,7 @@ agent 可维护的长期记忆层。
 - `.claudian/`: Claudian 本地设置和会话状态；不提交 sessions、设备 ID、CLI 绝对路径、环境变量或代理。
 - `.obsidian/`: Obsidian 配置和运行状态；只修改明确需要维护的配置，不整理运行状态。
 - `SundayNoteAgent/`: 可公开的工具项目；不要写入个人内容、个人模板正文或本地运行状态。
+- `AGENTS.md`、`CLAUDE.md`、`.agents/skills/sunday-note-*`、已启用的 `paper-summarizer` 和 `.sunday-note-agent/quickadd/` 是安装器托管副本；不直接修改，应修改 `SundayNoteAgent/` 内对应源文件后重跑安装器。
 
 ## 写入规则
 
