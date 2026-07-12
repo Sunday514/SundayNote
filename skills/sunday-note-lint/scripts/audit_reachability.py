@@ -165,19 +165,6 @@ def exact_aliases(candidates: list[Path], root: Path) -> list[str]:
     return list(dict.fromkeys(result))
 
 
-def collect_external_stems(root: Path, known_files: set[Path]) -> set[str]:
-    stems: set[str] = set()
-    for item in root.rglob("*.md"):
-        resolved = item.resolve()
-        if not inside_root(resolved, root) or resolved in known_files:
-            continue
-        relative = resolved.relative_to(root)
-        if any(part.startswith(".") for part in relative.parts):
-            continue
-        stems.add(resolved.stem)
-    return stems
-
-
 def resolve_target(
     target: str,
     source: Path,
@@ -185,7 +172,6 @@ def resolve_target(
     markdown: bool,
     active_aliases: dict[str, set[Path]],
     excluded_aliases: dict[str, set[Path]],
-    external_stems: set[str],
     scope_roots: list[Path],
 ) -> tuple[str, Path | None, list[Path], bool]:
     is_bare_wikilink = not markdown and "/" not in target and not target.startswith(("./", "../"))
@@ -196,7 +182,7 @@ def resolve_target(
             return "resolved", next(iter(matches)), [], True
         if len(matches) > 1:
             return "ambiguous", None, sorted(matches), True
-        if excluded_aliases.get(stem) or stem in external_stems:
+        if excluded_aliases.get(stem):
             return "ignored", None, [], False
         return "unresolved", None, [], True
 
@@ -253,7 +239,6 @@ def audit(args: argparse.Namespace, parser: argparse.ArgumentParser) -> dict:
     active = wiki | raw | routine
     active_aliases = build_alias_map(active, root)
     excluded_aliases = build_alias_map(excluded, root)
-    external_stems = collect_external_stems(root, all_files)
     kinds = {path: "wiki" for path in wiki} | {path: "raw" for path in raw} | {path: "routine" for path in routine}
     scope_roots = [resolve_input(raw_scope, root, parser) for raw_scope in args.wiki_scope + args.raw_scope + args.routine_scope]
 
@@ -278,7 +263,6 @@ def audit(args: argparse.Namespace, parser: argparse.ArgumentParser) -> dict:
                 markdown,
                 active_aliases,
                 excluded_aliases,
-                external_stems,
                 scope_roots,
             )
             if state == "resolved" and resolved:

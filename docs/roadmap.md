@@ -1,6 +1,6 @@
 ---
 last_updated: 2026-07-12
-update_count: 22
+update_count: 23
 last_queried: ""
 query_count: 0
 sources:
@@ -45,7 +45,7 @@ Raw 保存外部资料的忠实总结，Routine 保存用户活动和项目上�
 - 架构文档、目录文档和 scaffold 已同步 Wiki 中心知识流。
 - 项目开发规则允许父 vault 作为显式临时集成测试实例；自动回归和验收仍以通用 fixture 为准。
 - P0-A1 Ingest skill 已固定为从指定 Raw、Routine 或已确认对话向 Wiki 沉淀知识，包含最小写作契约、来源链接和明确写入边界。
-- P0-B1 至 P0-B3 已完成分层来源审计、确定性 Wiki header 检查和 Lint 维护编排；诊断保持只读，低风险维护按任务交给 subagent 执行。
+- P0-B1 至 P0-B3 已完成分层来源审计、确定性 Wiki header 检查和 Lint 维护编排；审计只读取显式 scope，诊断保持只读，低风险维护按任务交给 subagent 执行。
 
 ## P0-C：Query
 

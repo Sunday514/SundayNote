@@ -177,7 +177,7 @@ def test_layered_audit() -> None:
             "20_每日记录",
             "21_每周记录",
             "23_项目复盘",
-            "40_个人写作",
+            "outside",
         ]
         for raw in paths:
             (vault / raw).mkdir()
@@ -198,7 +198,7 @@ def test_layered_audit() -> None:
 [[同名]]
 [[外部页]]
 [相对缺失](子目录/同名.md)
-[[40_个人写作/私人]]
+[[outside/私人]]
 ![[图片.png]]
 """,
             encoding="utf-8",
@@ -217,8 +217,8 @@ def test_layered_audit() -> None:
         (vault / "21_每周记录/未链接周.md").write_text("# Weekly\n", encoding="utf-8")
         (vault / "23_项目复盘/项目证据.md").write_text("# Project\n", encoding="utf-8")
         (vault / "23_项目复盘/同名.md").write_text("# 同名 Project\n", encoding="utf-8")
-        (vault / "40_个人写作/私人.md").write_text("# 私人\n", encoding="utf-8")
-        (vault / "40_个人写作/外部页.md").write_text("# 外部页\n", encoding="utf-8")
+        (vault / "outside/私人.md").write_text("# 范围外\n", encoding="utf-8")
+        (vault / "outside/外部页.md").write_text("# 同名范围外页面\n", encoding="utf-8")
 
         before = snapshot(vault)
         output = run(
@@ -252,6 +252,7 @@ def test_layered_audit() -> None:
             "10_原始材料/目标.md",
         ]
         assert result["broken_links"] == [
+            {"source": "30_知识库/可达页.md", "link": "外部页"},
             {"source": "30_知识库/可达页.md", "link": "子目录/同名.md"},
             {"source": "30_知识库/可达页.md", "link": "缺失页面"},
         ], result["broken_links"]
