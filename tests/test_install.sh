@@ -23,11 +23,14 @@ test -f "$vault/AGENTS.md" || fail "new vault is missing AGENTS.md"
 test -f "$vault/30_知识库/个人上下文.md" || fail "new vault is missing personal context"
 test -f "$vault/个人模板/每日记录.md" || fail "new vault is missing Daily template"
 test ! -e "$vault/.agents/skills/paper-summarizer" || fail "optional skill was installed without opt-in"
+assert_file_contains "$vault/.stignore" "/SundayNoteAgent"
+assert_file_contains "$vault/.stignore" "/.import_files"
 
 printf '%s\n' "local config" > "$vault/.sunday-note-agent/config/quickadd-rollups.json"
 printf '%s\n' "local template" > "$vault/个人模板/每日记录.md"
 printf '%s\n' "stale managed rule" > "$vault/AGENTS.md"
 printf '%s\n' "extra skill file" > "$vault/.agents/skills/sunday-note-query/local.md"
+printf '%s\n' "local ignore" > "$vault/.stignore"
 
 bash "$ROOT/install/install.sh" --vault-root "$vault" --with-paper-summarizer >/dev/null
 
@@ -35,6 +38,9 @@ assert_file_contains "$vault/AGENTS.md" "Agent"
 assert_file_contains "$vault/.sunday-note-agent/config/quickadd-rollups.json" "local config"
 assert_file_contains "$vault/个人模板/每日记录.md" "local template"
 assert_file_contains "$vault/.agents/skills/sunday-note-query/local.md" "extra skill file"
+assert_file_contains "$vault/.stignore" "local ignore"
+assert_file_contains "$vault/.stignore" "/SundayNoteAgent"
+assert_file_contains "$vault/.stignore" "/.import_files"
 test -f "$vault/.agents/skills/paper-summarizer/SKILL.md" || fail "optional skill was not installed"
 
 printf '%s\n' "stale optional skill" > "$vault/.agents/skills/paper-summarizer/SKILL.md"
@@ -42,6 +48,8 @@ bash "$ROOT/install/install.sh" --vault-root "$vault" >/dev/null
 if grep -Fq "stale optional skill" "$vault/.agents/skills/paper-summarizer/SKILL.md"; then
   fail "enabled optional skill was not refreshed"
 fi
+test "$(grep -Fxc -- "/SundayNoteAgent" "$vault/.stignore")" -eq 1 || fail "Syncthing ignore rule was duplicated"
+test "$(grep -Fxc -- "/.import_files" "$vault/.stignore")" -eq 1 || fail "Syncthing import ignore rule was duplicated"
 
 conflict="$TMP_ROOT/conflict"
 mkdir -p "$conflict/SundayNoteAgent" "$conflict/.sunday-note-agent"
@@ -51,5 +59,12 @@ if bash "$ROOT/install/install.sh" --vault-root "$conflict" >"$TMP_ROOT/conflict
 fi
 assert_file_contains "$TMP_ROOT/conflict.out" "$conflict/.sunday-note-agent/config"
 assert_file_contains "$conflict/.sunday-note-agent/config" "do not replace"
+
+stignore_conflict="$TMP_ROOT/stignore-conflict"
+mkdir -p "$stignore_conflict/SundayNoteAgent" "$stignore_conflict/.stignore"
+if bash "$ROOT/install/install.sh" --vault-root "$stignore_conflict" >"$TMP_ROOT/stignore-conflict.out" 2>&1; then
+  fail "directory at .stignore did not stop installation"
+fi
+assert_file_contains "$TMP_ROOT/stignore-conflict.out" "$stignore_conflict/.stignore"
 
 echo "install fixture passed"

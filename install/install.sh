@@ -112,6 +112,18 @@ preflight_local_file() {
   fi
 }
 
+preflight_append_file() {
+  local path="$1"
+  if [ -L "$path" ]; then
+    echo "vault-local append target is a symlink; refusing to write through it: $path" >&2
+    exit 1
+  fi
+  if [ -e "$path" ] && [ ! -f "$path" ]; then
+    echo "vault-local append target exists and is not a file: $path" >&2
+    exit 1
+  fi
+}
+
 preflight_managed_dir() {
   local path="$1"
   if [ -e "$path" ] && [ ! -d "$path" ] && [ ! -L "$path" ]; then
@@ -210,6 +222,21 @@ keywords: []
 EOF
 }
 
+ensure_syncthing_ignores() {
+  local target="$VAULT_ROOT/.stignore"
+  local pattern
+
+  for pattern in "/$PROJECT_DIR_NAME" "/.import_files"; do
+    if [ -f "$target" ] && grep -Fxq -- "$pattern" "$target"; then
+      continue
+    fi
+    if [ -s "$target" ] && [ -n "$(tail -c 1 "$target")" ]; then
+      printf '\n' >> "$target"
+    fi
+    printf '%s\n' "$pattern" >> "$target"
+  done
+}
+
 paper_skill_path="$VAULT_ROOT/.agents/skills/paper-summarizer"
 install_paper_summarizer=0
 if [ "$WITH_PAPER_SUMMARIZER" -eq 1 ] || [ -e "$paper_skill_path" ] || [ -L "$paper_skill_path" ]; then
@@ -251,6 +278,7 @@ preflight_managed_file "$VAULT_ROOT/AGENTS.md"
 preflight_managed_file "$VAULT_ROOT/CLAUDE.md"
 preflight_local_file "$VAULT_ROOT/首页.md"
 preflight_local_file "$VAULT_ROOT/.gitignore"
+preflight_append_file "$VAULT_ROOT/.stignore"
 preflight_local_file "$VAULT_ROOT/.sunday-note-agent/config/sunday-note-vault.yaml"
 preflight_local_file "$VAULT_ROOT/.sunday-note-agent/config/quickadd-rollups.json"
 preflight_local_file "$VAULT_ROOT/.claudian/claudian-settings.json"
@@ -272,6 +300,7 @@ copy_managed_file "$SCAFFOLD_DIR/AGENTS.md" "$VAULT_ROOT/AGENTS.md"
 copy_managed_file "$SCAFFOLD_DIR/CLAUDE.md" "$VAULT_ROOT/CLAUDE.md"
 copy_if_missing "$SCAFFOLD_DIR/首页.md" "$VAULT_ROOT/首页.md"
 copy_if_missing "$SCAFFOLD_DIR/.gitignore" "$VAULT_ROOT/.gitignore"
+ensure_syncthing_ignores
 copy_if_missing "$SOURCE_ROOT/templates/每日记录.md" "$VAULT_ROOT/个人模板/每日记录.md"
 copy_if_missing "$SOURCE_ROOT/templates/周记录.md" "$VAULT_ROOT/个人模板/周记录.md"
 copy_if_missing "$SOURCE_ROOT/templates/月记录.md" "$VAULT_ROOT/个人模板/月记录.md"

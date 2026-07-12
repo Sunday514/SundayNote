@@ -60,6 +60,7 @@ bash SundayNoteAgent/install/install.sh --vault-root . --with-paper-summarizer
 - `个人模板/每日记录.md`、`周记录.md`、`月记录.md`：无具体打卡项的最小 Routine 骨架，只在缺失时创建。
 - `30_知识库/个人上下文.md`：空的个人上下文 Wiki 页面，`keywords` 初始为空，后续只记录真实兴趣词、方向词、项目词或常用问法。
 - `.obsidian/community-plugins.json` 基线；Obsidian 默认通过 Claudian 调用 agent，workspace 和 Claudian 会话状态由每台设备本地维护。
+- `.stignore`：保留已有规则并补充 `/SundayNoteAgent` 和 `/.import_files`，避免工具仓库与导入中间产物进入 Syncthing 同步。
 - `SundayNoteAgent/` 工具层目录。
 
 其中 `.import_files/` 是 PDF、docx、网页导出和解析中间产物的临时导入目录；`40_个人写作/` 只是空目录骨架，安装器不定义其中内容，也不维护其内部结构。
@@ -72,6 +73,7 @@ bash SundayNoteAgent/install/install.sh --vault-root . --with-paper-summarizer
 - 父 vault `.sunday-note-agent/config/` 下的本地路径配置只在缺失时创建。
 - 父 vault `.sunday-note-agent/config/quickadd-rollups.json` 下的 QuickAdd 统计配置；仅在缺失时创建。
 - 父 vault `.claudian/claudian-settings.json` 的脱敏默认配置；仅在缺失时创建。
+- 父 vault `.stignore` 保留已有内容，每次安装确保包含根目录规则 `/SundayNoteAgent` 和 `/.import_files`。
 
 只要 `30_知识库/个人上下文.md` 缺失，安装器就创建空 scaffold；已有文件不会被覆盖。
 
