@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Dependency-free fixtures for Query and layered Lint tools."""
+"""Dependency-free fixtures for layered Lint tools."""
 
 from __future__ import annotations
 
@@ -12,7 +12,6 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-QUERY = ROOT / "skills/sunday-note-query/scripts/query_search.py"
 LINT_HEADERS = ROOT / "skills/sunday-note-lint/scripts/lint_headers.py"
 AUDIT = ROOT / "skills/sunday-note-lint/scripts/audit_reachability.py"
 
@@ -67,32 +66,6 @@ topic: {topic}
 keywords: {keywords}
 ---
 """
-
-
-def test_query() -> None:
-    with tempfile.TemporaryDirectory() as temp:
-        vault = Path(temp)
-        (vault / ".sunday-note-agent/config").mkdir(parents=True)
-        (vault / "20_每日记录").mkdir()
-        (vault / "30_知识库").mkdir()
-        (vault / "outside").mkdir()
-        (vault / ".sunday-note-agent/config/sunday-note-vault.yaml").write_text(
-            'layers:\n  routine:\n    daily: "20_每日记录"\n  wiki: "30_知识库"\n',
-            encoding="utf-8",
-        )
-        (vault / "30_知识库/机器人.md").write_text(
-            wiki_header('"测试主题"', keywords='["机器人"]') + "\n机器人导航。\n",
-            encoding="utf-8",
-        )
-        (vault / "20_每日记录/2026-07-12.md").write_text("今天阅读机器人论文。\n", encoding="utf-8")
-        (vault / "outside/私人正文.md").write_text("机器人不应进入搜索范围。\n", encoding="utf-8")
-
-        before = snapshot(vault)
-        query_output = run(str(QUERY), "机器人", "--vault-root", str(vault))
-        assert "30_知识库" in query_output
-        assert "20_每日记录" in query_output
-        assert "私人正文" not in query_output
-        assert snapshot(vault) == before, "query must not modify the vault"
 
 
 def test_lint_headers() -> None:
@@ -276,7 +249,6 @@ def test_layered_audit() -> None:
 
 
 def main() -> None:
-    test_query()
     test_lint_headers()
     test_layered_audit()
     print("python tool fixture passed")

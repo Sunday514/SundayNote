@@ -1,169 +1,114 @@
 #!/usr/bin/env python3
-"""Find Routine and Wiki documents relevant to a query."""
+"""Find Wiki documents relevant to literal query terms."""
 
 from __future__ import annotations
 
 import argparse
+import ast
 import re
 import shutil
 import subprocess
 from collections import Counter
+from dataclasses import dataclass
 from pathlib import Path
 
-
-HEADER_FIELDS = {
-    "last_updated",
-    "update_count",
-    "last_queried",
-    "query_count",
-    "sources",
-    "topic",
-    "keywords",
-}
+HEADER_FIELDS = {"sources", "topic", "keywords"}
 LIST_FIELDS = {"sources", "keywords"}
+WIKI_DIR = Path("30_知识库")
+INDEX_PATH = WIKI_DIR / "索引.md"
+MAINTENANCE_LOG_PATH = WIKI_DIR / "知识库维护日志.md"
+
+
+@dataclass(frozen=True)
+class Candidate:
+    path: Path
+    is_index: bool
+    coverage: int
+    signal_coverage: int
+    score: int
+    counts: Counter[str]
+    header: dict[str, object]
+
+
+def positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 1:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return parsed
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("query", nargs="+", help="Search terms")
-    parser.add_argument("--vault-root", default=".", help="Vault root path")
-    parser.add_argument("--limit", type=int, default=10)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("query", nargs="+", help="Literal search terms; each argument remains one term.")
+    parser.add_argument("--vault-root", default=".", help="Vault root path.")
+    parser.add_argument("--limit", type=positive_int, default=10)
     return parser.parse_args()
 
 
-def find_config(vault_root: Path) -> Path:
-    candidates = [
-        vault_root / ".sunday-note-agent/config/sunday-note-vault.yaml",
-        vault_root / "SundayNoteAgent/config/sunday-note-vault.yaml",
-        vault_root / "config/sunday-note-vault.yaml",
-    ]
-    for candidate in candidates:
-        if candidate.exists():
-            return candidate
-    raise SystemExit("No sunday-note-vault.yaml found")
+def normalize_terms(raw_terms: list[str]) -> list[str]:
+    terms: list[str] = []
+    seen: set[str] = set()
+    for raw_term in raw_terms:
+        term = raw_term.strip().lower()
+        if term and term not in seen:
+            seen.add(term)
+            terms.append(term)
+    if not terms:
+        raise SystemExit("No search terms provided")
+    return terms
 
 
-def read_config_paths(config_path: Path) -> dict[str, list[str]]:
-    paths: dict[str, list[str]] = {
-        "raw": [],
-        "routine": [],
-        "wiki": [],
-        "journal": [],
-        "schema": [],
-    }
-    section_stack: list[tuple[int, str]] = []
-    for line in config_path.read_text(encoding="utf-8").splitlines():
-        if not line.strip() or line.lstrip().startswith("#"):
+def wiki_markdown_files(wiki_root: Path, maintenance_log: Path) -> list[Path]:
+    files: set[Path] = set()
+    for candidate in wiki_root.rglob("*.md"):
+        resolved = candidate.resolve()
+        if not resolved.is_file() or not resolved.is_relative_to(wiki_root):
             continue
-        match = re.match(r"^(\s*)([A-Za-z_]+):(?:\s+\"([^\"]+)\")?", line)
-        if not match:
-            continue
-        indent = len(match.group(1))
-        key = match.group(2)
-        value = match.group(3)
-        while section_stack and section_stack[-1][0] >= indent:
-            section_stack.pop()
-        parent = section_stack[-1][1] if section_stack else ""
-        if value:
-            if parent == "layers" and key in {"raw", "wiki", "journal"}:
-                paths[key].append(value)
-            elif parent == "routine":
-                paths["routine"].append(value)
-            elif parent == "schema":
-                paths["schema"].append(value)
-            elif parent == "wiki" and key == "index":
-                paths["wiki"].append(value)
-        else:
-            section_stack.append((indent, key))
-    return paths
+        if resolved != maintenance_log:
+            files.add(resolved)
+    return sorted(files)
 
 
-def configured_path(vault_root: Path, raw_path: str) -> Path:
-    path = vault_root / raw_path
-    if path.exists():
-        return path
-    agent_prefix = f"{vault_root.name}/"
-    if raw_path.startswith(agent_prefix):
-        local_path = vault_root / raw_path[len(agent_prefix) :]
-        if local_path.exists():
-            return local_path
-    return path
-
-
-def markdown_files(vault_root: Path, paths: list[str]) -> list[Path]:
-    files: list[Path] = []
-    for raw_path in paths:
-        path = configured_path(vault_root, raw_path)
-        if path.is_file() and path.suffix.lower() == ".md":
-            files.append(path)
-        elif path.is_dir():
-            files.extend(path.rglob("*.md"))
-    return sorted(set(files))
-
-
-def rg_scores(paths: list[Path], terms: list[str]) -> list[tuple[int, Path]] | None:
+def rg_candidates(wiki_root: Path, files: list[Path], terms: list[str]) -> set[Path] | None:
     if not shutil.which("rg"):
         return None
-    existing_paths = [path for path in paths if path.exists()]
-    if not existing_paths:
-        return []
-    command = ["rg", "-i", "--count-matches", "--with-filename", "--glob", "*.md"]
+
+    command = ["rg", "-i", "-F", "-l", "--null", "--glob", "*.md"]
     for term in terms:
         command.extend(["-e", term])
-    command.extend(str(path) for path in existing_paths)
-    result = subprocess.run(command, capture_output=True, text=True, check=False)
+    command.extend(["--", str(wiki_root)])
+    result = subprocess.run(command, capture_output=True, check=False)
     if result.returncode not in {0, 1}:
         return None
-    scores: dict[Path, int] = {}
-    for line in result.stdout.splitlines():
-        if ":" not in line:
-            continue
-        path_text, score_text = line.rsplit(":", 1)
-        try:
-            score = int(score_text)
-        except ValueError:
-            continue
-        path = Path(path_text).resolve()
-        scores[path] = max(scores.get(path, 0), score)
-    return [(score, path) for path, score in scores.items()]
+
+    allowed = set(files)
+    candidates = {
+        Path(raw_path.decode("utf-8")).resolve()
+        for raw_path in result.stdout.split(b"\0")
+        if raw_path
+    }
+    candidates &= allowed
+    candidates.update(
+        path for path in files if any(term in path.name.lower() for term in terms)
+    )
+    return candidates
 
 
-def with_filename_scores(scored: list[tuple[int, Path]], files: list[Path], terms: list[str]) -> list[tuple[int, Path]]:
-    scores = {path.resolve(): score for score, path in scored}
-    for path in files:
-        name = path.name.lower()
-        score = sum(name.count(term) for term in terms)
-        if score > 0:
-            resolved = path.resolve()
-            scores[resolved] = scores.get(resolved, 0) + score
-    return [(score, path) for path, score in scores.items()]
-
-
-def search_roots(vault_root: Path, paths: list[str]) -> list[Path]:
-    roots = sorted({configured_path(vault_root, raw_path).resolve() for raw_path in paths})
-    directories = [path for path in roots if path.is_dir()]
-    return [
-        path
-        for path in roots
-        if not any(path != directory and path.is_relative_to(directory) for directory in directories)
-    ]
-
-
-def score_text(path: Path, terms: list[str]) -> tuple[Counter[str], str]:
+def score_candidate(path: Path, terms: list[str], index: Path) -> Candidate | None:
     text = path.read_text(encoding="utf-8", errors="ignore")
+    header = parse_header(text)
+    filename = path.name.lower()
     haystack = f"{path.name}\n{text}".lower()
     counts = Counter({term: haystack.count(term) for term in terms})
-    return counts, text
+    coverage = sum(count > 0 for count in counts.values())
+    if coverage == 0:
+        return None
 
-
-def python_scores(files: list[Path], terms: list[str]) -> list[tuple[int, Path]]:
-    scores: list[tuple[int, Path]] = []
-    for path in files:
-        counts, _text = score_text(path, terms)
-        score = sum(counts.values())
-        if score > 0:
-            scores.append((score, path))
-    return scores
+    signal_parts = [filename, str(header.get("topic", "")).lower()]
+    signal_parts.extend(str(item).lower() for item in header.get("keywords", []))
+    signal_text = "\n".join(signal_parts)
+    signal_coverage = sum(term in signal_text for term in terms)
+    return Candidate(path, path == index, coverage, signal_coverage, sum(counts.values()), counts, header)
 
 
 def parse_inline_list(value: str) -> list[str]:
@@ -171,8 +116,13 @@ def parse_inline_list(value: str) -> list[str]:
     if value == "[]":
         return []
     if value.startswith("[") and value.endswith("]"):
-        raw_items = [item.strip() for item in value[1:-1].split(",")]
-        return [strip_quotes(item) for item in raw_items if item]
+        try:
+            parsed = ast.literal_eval(value)
+        except (SyntaxError, ValueError):
+            parsed = None
+        if isinstance(parsed, list):
+            return [str(item) for item in parsed if str(item).strip()]
+        return [strip_quotes(item.strip()) for item in value[1:-1].split(",") if item.strip()]
     return [strip_quotes(value)] if value else []
 
 
@@ -180,19 +130,40 @@ def strip_quotes(value: str) -> str:
     return value.strip().strip("\"'")
 
 
+def strip_inline_comment(value: str) -> str:
+    quote: str | None = None
+    escaped = False
+    for index, char in enumerate(value):
+        if escaped:
+            escaped = False
+            continue
+        if char == "\\" and quote == '"':
+            escaped = True
+            continue
+        if char in {"\"", "'"}:
+            quote = None if quote == char else (char if quote is None else quote)
+            continue
+        if char == "#" and quote is None and (index == 0 or value[index - 1].isspace()):
+            return value[:index]
+    return value
+
+
 def parse_header(text: str) -> dict[str, object]:
-    if not text.startswith("---\n"):
+    lines = text.splitlines()
+    if not lines or lines[0] != "---":
         return {}
-    end = text.find("\n---", 4)
-    if end == -1:
+    try:
+        end = lines.index("---", 1)
+    except ValueError:
         return {}
+
     header: dict[str, object] = {}
     current_list: str | None = None
-    for line in text[4:end].splitlines():
-        key_match = re.match(r"^([A-Za-z_]+):(?:\s*(.*))?$", line)
-        if key_match:
-            key = key_match.group(1)
-            value = (key_match.group(2) or "").strip()
+    for line in lines[1:end]:
+        match = re.match(r"^([A-Za-z_]+):(?:\s*(.*))?$", line)
+        if match:
+            key = match.group(1)
+            value = strip_inline_comment(match.group(2) or "").strip()
             current_list = None
             if key not in HEADER_FIELDS:
                 continue
@@ -210,78 +181,84 @@ def parse_header(text: str) -> dict[str, object]:
     return header
 
 
-def layer_root(path: Path, vault_root: Path) -> str:
-    try:
-        return path.relative_to(vault_root).parts[0]
-    except (ValueError, IndexError):
-        return path.parent.name
-
-
 def rel(path: Path, root: Path) -> str:
-    try:
-        return str(path.relative_to(root))
-    except ValueError:
-        return str(path)
+    return path.relative_to(root).as_posix()
 
 
-def main() -> None:
+def display_values(values: object, limit: int) -> str:
+    items = list(values) if isinstance(values, list) else [str(values)]
+    displayed = ", ".join(f"`{value}`" for value in items[:limit])
+    if len(items) > limit:
+        displayed += f", ... (+{len(items) - limit})"
+    return displayed
+
+
+def main() -> int:
     args = parse_args()
+    terms = normalize_terms(args.query)
     vault_root = Path(args.vault_root).resolve()
-    config_path = find_config(vault_root)
-    paths = read_config_paths(config_path)
-    terms = [term.lower() for term in " ".join(args.query).split() if term.strip()]
-    if not terms:
-        raise SystemExit("No search terms provided")
+    if not vault_root.is_dir():
+        raise SystemExit(f"vault root is not a directory: {vault_root}")
+    wiki_root = (vault_root / WIKI_DIR).resolve()
+    if not wiki_root.is_dir():
+        raise SystemExit(f"fixed Wiki directory is missing: {wiki_root}")
+    index_path = (vault_root / INDEX_PATH).resolve()
+    maintenance_log = (vault_root / MAINTENANCE_LOG_PATH).resolve()
 
-    scoped_paths = paths["wiki"] + paths["routine"]
+    files = wiki_markdown_files(wiki_root, maintenance_log)
+    discovered = rg_candidates(wiki_root, files, terms)
+    backend = "rg fixed-string + Python scoring"
+    if discovered is None:
+        discovered = set(files)
+        backend = "Python literal fallback"
 
-    files = markdown_files(vault_root, scoped_paths)
-    scoped_roots = search_roots(vault_root, scoped_paths)
-    scored = rg_scores(scoped_roots, terms)
-    search = "rg count-matches"
-    if scored is None:
-        scored = python_scores(files, terms)
-        search = "python full text"
-    else:
-        scored = with_filename_scores(scored, files, terms)
-        search = "rg count-matches + filename"
-    scored.sort(key=lambda item: (-item[0], rel(item[1], vault_root)))
+    candidates = [
+        candidate
+        for path in discovered
+        if (candidate := score_candidate(path, terms, index_path))
+    ]
+    candidates.sort(
+        key=lambda item: (
+            item.is_index,
+            -item.coverage,
+            -item.signal_coverage,
+            -item.score,
+            rel(item.path, vault_root),
+        )
+    )
 
     print("# Query Candidates\n")
-    print("- Scope: `wiki,routine`")
+    print("- Scope: `wiki`")
     print(f"- Terms: `{', '.join(terms)}`")
-    print(f"- Search: `{search}`")
-    print(f"- Markdown files in scope: {len(files)}\n")
+    print(f"- Search: `{backend}`")
+    print(f"- Markdown files in scope: {len(files)}")
+    print(f"- Scored candidates: {len(candidates)}\n")
 
-    if not scored:
-        print("No matching Markdown files found in Wiki/Routine.")
-        return
+    if not candidates:
+        print("No matching Wiki pages found. This is a Wiki coverage gap.")
+        return 0
 
     print("## Files\n")
-    top = scored[: args.limit]
-    for index, (score, path) in enumerate(top, start=1):
-        counts, text = score_text(path, terms)
-        count_text = ", ".join(f"{term}:{count}" for term, count in counts.items() if count)
-        header = parse_header(text)
-        root = layer_root(path, vault_root)
-        print(f"{index}. `{rel(path, vault_root)}` score={score} root=`{root}`")
-        if count_text:
-            print(f"   - matched: {count_text}")
-        if header:
-            fields = [
-                f"{key}={header[key]!r}"
-                for key in ["last_updated", "update_count", "last_queried", "query_count", "topic"]
-                if key in header
-            ]
-            if fields:
-                print("   - header: " + ", ".join(fields))
-            for key in ["keywords", "sources"]:
-                values = header.get(key)
-                if values:
-                    print("   - " + key + ": " + ", ".join(f"`{value}`" for value in values))
-        else:
-            print(f"   - no header: title=`{path.stem}`")
+    for index, candidate in enumerate(candidates[: args.limit], start=1):
+        count_text = ", ".join(
+            f"{term}:{candidate.counts[term]}" for term in terms if candidate.counts[term]
+        )
+        print(
+            f"{index}. `{rel(candidate.path, vault_root)}` "
+            f"coverage={candidate.coverage}/{len(terms)} "
+            f"signal={candidate.signal_coverage} score={candidate.score}"
+        )
+        print(f"   - matched: {count_text}")
+        topic = candidate.header.get("topic")
+        if topic:
+            print(f"   - topic: {topic}")
+        for key in ("keywords", "sources"):
+            values = candidate.header.get(key)
+            if values:
+                limit = 8 if key == "keywords" else 5
+                print(f"   - {key}: {display_values(values, limit)}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
