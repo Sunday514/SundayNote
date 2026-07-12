@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Audit Markdown reachability from an entry page.
-
-This script checks whether Markdown files in selected scopes are reachable
-through Obsidian-style wikilinks or Markdown links from an entry document.
-"""
+"""Audit layered Wiki navigation and source links without modifying the vault."""
 
 from __future__ import annotations
 
@@ -12,217 +8,328 @@ import json
 import re
 from pathlib import Path
 from typing import Iterable
+from urllib.parse import unquote
 
 
-WIKILINK_RE = re.compile(r"!??\[\[([^\]]+)\]\]")
-MD_LINK_RE = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
-IGNORED_UNRESOLVED_SUFFIXES = (
-    ".png",
-    ".jpg",
-    ".jpeg",
-    ".gif",
-    ".webp",
-    ".svg",
-    ".pdf",
+WIKILINK_RE = re.compile(r"(?<!!)\[\[([^\]]+)\]\]")
+MD_LINK_RE = re.compile(r"(?<!!)\[[^\]]*\]\(([^)]+)\)")
+IGNORED_SUFFIXES = {
+    ".bmp",
+    ".doc",
     ".docx",
-)
+    ".gif",
+    ".jpeg",
+    ".jpg",
+    ".pdf",
+    ".png",
+    ".svg",
+    ".webp",
+}
+IGNORED_SCHEMES = ("http://", "https://", "mailto:", "obsidian://")
 
 
-def main() -> int:
+def parse_args() -> tuple[argparse.Namespace, argparse.ArgumentParser]:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--entry", required=True, help="Entry Markdown file.")
-    parser.add_argument("--scope", action="append", required=True, help="Markdown file or directory to audit. Repeatable.")
-    parser.add_argument("--include-file", action="append", default=[], help="Extra Markdown files to include in link resolution.")
-    parser.add_argument("--root", default=".", help="Vault root for relative paths.")
+    parser.add_argument("--root", default=".", help="Vault root used for paths and output.")
+    parser.add_argument("--wiki-entry", required=True, help="Wiki navigation entry Markdown file.")
+    parser.add_argument("--wiki-scope", action="append", required=True, help="Wiki file or directory. Repeatable.")
+    parser.add_argument("--raw-scope", action="append", default=[], help="Raw file or directory. Repeatable.")
+    parser.add_argument("--routine-scope", action="append", default=[], help="Routine file or directory. Repeatable.")
+    parser.add_argument("--exclude", action="append", default=[], help="Relative path, file name, or glob to exclude.")
     parser.add_argument("--format", choices=("markdown", "json"), default="markdown")
-    args = parser.parse_args()
-
-    root = Path(args.root).resolve()
-    entry = (root / args.entry).resolve()
-    if not entry.is_file():
-        parser.error(f"--entry not found or not a file: {args.entry}")
-    files = collect_files(root, args.scope, args.include_file)
-    files.add(entry)
-
-    by_rel = {rel(root, path): path for path in files}
-    by_rel_no_ext = {rel(root, path.with_suffix("")): path for path in files}
-    by_abs = {path.resolve(): path for path in files}
-    by_name: dict[str, list[Path]] = {}
-    for path in files:
-        by_name.setdefault(path.stem, []).append(path)
-
-    graph = {path: set() for path in files}
-    backlinks = {path: set() for path in files}
-    ambiguous = []
-    unresolved = []
-
-    for path in files:
-        text = path.read_text(encoding="utf-8")
-        for match in WIKILINK_RE.finditer(text):
-            raw = match.group(1)
-            target = strip_wikilink(raw)
-            ambiguous_link = False
-            if "/" not in target and target:
-                matches = by_name.get(Path(target).stem, [])
-                if len(matches) > 1:
-                    ambiguous.append({
-                        "source": rel(root, path),
-                        "link": raw,
-                        "candidates": [rel(root, item) for item in matches],
-                    })
-                    ambiguous_link = True
-            if ambiguous_link:
-                continue
-            resolved = resolve(target, path, by_rel, by_rel_no_ext, by_abs, by_name)
-            if resolved:
-                graph[path].add(resolved)
-                backlinks[resolved].add(path)
-            elif should_report_unresolved(target):
-                unresolved.append({"source": rel(root, path), "link": raw})
-
-        for match in MD_LINK_RE.finditer(text):
-            target = strip_markdown_link(match.group(1))
-            resolved = resolve(target, path, by_rel, by_rel_no_ext, by_abs, by_name)
-            if resolved:
-                graph[path].add(resolved)
-                backlinks[resolved].add(path)
-            elif should_report_unresolved(target):
-                unresolved.append({"source": rel(root, path), "link": target})
-
-    seen = reachable(entry, graph)
-    not_reachable = sorted(rel(root, path) for path in files if path not in seen)
-    zero_inlinks = sorted(rel(root, path) for path in files if path != entry and not backlinks[path])
-
-    report = {
-        "entry": rel(root, entry),
-        "total": len(files),
-        "reachable": len(seen),
-        "not_reachable_count": len(not_reachable),
-        "not_reachable": not_reachable,
-        "zero_inlinks_count": len(zero_inlinks),
-        "zero_inlinks": zero_inlinks,
-        "ambiguous_count": len(ambiguous),
-        "ambiguous": ambiguous,
-        "unresolved_count": len(unresolved),
-        "unresolved": unresolved,
-    }
-
-    if args.format == "json":
-        print(json.dumps(report, ensure_ascii=False, indent=2))
-    else:
-        print_markdown(report)
-    return 0 if not not_reachable and not ambiguous else 1
+    return parser.parse_args(), parser
 
 
-def collect_files(root: Path, scopes: Iterable[str], include_files: Iterable[str]) -> set[Path]:
+def inside_root(path: Path, root: Path) -> bool:
+    try:
+        path.relative_to(root)
+        return True
+    except ValueError:
+        return False
+
+
+def resolve_input(raw: str, root: Path, parser: argparse.ArgumentParser | None = None) -> Path:
+    path = Path(raw)
+    if not path.is_absolute():
+        path = root / path
+    path = path.resolve()
+    if not inside_root(path, root):
+        message = f"path is outside --root: {raw}"
+        if parser:
+            parser.error(message)
+        raise ValueError(message)
+    return path
+
+
+def rel(path: Path, root: Path) -> str:
+    return path.relative_to(root).as_posix()
+
+
+def matches_any(path: Path, root: Path, patterns: list[str]) -> bool:
+    relative = rel(path, root)
+    for pattern in patterns:
+        normalized = pattern.replace("\\", "/").strip("/")
+        if path.name == normalized or relative == normalized or Path(relative).match(normalized):
+            return True
+    return False
+
+
+def collect_scope(raw_scopes: Iterable[str], root: Path, parser: argparse.ArgumentParser) -> set[Path]:
     files: set[Path] = set()
-    for scope in scopes:
-        path = root / scope
-        if path.is_file() and path.suffix == ".md":
-            files.add(path.resolve())
-        elif path.is_dir():
-            files.update(item.resolve() for item in path.rglob("*.md"))
-    for item in include_files:
-        path = root / item
-        if path.is_file() and path.suffix == ".md":
-            files.add(path.resolve())
+    for raw in raw_scopes:
+        path = resolve_input(raw, root, parser)
+        if not path.exists():
+            parser.error(f"scope does not exist: {raw}")
+        if path.is_file():
+            if path.suffix.lower() != ".md":
+                parser.error(f"scope file is not Markdown: {raw}")
+            files.add(path)
+        else:
+            for item in path.rglob("*.md"):
+                resolved = item.resolve()
+                if not inside_root(resolved, root):
+                    parser.error(f"scope contains a path outside --root: {item}")
+                files.add(resolved)
     return files
 
 
-def strip_wikilink(raw: str) -> str:
-    return raw.split("|", 1)[0].split("#", 1)[0].strip().lstrip("./")
+def body_without_header(text: str) -> str:
+    if not text.startswith("---\n"):
+        return text
+    end = text.find("\n---", 4)
+    if end == -1:
+        return text
+    return text[end + 4 :]
 
 
-def strip_markdown_link(raw: str) -> str:
-    return raw.strip().replace("%20", " ").split("#", 1)[0].lstrip("./")
+def clean_target(raw: str, markdown: bool = False) -> str:
+    target = raw.strip()
+    if markdown:
+        if target.startswith("<") and ">" in target:
+            target = target[1 : target.index(">")]
+        else:
+            target = re.split(r"\s+[\"']", target, maxsplit=1)[0]
+    else:
+        target = target.split("|", 1)[0].rstrip("\\")
+    return unquote(target.split("#", 1)[0].strip()).replace("\\", "/")
 
 
-def resolve(
+def ignored_target(target: str) -> bool:
+    lowered = target.lower()
+    return (
+        not target
+        or lowered.startswith(IGNORED_SCHEMES)
+        or Path(lowered).suffix in IGNORED_SUFFIXES
+        or target.startswith("Pasted image")
+    )
+
+
+def aliases(path: Path, root: Path) -> set[str]:
+    relative = rel(path, root)
+    without_suffix = str(Path(relative).with_suffix("")).replace("\\", "/")
+    return {relative, without_suffix, path.stem}
+
+
+def build_alias_map(files: set[Path], root: Path) -> dict[str, set[Path]]:
+    result: dict[str, set[Path]] = {}
+    for path in files:
+        for alias in aliases(path, root):
+            result.setdefault(alias, set()).add(path)
+    return result
+
+
+def exact_candidates(target: str, source: Path, root: Path, markdown: bool) -> list[Path]:
+    if markdown:
+        base = root if target.startswith("/") else source.parent
+        raw = target.lstrip("/") if target.startswith("/") else target
+    elif target.startswith(("./", "../")):
+        base, raw = source.parent, target
+    else:
+        base, raw = root, target
+    candidate = (base / raw).resolve()
+    candidates = [candidate]
+    if candidate.suffix.lower() != ".md":
+        candidates.append(Path(f"{candidate}.md"))
+    return list(dict.fromkeys(candidates))
+
+
+def exact_aliases(candidates: list[Path], root: Path) -> list[str]:
+    result: list[str] = []
+    for candidate in candidates:
+        if not inside_root(candidate, root):
+            continue
+        relative = rel(candidate, root)
+        result.append(relative)
+        if candidate.suffix.lower() == ".md":
+            result.append(str(Path(relative).with_suffix("")).replace("\\", "/"))
+    return list(dict.fromkeys(result))
+
+
+def collect_external_stems(root: Path, known_files: set[Path]) -> set[str]:
+    stems: set[str] = set()
+    for item in root.rglob("*.md"):
+        resolved = item.resolve()
+        if not inside_root(resolved, root) or resolved in known_files:
+            continue
+        relative = resolved.relative_to(root)
+        if any(part.startswith(".") for part in relative.parts):
+            continue
+        stems.add(resolved.stem)
+    return stems
+
+
+def resolve_target(
     target: str,
     source: Path,
-    by_rel: dict[str, Path],
-    by_rel_no_ext: dict[str, Path],
-    by_abs: dict[Path, Path],
-    by_name: dict[str, list[Path]],
-) -> Path | None:
-    if not target or target.startswith(("http://", "https://", "obsidian://", "mailto:")):
-        return None
-
-    candidates = [target] if target.endswith(".md") else [f"{target}.md", target]
-    for candidate in candidates:
-        if candidate in by_rel:
-            return by_rel[candidate]
-        if candidate in by_rel_no_ext:
-            return by_rel_no_ext[candidate]
-
-    for candidate in candidates:
-        relative = (source.parent / candidate).resolve()
-        if relative in by_abs:
-            return by_abs[relative]
-        if relative.with_suffix("") in by_abs:
-            return by_abs[relative.with_suffix("")]
-
-    if "/" not in target:
-        matches = by_name.get(Path(target).stem, [])
+    root: Path,
+    markdown: bool,
+    active_aliases: dict[str, set[Path]],
+    excluded_aliases: dict[str, set[Path]],
+    external_stems: set[str],
+    scope_roots: list[Path],
+) -> tuple[str, Path | None, list[Path], bool]:
+    is_bare_wikilink = not markdown and "/" not in target and not target.startswith(("./", "../"))
+    if is_bare_wikilink:
+        stem = Path(target).stem
+        matches = active_aliases.get(stem, set())
         if len(matches) == 1:
-            return matches[0]
-    return None
+            return "resolved", next(iter(matches)), [], True
+        if len(matches) > 1:
+            return "ambiguous", None, sorted(matches), True
+        if excluded_aliases.get(stem) or stem in external_stems:
+            return "ignored", None, [], False
+        return "unresolved", None, [], True
 
-
-def should_report_unresolved(target: str) -> bool:
-    if not target or target.startswith("Pasted image"):
-        return False
-    if target.startswith(("http://", "https://", "obsidian://", "mailto:")):
-        return False
-    lowered = target.lower()
-    return not lowered.endswith(IGNORED_UNRESOLVED_SUFFIXES)
+    candidates = exact_candidates(target, source, root, markdown)
+    candidate_aliases = exact_aliases(candidates, root)
+    matches: set[Path] = set()
+    excluded_matches: set[Path] = set()
+    for alias in candidate_aliases:
+        matches.update(active_aliases.get(alias, set()))
+        excluded_matches.update(excluded_aliases.get(alias, set()))
+    if len(matches) == 1:
+        return "resolved", next(iter(matches)), [], True
+    if len(matches) > 1:
+        return "ambiguous", None, sorted(matches), True
+    if excluded_matches:
+        return "ignored", None, [], False
+    in_scope = any(inside_root(candidate, scope) for candidate in candidates for scope in scope_roots)
+    return "unresolved", None, [], in_scope
 
 
 def reachable(entry: Path, graph: dict[Path, set[Path]]) -> set[Path]:
-    if entry not in graph:
-        return set()
     seen = {entry}
     stack = [entry]
     while stack:
-        path = stack.pop()
-        for target in graph.get(path, set()):
+        source = stack.pop()
+        for target in graph.get(source, set()):
             if target not in seen:
                 seen.add(target)
                 stack.append(target)
     return seen
 
 
-def rel(root: Path, path: Path) -> str:
-    try:
-        return path.resolve().relative_to(root.resolve()).as_posix()
-    except ValueError:
-        return path.as_posix()
+def audit(args: argparse.Namespace, parser: argparse.ArgumentParser) -> dict:
+    root = Path(args.root).resolve()
+    if not root.is_dir():
+        parser.error(f"--root is not a directory: {args.root}")
+
+    wiki_all = collect_scope(args.wiki_scope, root, parser)
+    raw_all = collect_scope(args.raw_scope, root, parser)
+    routine_all = collect_scope(args.routine_scope, root, parser)
+    overlaps = (wiki_all & raw_all) | (wiki_all & routine_all) | (raw_all & routine_all)
+    if overlaps:
+        parser.error(f"layer scopes overlap: {rel(sorted(overlaps)[0], root)}")
+
+    all_files = wiki_all | raw_all | routine_all
+    excluded = {path for path in all_files if matches_any(path, root, args.exclude)}
+    wiki = wiki_all - excluded
+    raw = raw_all - excluded
+    routine = routine_all - excluded
+    entry = resolve_input(args.wiki_entry, root, parser)
+    if not entry.is_file() or entry not in wiki:
+        parser.error("--wiki-entry must be an included file inside --wiki-scope")
+
+    active = wiki | raw | routine
+    active_aliases = build_alias_map(active, root)
+    excluded_aliases = build_alias_map(excluded, root)
+    external_stems = collect_external_stems(root, all_files)
+    kinds = {path: "wiki" for path in wiki} | {path: "raw" for path in raw} | {path: "routine" for path in routine}
+    scope_roots = [resolve_input(raw_scope, root, parser) for raw_scope in args.wiki_scope + args.raw_scope + args.routine_scope]
+
+    graph = {path: set() for path in wiki}
+    raw_backlinks: set[Path] = set()
+    broken: list[dict] = []
+    ambiguous: list[dict] = []
+
+    for source in sorted(wiki):
+        body = body_without_header(source.read_text(encoding="utf-8"))
+        links = [(match.group(1), False) for match in WIKILINK_RE.finditer(body)]
+        links += [(match.group(1), True) for match in MD_LINK_RE.finditer(body)]
+        links = list(dict.fromkeys(links))
+        for raw_link, markdown in links:
+            target = clean_target(raw_link, markdown)
+            if ignored_target(target):
+                continue
+            state, resolved, candidates, in_scope = resolve_target(
+                target,
+                source,
+                root,
+                markdown,
+                active_aliases,
+                excluded_aliases,
+                external_stems,
+                scope_roots,
+            )
+            if state == "resolved" and resolved:
+                if kinds[resolved] == "wiki":
+                    graph[source].add(resolved)
+                elif kinds[resolved] == "raw":
+                    raw_backlinks.add(resolved)
+            elif state == "ambiguous":
+                ambiguous.append({
+                    "source": rel(source, root),
+                    "link": raw_link,
+                    "candidates": [rel(path, root) for path in candidates],
+                })
+            elif state == "unresolved" and in_scope:
+                broken.append({"source": rel(source, root), "link": raw_link})
+
+    seen = reachable(entry, graph)
+    return {
+        "scanned": {"wiki": len(wiki), "raw": len(raw), "routine": len(routine)},
+        "wiki_entry": rel(entry, root),
+        "wiki_unreachable": sorted(rel(path, root) for path in wiki - seen),
+        "raw_unlinked": sorted(rel(path, root) for path in raw - raw_backlinks),
+        "broken_links": sorted(broken, key=lambda item: (item["source"], item["link"])),
+        "ambiguous_links": sorted(ambiguous, key=lambda item: (item["source"], item["link"])),
+    }
 
 
 def print_markdown(report: dict) -> None:
-    print("# Reachability Audit")
-    print()
-    print(f"- Entry: `{report['entry']}`")
-    print(f"- Reachable: {report['reachable']} / {report['total']}")
-    print(f"- Not reachable: {report['not_reachable_count']}")
-    print(f"- Zero inlinks: {report['zero_inlinks_count']}")
-    print(f"- Ambiguous links: {report['ambiguous_count']}")
-    print(f"- Unresolved links: {report['unresolved_count']}")
-    print()
+    print("# Layered Reachability Audit\n")
+    print(f"- Wiki entry: `{report['wiki_entry']}`")
+    print(f"- Scanned: Wiki {report['scanned']['wiki']}, Raw {report['scanned']['raw']}, Routine {report['scanned']['routine']}")
     for key, heading in (
-        ("not_reachable", "Not Reachable"),
-        ("zero_inlinks", "Zero Inlinks"),
-        ("ambiguous", "Ambiguous Links"),
-        ("unresolved", "Unresolved Links"),
+        ("wiki_unreachable", "Wiki Unreachable"),
+        ("raw_unlinked", "Raw Unlinked"),
+        ("broken_links", "Broken Links"),
+        ("ambiguous_links", "Ambiguous Links"),
     ):
-        if not report[key]:
-            continue
-        print(f"## {heading}")
-        for item in report[key][:100]:
-            print(f"- `{item}`" if isinstance(item, str) else f"- `{item}`")
-        if len(report[key]) > 100:
-            print(f"- ... {len(report[key]) - 100} more")
-        print()
+        values = report[key]
+        print(f"\n## {heading} ({len(values)})")
+        for item in values:
+            print(f"- `{item}`")
+
+
+def main() -> int:
+    args, parser = parse_args()
+    report = audit(args, parser)
+    if args.format == "json":
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+    else:
+        print_markdown(report)
+    return 0
 
 
 if __name__ == "__main__":

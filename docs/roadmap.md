@@ -1,6 +1,6 @@
 ---
 last_updated: 2026-07-12
-update_count: 21
+update_count: 22
 last_queried: ""
 query_count: 0
 sources:
@@ -35,7 +35,7 @@ Lint ──检查 Wiki 结构、内容和向下链接
 
 Raw 保存外部资料的忠实总结，Routine 保存用户活动和项目上下文，Wiki 保存稳定知识并作为默认 Query 入口。每份长期 Raw 最终都需要 Wiki backlink；Routine 只链接实际支撑稳定知识的记录。完整读写边界由 `docs/architecture.md` 和安装后的 `AGENTS.md` 定义。
 
-待办按 Lint、Query、集成导出和后续维护分组。同组子项可以协同开发，每个子项保留独立模块、验收条件和 fixture。
+待办按 Query、集成导出和后续维护分组。同组子项可以协同开发，每个子项保留独立模块、验收条件和 fixture。
 
 ## 已完成
 
@@ -45,85 +45,7 @@ Raw 保存外部资料的忠实总结，Routine 保存用户活动和项目上�
 - 架构文档、目录文档和 scaffold 已同步 Wiki 中心知识流。
 - 项目开发规则允许父 vault 作为显式临时集成测试实例；自动回归和验收仍以通用 fixture 为准。
 - P0-A1 Ingest skill 已固定为从指定 Raw、Routine 或已确认对话向 Wiki 沉淀知识，包含最小写作契约、来源链接和明确写入边界。
-
-## P0-B：Lint
-
-### P0-B1：分层来源覆盖审计
-
-模块：`skills/sunday-note-lint/scripts/audit_reachability.py`
-
-目标：提供只读、确定性的 Wiki 导航与来源覆盖报告。
-
-图模型：
-
-- Wiki 导航只计算 `Wiki → Wiki`，从 Wiki index 检查 Wiki scope 可达性。
-- Raw 承接只计算 `Wiki → Raw`，每份长期 Raw 至少需要一个 Wiki backlink。
-- Routine 只验证已有的 `Wiki → Routine` 链接，不检查 Routine backlink。
-- Raw 和 Routine 参与链接解析，不参与 Wiki 导航可达性。
-- Journal、Schema、`.import_files/` 和未显式指定的目录不进入审计。
-
-实现内容：
-
-- CLI 明确接收 Wiki entry、Wiki scope、Raw scope、Routine scope、vault root 和输出格式。
-- 复用 wikilink、Markdown link、路径解析和歧义检测能力。
-- 分别构建 Wiki 导航边、Raw backlink 和 Routine 证据链接。
-- 输出 `wiki_unreachable`、`raw_unlinked`、`broken_links` 和 `ambiguous_links`。
-- 输出 Markdown 和 JSON；不写文件，不维护缓存或运行状态。
-
-验收：
-
-- fixture 覆盖 Wiki→Wiki、Wiki→Raw、Wiki→Project、断链和同名歧义。
-- Raw 建立 Wiki backlink 后从 `raw_unlinked` 消失。
-- 普通 Daily 无 backlink 不进入报告。
-- Wiki index 可达性只计算 Wiki scope。
-- 审计不读取指定范围外的目录。
-
-### P0-B2：Wiki header 检查
-
-模块：`skills/sunday-note-lint/scripts/lint_headers.py`
-
-目标：只执行可由 Wiki header 确定的机械检查。
-
-实现内容：
-
-- 检查必需字段、日期、非负计数、空 `sources`、空 `topic`、空 `keywords` 和重复 `topic`。
-- 保留 `query_count` 与 `last_queried` 的格式和一致性检查。
-- 输出 Markdown 和 JSON，并保持只读。
-- CLI 只保留 scope、root、排除项、格式和结果数量等直接相关参数。
-- index、入口可达性、链接图和正文正则候选由其他模块负责。
-
-验收：
-
-- 脚本只读取显式 scope。
-- header 合法与常见错误均有标准库 fixture。
-- 输出不包含正文质量、链接可达性或主观价值判断。
-- 运行前后输入文件字节不变。
-
-### P0-B3：Lint skill
-
-模块：`skills/sunday-note-lint/SKILL.md`
-
-依赖：P0-B1、P0-B2。
-
-目标：诊断 Wiki 健康度，并在用户明确要求时执行 Wiki 维护。
-
-实现内容：
-
-- 诊断请求只读取、报告问题和给出建议。
-- header 检查调用 `lint_headers.py`，链接与覆盖检查调用 `audit_reachability.py`。
-- Raw / Routine 只作为来源目标读取，不进入普通改写范围。
-- `raw_unlinked` 交给 Ingest 承接；Routine 无 backlink 不作为问题。
-- 只有用户明确要求执行维护时才修改 Wiki。
-- 维护日志只记录真实内容修改；诊断、blocked 和无变更运行不写日志。
-- worker 作为运行时可选优化，不写入固定工作流或 API。
-- `query_count` 只作为复查优先级的弱信号。
-
-验收：
-
-- skill 正文保持简洁，frontmatter 只包含 `name` 和 `description`。
-- 诊断模式没有文件写入和 worker 创建。
-- 两个脚本的职责没有重叠。
-- 删除、归档、个人判断和证据不足的修改需要用户确认。
+- P0-B1 至 P0-B3 已完成分层来源审计、确定性 Wiki header 检查和 Lint 维护编排；诊断保持只读，低风险维护按任务交给 subagent 执行。
 
 ## P0-C：Query
 
@@ -354,11 +276,10 @@ Raw 保存外部资料的忠实总结，Routine 保存用户活动和项目上�
 
 ## 实施顺序
 
-1. P0-B1、P0-B2 两个 Lint 脚本可以并行实现，随后完成 P0-B3。
-2. P0-C1、P0-C2 两个 Query 脚本可以并行实现；P0-B1 可用后完成 P0-C3。
-3. P0-D 统一验证并导出全部 P0 改动。
-4. P1 各组按实际需要独立实施。
-5. P2 只在验证达到稳定复用门槛后实施。
+1. P0-C1、P0-C2 两个 Query 脚本可以并行实现，随后完成 P0-C3。
+2. P0-D 统一验证并导出全部 P0 改动。
+3. P1 各组按实际需要独立实施。
+4. P2 只在验证达到稳定复用门槛后实施。
 
 ## 持续约束
 
