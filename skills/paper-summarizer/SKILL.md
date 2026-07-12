@@ -21,7 +21,7 @@ description: 从本地 PDF 论文解析正文和图表，整理贡献、方法�
 
 ## 工作流
 
-1. 从父 vault 根目录运行脚本。读取 `.sunday-note-agent/config/sunday-note-vault.yaml`；缺少配置时使用默认目录。
+1. 从父 vault 根目录运行脚本，使用固定的 `.import_files`、`10_原始材料` 和 `assets/figures` 目录。
 2. 使用当前 Python 环境；不要猜测或切换 conda 环境。确保该环境已安装 Docling 等依赖。
 3. 准备并解析论文：
 

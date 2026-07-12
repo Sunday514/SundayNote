@@ -1,6 +1,6 @@
 ---
-last_updated: "2026-07-12"
-update_count: 8
+last_updated: "2026-07-13"
+update_count: 10
 last_queried: ""
 query_count: 0
 sources:
@@ -14,7 +14,6 @@ keywords:
   - "Wiki"
   - "Journal"
   - "Schema"
-  - "路径映射"
   - "导入工作区"
 ---
 
@@ -35,7 +34,7 @@ keywords:
 - `个人模板/`: Schema，本地个人模板和相关自动化配置。
 - `SundayNoteAgent/`: Schema，可公开的工具项目，保存框架文档、skills、自动化脚本、配置快照、迁移工具和辅助文件。
 - `.agents/`: Schema，agent skill 导出目录。
-- `.sunday-note-agent/`: Schema，路径配置和自动化导出目录。
+- `.sunday-note-agent/`: Schema，自动化配置和脚本导出目录。
 - `.claudian/`: Schema，Claudian 本地设置和会话状态；只维护脱敏默认设置，不维护会话。
 - `.obsidian/`: Schema，Obsidian 配置和运行状态；只维护明确需要迁移的配置。
 
@@ -67,9 +66,9 @@ Query 只搜索 Wiki，读取 Wiki 后由 agent 按问题需要决定是否读�
 
 ## 框架与个人内容
 
-框架项目由 `AGENTS.md`、`CLAUDE.md`、`SundayNoteAgent/`、`首页.md`、本地模板、必要 Obsidian 配置和脱敏 Claudian 默认配置组成。`SundayNoteAgent/` 是可公开的工具项目，不保存个人内容、个人模板正文或本地运行状态。
+框架项目由 `AGENTS.md`、`SundayNoteAgent/`、`首页.md`、本地模板、必要 Obsidian 配置和脱敏 Claudian 默认配置组成。`SundayNoteAgent/` 是可公开的工具项目，不保存个人内容、个人模板正文或本地运行状态。
 
-`SundayNoteAgent/config/sunday-note-vault.yaml` 保存机器可读的目录映射默认值；安装器会在父 vault 缺少配置时创建 `.sunday-note-agent/config/sunday-note-vault.yaml`。人读文档仍直接使用当前目录名；skills 和未来脚本优先读取父 vault `.sunday-note-agent/` 下的本地配置，避免把 Raw、Wiki 等语义层和中文目录名绑定。`.import_files/` 使用独立路径配置，不属于 `layers`。
+本页列出的一级目录和维护文件路径是固定 vault 布局。安装器负责补建缺失目录，skills 和自动化脚本直接使用这些路径；`.sunday-note-agent/config/` 只保存 QuickAdd 等具体功能配置。
 
 `30_知识库/索引.md`、`30_知识库/知识库维护日志.md` 和个人上下文页面属于本地 Wiki 维护文件。索引只组织核心 Wiki 页面，不枚举全部 Raw / Routine；维护日志只记录真实执行的内容新增、合并、重要修订和来源关系修复，不记录普通 Query、只读 Lint 或仅使用次数变化；个人上下文集中保存能降低 agent 沟通成本的稳定个人偏好和计划。这些文件默认不进入 Git。
 

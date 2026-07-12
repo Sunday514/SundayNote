@@ -244,10 +244,8 @@ if [ "$WITH_PAPER_SUMMARIZER" -eq 1 ] || [ -e "$paper_skill_path" ] || [ -L "$pa
 fi
 
 require_source_file "$SCAFFOLD_DIR/AGENTS.md"
-require_source_file "$SCAFFOLD_DIR/CLAUDE.md"
 require_source_file "$SCAFFOLD_DIR/首页.md"
 require_source_file "$SCAFFOLD_DIR/.gitignore"
-require_source_file "$SOURCE_ROOT/config/sunday-note-vault.yaml"
 require_source_file "$SOURCE_ROOT/config/quickadd-rollups.json"
 require_source_file "$SOURCE_ROOT/config/claudian/claudian-settings.json"
 require_source_file "$SOURCE_ROOT/config/obsidian/community-plugins.json"
@@ -275,11 +273,9 @@ preflight_container_dir "$VAULT_ROOT/.claudian"
 preflight_container_dir "$VAULT_ROOT/.obsidian"
 
 preflight_managed_file "$VAULT_ROOT/AGENTS.md"
-preflight_managed_file "$VAULT_ROOT/CLAUDE.md"
 preflight_local_file "$VAULT_ROOT/首页.md"
 preflight_local_file "$VAULT_ROOT/.gitignore"
 preflight_append_file "$VAULT_ROOT/.stignore"
-preflight_local_file "$VAULT_ROOT/.sunday-note-agent/config/sunday-note-vault.yaml"
 preflight_local_file "$VAULT_ROOT/.sunday-note-agent/config/quickadd-rollups.json"
 preflight_local_file "$VAULT_ROOT/.claudian/claudian-settings.json"
 preflight_local_file "$VAULT_ROOT/.obsidian/community-plugins.json"
@@ -297,7 +293,6 @@ fi
 
 ensure_vault_dirs
 copy_managed_file "$SCAFFOLD_DIR/AGENTS.md" "$VAULT_ROOT/AGENTS.md"
-copy_managed_file "$SCAFFOLD_DIR/CLAUDE.md" "$VAULT_ROOT/CLAUDE.md"
 copy_if_missing "$SCAFFOLD_DIR/首页.md" "$VAULT_ROOT/首页.md"
 copy_if_missing "$SCAFFOLD_DIR/.gitignore" "$VAULT_ROOT/.gitignore"
 ensure_syncthing_ignores
@@ -314,7 +309,6 @@ if [ "$install_paper_summarizer" -eq 1 ]; then
 fi
 copy_managed_dir "$SOURCE_ROOT/automation/quickadd" "$VAULT_ROOT/.sunday-note-agent/quickadd"
 
-copy_if_missing "$SOURCE_ROOT/config/sunday-note-vault.yaml" "$VAULT_ROOT/.sunday-note-agent/config/sunday-note-vault.yaml"
 copy_if_missing "$SOURCE_ROOT/config/quickadd-rollups.json" "$VAULT_ROOT/.sunday-note-agent/config/quickadd-rollups.json"
 copy_if_missing "$SOURCE_ROOT/config/claudian/claudian-settings.json" "$VAULT_ROOT/.claudian/claudian-settings.json"
 copy_if_missing "$SOURCE_ROOT/config/obsidian/community-plugins.json" "$VAULT_ROOT/.obsidian/community-plugins.json"

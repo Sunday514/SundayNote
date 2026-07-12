@@ -1,6 +1,15 @@
+const VAULT_LAYOUT = Object.freeze({
+  daily: "20_每日记录",
+  weekly: "21_每周记录",
+  monthly: "22_每月记录",
+  daily_template: "个人模板/每日记录.md",
+  weekly_template: "个人模板/周记录.md",
+  monthly_template: "个人模板/月记录.md",
+});
+
 module.exports = async function rollup(params) {
   const { app, variables = {} } = params;
-  const vaultConfig = await readVaultConfig(app);
+  const vaultLayout = VAULT_LAYOUT;
   const rollupConfig = await readRollupConfig(app);
   const rollupName = String(variables.rollup || "").trim();
   const spec = rollupConfig.rollups && rollupConfig.rollups[rollupName];
@@ -9,14 +18,14 @@ module.exports = async function rollup(params) {
     throw new Error(`Unknown rollup: ${rollupName || "(empty)"}`);
   }
 
-  const context = buildContext(app, variables, spec, vaultConfig);
+  const context = buildContext(app, variables, spec, vaultLayout);
   if (!hasRequiredContext(spec, context)) return;
-  const rows = await readSourceRows(app, vaultConfig, spec, context);
-  const items = await collectItems(app, vaultConfig, spec, rows);
+  const rows = await readSourceRows(app, vaultLayout, spec, context);
+  const items = await collectItems(app, vaultLayout, spec, rows);
   const stats = aggregateRows(spec, rows, items);
   const autoBlock = renderAutoBlock(spec, rows, stats, context);
-  const targetPath = renderTemplate(spec.target.path, { ...vaultConfig, ...context });
-  const content = await nextTargetContent(app, targetPath, spec, autoBlock, vaultConfig, context);
+  const targetPath = renderTemplate(spec.target.path, { ...vaultLayout, ...context });
+  const content = await nextTargetContent(app, targetPath, spec, autoBlock, vaultLayout, context);
   const file = await writeFile(app, targetPath, content);
   await app.workspace.getLeaf(false).openFile(file);
 };
@@ -31,30 +40,12 @@ function hasRequiredContext(spec, context) {
   return true;
 }
 
-async function readVaultConfig(app) {
-  const text = await app.vault.adapter.read(".sunday-note-agent/config/sunday-note-vault.yaml");
-  return {
-    daily: getYamlValue(text, "daily", "20_每日记录"),
-    weekly: getYamlValue(text, "weekly", "21_每周记录"),
-    monthly: getYamlValue(text, "monthly", "22_每月记录"),
-    daily_template: getYamlValue(text, "daily_template", "个人模板/每日记录.md"),
-    weekly_template: getYamlValue(text, "weekly_template", "个人模板/周记录.md"),
-    monthly_template: getYamlValue(text, "monthly_template", "个人模板/月记录.md"),
-  };
-}
-
 async function readRollupConfig(app) {
   const text = await app.vault.adapter.read(".sunday-note-agent/config/quickadd-rollups.json");
   return JSON.parse(text);
 }
 
-function getYamlValue(text, key, fallback) {
-  const re = new RegExp(`^\\s*${key}:\\s*"([^"]+)"\\s*$`, "m");
-  const match = text.match(re);
-  return match ? match[1] : fallback;
-}
-
-function buildContext(app, variables, spec, vaultConfig) {
+function buildContext(app, variables, spec, vaultLayout) {
   const context = { ...variables };
 
   if (spec.context && spec.context.date) {
@@ -66,7 +57,7 @@ function buildContext(app, variables, spec, vaultConfig) {
   }
 
   if (spec.context && spec.context.month) {
-    context.month = getMonthFromContext(app, variables, spec.context.month, vaultConfig);
+    context.month = getMonthFromContext(app, variables, spec.context.month, vaultLayout);
   }
 
   if (spec.context && spec.context.weeks) {
@@ -74,7 +65,7 @@ function buildContext(app, variables, spec, vaultConfig) {
   }
 
   if (spec.context && spec.context.label) {
-    context.label = getLabel(app, variables, spec.context.label, vaultConfig, context);
+    context.label = getLabel(app, variables, spec.context.label, vaultLayout, context);
   }
 
   return context;
@@ -98,13 +89,13 @@ function getWeekFromContext(app, variables, dateText, options) {
   return isoWeekId(parseDate(dateText || formatDate(new Date())));
 }
 
-function getMonthFromContext(app, variables, options, vaultConfig) {
+function getMonthFromContext(app, variables, options, vaultLayout) {
   const variable = options.variable || "month";
   const raw = variables && variables[variable] ? String(variables[variable]).trim() : "";
   if (raw) return normalizeMonth(raw);
 
   const active = app.workspace.getActiveFile && app.workspace.getActiveFile();
-  if (active && options.infer_from_active_file && activeFileInFolder(active, vaultConfig, options.active_folder)) {
+  if (active && options.infer_from_active_file && activeFileInFolder(active, vaultLayout, options.active_folder)) {
     return normalizeMonth(active.basename);
   }
 
@@ -127,7 +118,7 @@ function getWeeks(variables, options, context) {
   return [];
 }
 
-function getLabel(app, variables, options, vaultConfig, context) {
+function getLabel(app, variables, options, vaultLayout, context) {
   const variable = options.variable || "label";
   const fromVars = variables && variables[variable] ? sanitizeFileName(String(variables[variable])) : "";
   if (fromVars) return fromVars;
@@ -136,7 +127,7 @@ function getLabel(app, variables, options, vaultConfig, context) {
   if (
     active
     && options.infer_from_active_file
-    && activeFileInFolder(active, vaultConfig, options.active_folder)
+    && activeFileInFolder(active, vaultLayout, options.active_folder)
   ) {
     return sanitizeFileName(active.basename);
   }
@@ -145,7 +136,7 @@ function getLabel(app, variables, options, vaultConfig, context) {
   return sanitizeFileName(defaultLabel);
 }
 
-async function readSourceRows(app, vaultConfig, spec, context) {
+async function readSourceRows(app, vaultLayout, spec, context) {
   if (spec.source.type === "iso_week_days") {
     const weekStart = mondayOfIsoWeek(context.week);
     const days = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
@@ -153,7 +144,7 @@ async function readSourceRows(app, vaultConfig, spec, context) {
       const id = formatDate(day);
       return {
         id,
-        path: `${resolvePath(vaultConfig, spec.source.folder)}/${id}.md`,
+        path: `${resolvePath(vaultLayout, spec.source.folder)}/${id}.md`,
       };
     }));
   }
@@ -161,7 +152,7 @@ async function readSourceRows(app, vaultConfig, spec, context) {
   if (spec.source.type === "iso_weeks") {
     return readFiles(app, context.weeks.map((week) => ({
       id: week,
-      path: `${resolvePath(vaultConfig, spec.source.folder)}/${week}.md`,
+      path: `${resolvePath(vaultLayout, spec.source.folder)}/${week}.md`,
     })));
   }
 
@@ -181,10 +172,10 @@ async function readFiles(app, rows) {
   return result;
 }
 
-async function collectItems(app, vaultConfig, spec, rows) {
+async function collectItems(app, vaultLayout, spec, rows) {
   if (spec.extract.type !== "checkbox_section") return [];
 
-  const templatePath = spec.extract.template ? resolvePath(vaultConfig, spec.extract.template) : "";
+  const templatePath = spec.extract.template ? resolvePath(vaultLayout, spec.extract.template) : "";
   const templateDefinitions = templatePath
     ? await readTemplateCheckboxDefinitions(app, templatePath, spec.extract.heading)
     : [];
@@ -288,15 +279,15 @@ function renderAutoBlock(spec, rows, stats, context) {
   return parts.join("\n");
 }
 
-async function nextTargetContent(app, path, spec, autoBlock, vaultConfig, context) {
+async function nextTargetContent(app, path, spec, autoBlock, vaultLayout, context) {
   const existing = app.vault.getAbstractFileByPath(path);
   let oldContent;
   if (existing) {
     oldContent = await app.vault.read(existing);
   } else if (spec.target.template) {
-    const templatePath = resolvePath(vaultConfig, spec.target.template);
+    const templatePath = resolvePath(vaultLayout, spec.target.template);
     const template = await app.vault.adapter.read(templatePath);
-    oldContent = renderTemplate(template, { ...vaultConfig, ...context });
+    oldContent = renderTemplate(template, { ...vaultLayout, ...context });
   } else {
     throw new Error(`Rollup target does not exist: ${path}`);
   }
@@ -314,13 +305,13 @@ function upsertAutoBlock(content, block, autoBlock) {
   return `${autoBlock}\n\n${oldContent}`;
 }
 
-function resolvePath(vaultConfig, value) {
-  return vaultConfig[value] || value;
+function resolvePath(vaultLayout, value) {
+  return vaultLayout[value] || value;
 }
 
-function activeFileInFolder(active, vaultConfig, folderKey) {
+function activeFileInFolder(active, vaultLayout, folderKey) {
   if (!folderKey) return true;
-  const folder = resolvePath(vaultConfig, folderKey).replace(/\/+$/, "");
+  const folder = resolvePath(vaultLayout, folderKey).replace(/\/+$/, "");
   return Boolean(active.path && active.path.startsWith(`${folder}/`));
 }
 

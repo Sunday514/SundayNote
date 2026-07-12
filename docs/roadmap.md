@@ -1,6 +1,6 @@
 ---
-last_updated: 2026-07-12
-update_count: 23
+last_updated: 2026-07-13
+update_count: 26
 last_queried: ""
 query_count: 0
 sources:
@@ -35,7 +35,7 @@ Lint ──检查 Wiki 结构、内容和向下链接
 
 Raw 保存外部资料的忠实总结，Routine 保存用户活动和项目上下文，Wiki 保存稳定知识并作为默认 Query 入口。每份长期 Raw 最终都需要 Wiki backlink；Routine 只链接实际支撑稳定知识的记录。完整读写边界由 `docs/architecture.md` 和安装后的 `AGENTS.md` 定义。
 
-待办按 Query、集成导出和后续维护分组。同组子项可以协同开发，每个子项保留独立模块、验收条件和 fixture。
+待办按集成导出和后续维护分组。同组子项可以协同开发，每个子项保留独立模块、验收条件和 fixture。
 
 ## 已完成
 
@@ -46,77 +46,9 @@ Raw 保存外部资料的忠实总结，Routine 保存用户活动和项目上�
 - 项目开发规则允许父 vault 作为显式临时集成测试实例；自动回归和验收仍以通用 fixture 为准。
 - P0-A1 Ingest skill 已固定为从指定 Raw、Routine 或已确认对话向 Wiki 沉淀知识，包含最小写作契约、来源链接和明确写入边界。
 - P0-B1 至 P0-B3 已完成分层来源审计、确定性 Wiki header 检查和 Lint 维护编排；审计只读取显式 scope，诊断保持只读，低风险维护按任务交给 subagent 执行。
-
-## P0-C：Query
-
-### P0-C1：Wiki 字面检索
-
-模块：`skills/sunday-note-query/scripts/query_search.py`
-
-目标：以 Wiki 为唯一搜索范围，输出小而可解释的候选列表。
-
-实现内容：
-
-- 从 vault 配置解析 Wiki 路径，只扫描该范围内的 Markdown。
-- 关键词去空、大小写归一、按首次出现顺序去重，并保留完整短语。
-- `rg` 使用 fixed-string，只负责候选发现。
-- Python 统一计算文件名和正文的字面命中数；总分能够由显示的各词命中数相加得到。
-- 有无 `rg` 使用同一评分与排序原则。
-- 候选输出路径、总分、各词命中、`topic`、`keywords` 和 `sources`。
-- 无匹配时返回明确的 Wiki 覆盖缺口；不搜索 Raw / Routine，不增加 scope 回退。
-
-验收：
-
-- `C++`、`.NET`、`[`、中英文短语和普通项目名均按字面匹配。
-- 重复词只计一次，文件名与正文计分一致。
-- 有无 `rg` 的候选集合和排序原则一致。
-- 输出不包含 Raw / Routine 文件，运行前后 vault 文件不变。
-
-### P0-C2：Wiki 使用记录
-
-模块：`skills/sunday-note-query/scripts/update_query_header.py`
-
-目标：安全记录实际参与回答的 Wiki 页面使用次数。
-
-实现内容：
-
-- 通过 vault 配置解析 Wiki 根目录，只接受其中的 Markdown 页面。
-- Raw、Routine、Journal、Schema 和 vault 外路径全部拒绝。
-- 所有目标先完成路径、header、字段和计数预检，再开始写入。
-- 同一页面同一轮只计一次。
-- 只更新 `last_queried` 和 `query_count`；正文及其他 header 字段保持不变。
-- 用户明确要求完全只读时跳过记录。
-
-验收：
-
-- 候选命中和精读后排除的页面不计数。
-- 实际作为回答依据或来源路由的 Wiki 页面计数加一。
-- 任一目标预检失败时全部目标保持不变。
-- 路径边界、去重和正文不变由标准库 fixture 覆盖。
-
-### P0-C3：Query skill
-
-模块：`skills/sunday-note-query/SKILL.md`
-
-依赖：P0-C1、P0-C2；发布依赖 P0-B1。
-
-目标：用最少 Wiki 证据回答问题，并按需读取页面中的来源链接。
-
-实现内容：
-
-- 从用户问题提取 3–8 个名称、日期、项目线索、术语或短语。
-- 调用 Wiki 字面检索并选择不超过 3 个页面精读。
-- 由 agent 判断是否读取 Wiki 中直接相关的 Raw / Routine 链接，不引入递归搜索或图遍历机制。
-- Wiki 已足够回答时不读取来源；需要事实细节、来源限制、项目验证或冲突核对时读取链接文档。
-- 只为最终影响回答的 Wiki 页面更新使用记录。
-- 新产生的稳定知识给出 Ingest 建议；Query 不修改 Wiki 正文。
-
-验收：
-
-- skill 正文保持简洁，frontmatter 只包含 `name` 和 `description`。
-- 普通 Query 不直接搜索 Raw / Routine。
-- Wiki 无匹配时报告覆盖缺口。
-- 同一轮的候选、精读页面和实际证据范围能够明确区分。
+- P0-C1 至 P0-C3 已完成 Wiki-only 字面检索、安全使用记录和最小证据 Query；候选排序使用可解释的词覆盖与 header 信号，index 不占用内容页优先级，Raw / Routine 只沿直接链接按需读取。标准 fixture、父 vault 只读 A/B 和独立证据复核均已通过。
+- Vault 层目录和维护文件采用固定布局；安装器、skills、QuickAdd 和论文总结工具共享同一目录契约，`.sunday-note-agent/config/` 只保存具体功能配置。
+- P1-A2 仓库忽略规则已只保留本项目的 agent 开发状态；父 vault 的运行状态和生成目录由安装后的 `.gitignore` 维护。
 
 ## P0-D：集成、测试与导出
 
@@ -179,23 +111,6 @@ Raw 保存外部资料的忠实总结，Routine 保存用户活动和项目上�
 - 文档中的仓库路径真实存在，安装后路径有明确标记。
 - 安装器帮助、README 和实际导出内容一致。
 - 同一事实只在职责最近的文档中完整说明。
-
-### P1-A2：仓库忽略规则
-
-模块：`.gitignore`
-
-目标：只忽略本项目真实产生的本地目录和运行状态。
-
-实现内容：
-
-- 核对每条规则对应的当前目录或工具。
-- 删除失效路径和父 vault 专用规则。
-- 安装后 vault 的忽略规则继续由 `install/scaffold/.gitignore` 维护。
-
-验收：
-
-- 仓库本地运行状态不会进入 Git。
-- 源码、模板、fixture 和受托管配置不会被误忽略。
 
 ## P1-B：Vault 集成配置
 
@@ -276,10 +191,9 @@ Raw 保存外部资料的忠实总结，Routine 保存用户活动和项目上�
 
 ## 实施顺序
 
-1. P0-C1、P0-C2 两个 Query 脚本可以并行实现，随后完成 P0-C3。
-2. P0-D 统一验证并导出全部 P0 改动。
-3. P1 各组按实际需要独立实施。
-4. P2 只在验证达到稳定复用门槛后实施。
+1. P0-D 统一验证并导出全部 P0 改动。
+2. P1 各组按实际需要独立实施。
+3. P2 只在验证达到稳定复用门槛后实施。
 
 ## 持续约束
 

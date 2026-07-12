@@ -1,6 +1,6 @@
 # SundayNoteAgent
 
-SundayNoteAgent 是一套用于 Obsidian 知识库的 agent 工具层。它提供安装器、Codex / agent skills、QuickAdd 自动化脚本、路径配置、最小 Routine 模板和框架文档，适合放在私人知识库中的 `SundayNoteAgent/` 目录下作为工具层独立 repo 使用。
+SundayNoteAgent 是一套用于 Obsidian 知识库的 agent 工具层。它提供安装器、Codex / agent skills、QuickAdd 自动化脚本、固定 vault 布局、最小 Routine 模板和框架文档，适合放在私人知识库中的 `SundayNoteAgent/` 目录下作为工具层独立 repo 使用。
 
 个人笔记、带具体条目的个人模板、附件、图片、本地 Obsidian 工作流配置和运行状态由父知识库管理，不属于本仓库。
 
@@ -47,7 +47,6 @@ bash SundayNoteAgent/install/install.sh
 .agents/skills/sunday-note-lint                    # 安装器托管副本
 .agents/skills/sunday-note-query                   # 安装器托管副本
 .agents/skills/paper-summarizer                    # 安装器托管副本，可选
-.sunday-note-agent/config/sunday-note-vault.yaml
 .sunday-note-agent/config/quickadd-rollups.json
 .sunday-note-agent/quickadd/                       # 安装器托管副本
 .stignore                                          # 保留已有规则并补充工具层和导入目录
@@ -55,7 +54,7 @@ bash SundayNoteAgent/install/install.sh
 30_知识库/个人上下文.md                          # 空 Wiki 页面，只在缺失时创建
 ```
 
-重复运行安装器会从 `SundayNoteAgent/` 覆盖根规则、skills 和 QuickAdd 脚本中的同名文件，但保留目标目录中的其他文件。安装器会在父 vault 的 `.stignore` 中补充 `/SundayNoteAgent` 和 `/.import_files`，并保留已有规则。论文总结 skill 首次启用时传入 `--with-paper-summarizer`；启用后普通重跑也会继续更新。路径、统计、Claudian 和 Obsidian 配置是 vault 本地文件，只在缺失时创建。
+重复运行安装器会从 `SundayNoteAgent/` 覆盖根规则、skills 和 QuickAdd 脚本中的同名文件，但保留目标目录中的其他文件。安装器会在父 vault 的 `.stignore` 中补充 `/SundayNoteAgent` 和 `/.import_files`，并保留已有规则。论文总结 skill 首次启用时传入 `--with-paper-summarizer`；启用后普通重跑也会继续更新。统计、Claudian 和 Obsidian 配置是 vault 本地文件，只在缺失时创建。
 
 ## 更新
 
@@ -75,7 +74,7 @@ bash SundayNoteAgent/install/install.sh --vault-root .
 ```text
 AGENTS.md                 # 子项目开发规则
 automation/               # QuickAdd 等自动化脚本源文件
-config/                   # 路径配置源文件和配置类快照
+config/                   # QuickAdd、Obsidian 和 Claudian 配置源文件
 docs/                     # 框架说明和维护文档
 install/                  # 安装器和父知识库 scaffold
 migration/                # 可复用知识库迁移辅助工具

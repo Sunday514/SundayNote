@@ -1,6 +1,6 @@
 ---
-last_updated: 2026-07-12
-update_count: 10
+last_updated: 2026-07-13
+update_count: 12
 last_queried: ""
 query_count: 0
 sources:
@@ -42,8 +42,8 @@ Schema = 规则
 - Routine 对应 `20_每日记录/`、`21_每周记录/`、`22_每月记录/`、`23_项目复盘/`。它是用户主导的过程记录层。
 - Wiki 对应 `30_知识库/`。它是 agent 可维护的长期记忆层，只保存已确认、可复用、能减少未来解释成本的内容。
 - Journal 对应可选的 `40_个人写作/` 骨架。具体内容和内部结构由用户自行定义，agent 默认只读。
-- Schema 对应 `AGENTS.md`、`CLAUDE.md`、`.agents/`、`.sunday-note-agent/`、`SundayNoteAgent/`、`首页.md`、`个人模板/` 和必要 `.obsidian` 配置。它是规则、配置、模板和工具控制面。
-- `SundayNoteAgent/config/sunday-note-vault.yaml` 是机器可读路径映射的默认值；安装器会在父 vault 缺少配置时创建 `.sunday-note-agent/config/sunday-note-vault.yaml`，负责把 Raw、Routine、Wiki、Journal 和 Schema 术语映射到当前 vault 的实际目录名。
+- Schema 对应 `AGENTS.md`、`.agents/`、`.sunday-note-agent/`、`SundayNoteAgent/`、`首页.md`、`个人模板/` 和必要 `.obsidian` 配置。它是规则、配置、模板和工具控制面。
+- Raw、Routine、Wiki、Journal 和 Schema 使用本文件定义的固定目录名；skills、自动化脚本和安装器遵循同一布局。
 - `SundayNoteAgent/templates/` 保存 Daily、Weekly 和 month pack 的最小结构契约，不包含具体打卡项或个人正文；安装器只在父 vault 对应模板缺失时创建副本。
 
 `.import_files/` 是隐藏导入工作目录，不属于知识分层；PDF、docx、网页导出、解析中间产物和临时日志先放这里，完成整理的长期来源总结再进入 Raw。
@@ -172,7 +172,7 @@ Header 用于三个动作：
 - 根目录规则用于知识库使用，`SundayNoteAgent/AGENTS.md` 用于工具层开发。
 - 新建正式文件要比更新已有文件更难。
 - 同一长期主题尽量只维护一个主要 Wiki 页面。
-- Skill 负责触发和执行入口；执行时先读取路径映射，不直接假设目录名；详细知识仍以 Wiki 和框架文档为准。
+- Skill 负责触发和执行入口，按固定 vault 布局工作；详细知识仍以 Wiki 和框架文档为准。
 - `30_知识库/索引.md` 和 `30_知识库/知识库维护日志.md` 是本地 Wiki 维护文件，默认不进入 Git。
 
 ## 相关链接

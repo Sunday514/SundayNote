@@ -7,7 +7,7 @@ description: 检查 Wiki header、导航、来源覆盖和指定内容，并编�
 
 ## 工作流
 
-1. 读取 vault 路径配置、用户指定范围和写入边界。
+1. 按固定 vault 布局读取用户指定范围和写入边界。
 2. 用 `scripts/lint_headers.py` 检查 Wiki header；用 `scripts/audit_reachability.py` 检查 Wiki 导航及其指向 Raw / Routine 的链接。
 3. 阅读报告涉及的 Wiki 页面和直接证据；用户明确指定内容检查时，也阅读该范围。把确定的问题整理为具体任务。
 4. 按断链与歧义、header、Wiki 导航、Raw 承接排列任务；同一目标页的问题合并为一个任务。

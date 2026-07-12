@@ -9,9 +9,9 @@ import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 
-DEFAULT_IMPORT_DIR = ".import_files"
-DEFAULT_OUTPUT_DIR = "10_原始材料"
-DEFAULT_FIGURES_DIR = "assets/figures"
+IMPORT_DIR = ".import_files"
+RAW_DIR = "10_原始材料"
+FIGURES_DIR = "assets/figures"
 UNKNOWN = "未明确"
 
 
@@ -26,39 +26,6 @@ def read_json(path: Path) -> dict[str, object]:
 def write_json(path: Path, payload: dict[str, object]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-
-
-def load_yaml_config(path: Path) -> dict[str, object]:
-    if not path.exists():
-        return {}
-    try:
-        import yaml  # type: ignore[import-not-found]
-    except ImportError:
-        return {}
-    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
-    return payload if isinstance(payload, dict) else {}
-
-
-def component_config(vault_root: Path) -> dict[str, object]:
-    config_path = vault_root / ".sunday-note-agent" / "config" / "sunday-note-vault.yaml"
-    config = load_yaml_config(config_path)
-    components = config.get("components")
-    if not isinstance(components, dict):
-        return {}
-    paper = components.get("paper_summarizer")
-    if not isinstance(paper, dict):
-        return {}
-    result = dict(paper)
-    if "import_dir" not in result and isinstance(config.get("import_tmp"), str):
-        result["import_dir"] = config["import_tmp"]
-    assets = config.get("assets")
-    if (
-        "figures_dir" not in result
-        and isinstance(assets, dict)
-        and isinstance(assets.get("figures"), str)
-    ):
-        result["figures_dir"] = assets["figures"]
-    return result
 
 
 def clean_filename(value: str, max_len: int = 120) -> str:
@@ -148,9 +115,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--paper-link", help="Optional paper link")
     parser.add_argument("--code-link", help="Optional code link")
     parser.add_argument("--slug", help="Optional output directory name")
-    parser.add_argument("--import-dir", type=Path, help="Import workspace directory relative to vault root")
-    parser.add_argument("--output-dir", type=Path, help="Raw summary directory relative to vault root")
-    parser.add_argument("--figures-dir", type=Path, help="Final figure directory relative to vault root")
     parser.add_argument("--device", default="auto", help="Docling accelerator device")
     parser.add_argument("--ocr", action="store_true", help="Enable OCR in docling")
     parser.add_argument(
@@ -172,13 +136,9 @@ def main() -> int:
     if not vault_root.exists():
         raise FileNotFoundError(f"vault root not found: {vault_root}")
 
-    cfg = component_config(vault_root)
-    configured_import = cfg.get("import_dir")
-    configured_output = cfg.get("output_dir")
-    configured_figures = cfg.get("figures_dir")
-    import_dir = args.import_dir or Path(str(configured_import or DEFAULT_IMPORT_DIR))
-    output_dir = args.output_dir or Path(str(configured_output or DEFAULT_OUTPUT_DIR))
-    figures_root = args.figures_dir or Path(str(configured_figures or DEFAULT_FIGURES_DIR))
+    import_dir = Path(IMPORT_DIR)
+    output_dir = Path(RAW_DIR)
+    figures_root = Path(FIGURES_DIR)
     metadata = merge_metadata(args, args.metadata, pdf_path)
     title = str(metadata.get("title") or "")
     slug = slug_from_pdf(pdf_path, title, args.slug)

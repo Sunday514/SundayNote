@@ -11,7 +11,6 @@
 .agents/skills/sunday-note-lint                    # 安装器托管副本
 .agents/skills/sunday-note-query                   # 安装器托管副本
 .agents/skills/paper-summarizer                    # 安装器托管副本，可选
-.sunday-note-agent/config/sunday-note-vault.yaml
 .sunday-note-agent/config/quickadd-rollups.json
 .sunday-note-agent/quickadd/                       # 安装器托管副本
 .claudian/claudian-settings.json
@@ -53,7 +52,6 @@ bash SundayNoteAgent/install/install.sh --vault-root . --with-paper-summarizer
 安装器会创建缺失的：
 
 - `AGENTS.md`：安装后的私人 vault 根规则。
-- `CLAUDE.md`：Claude Code 适配入口。
 - `首页.md`：vault 首页。
 - `.import_files/`：隐藏导入工作目录。
 - `10_原始材料/`、`20_每日记录/`、`21_每周记录/`、`22_每月记录/`、`23_项目复盘/`、`30_知识库/`、`40_个人写作/`、`个人模板/`。
@@ -67,17 +65,16 @@ bash SundayNoteAgent/install/install.sh --vault-root . --with-paper-summarizer
 
 不论是新 vault 还是已有 vault，安装器都会补建缺失的标准一级目录和 `.import_files/`，但不创建二级结构，也不整理已有内容。工具入口的维护方式是：
 
-- 每次覆盖父 vault 的 `AGENTS.md`、`CLAUDE.md`、三个基础 skill 和 `.sunday-note-agent/quickadd/` 中的同名源文件。
+- 每次覆盖父 vault 的 `AGENTS.md`、三个基础 skill 和 `.sunday-note-agent/quickadd/` 中的同名源文件。
 - 传入 `--with-paper-summarizer` 时首次导出 `paper-summarizer`；已导出时，普通重跑也会刷新它。
 - 托管目录中不与源仓库同名的额外文件会保留。
-- 父 vault `.sunday-note-agent/config/` 下的本地路径配置只在缺失时创建。
 - 父 vault `.sunday-note-agent/config/quickadd-rollups.json` 下的 QuickAdd 统计配置；仅在缺失时创建。
 - 父 vault `.claudian/claudian-settings.json` 的脱敏默认配置；仅在缺失时创建。
 - 父 vault `.stignore` 保留已有内容，每次安装确保包含根目录规则 `/SundayNoteAgent` 和 `/.import_files`。
 
 只要 `30_知识库/个人上下文.md` 缺失，安装器就创建空 scaffold；已有文件不会被覆盖。
 
-项目模板只保存稳定结构和自动块标记，不包含具体打卡类别或个人正文。父 vault 的模板副本创建后不再覆盖；自动化脚本通过 `.sunday-note-agent/config/sunday-note-vault.yaml` 读取实际模板路径。论文总结脚本使用当前 Python 环境，导入工作目录为 `.import_files`，摘要目录为 `10_原始材料`。旧版安装器创建的 skill 和 QuickAdd 软链接会在重跑时转换为普通目录，不删除链接目标。
+项目模板只保存稳定结构和自动块标记，不包含具体打卡类别或个人正文。父 vault 的模板副本创建后不再覆盖；自动化脚本使用固定的 Routine 和模板路径。论文总结脚本使用当前 Python 环境，导入工作目录为 `.import_files`，摘要目录为 `10_原始材料`。
 
 ## Claudian
 

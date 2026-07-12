@@ -73,7 +73,6 @@ function makeApp(initialFiles) {
 
 function baseFiles() {
   return {
-    ".sunday-note-agent/config/sunday-note-vault.yaml": repoText("config/sunday-note-vault.yaml"),
     ".sunday-note-agent/config/quickadd-rollups.json": repoText("config/quickadd-rollups.json"),
     "个人模板/周记录.md": repoText("templates/周记录.md"),
     "个人模板/月记录.md": repoText("templates/月记录.md"),
