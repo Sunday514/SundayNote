@@ -1,6 +1,6 @@
 ---
 last_updated: "2026-07-12"
-update_count: 6
+update_count: 8
 last_queried: ""
 query_count: 0
 sources:
@@ -25,7 +25,7 @@ keywords:
 ## 编号逻辑
 
 - `首页.md`: Schema，知识库导航入口。
-- `10_原始材料/`: Raw，长期可读来源材料层。
+- `10_原始材料/`: Raw，论文、书籍、课程等外部资料的长期来源总结层。
 - `20_每日记录/`: Routine，当天视图。
 - `21_每周记录/`: Routine，每周视图。
 - `22_每月记录/`: Routine，每月视图。
@@ -49,13 +49,19 @@ Journal = 写作
 Schema = 规则
 ```
 
-`.import_files/` 不是知识分层。不可直接长期引用的导入文件先放入这个隐藏目录；转换后的 Markdown 来源材料进入 Raw。
+`.import_files/` 是隐藏导入工作区，保存原始 PDF、docx、网页导出、解析产物和临时日志；完成整理的长期来源总结进入 Raw。
 
-Routine 是用户主导的过程记录层，不等同于“工作”。Daily、Weekly、Monthly 和 Project 是 Routine 内部的不同视图。agent 写入或改写 Routine 前需要确认。
+Routine 是用户主导的过程记录层，包含 Daily、Weekly、Monthly 和 Project 四种视图。agent 写入或改写 Routine 前需要确认。
 
 `40_个人写作/` 不属于自动编译链路。SundayNoteAgent 不定义其中内容，也不维护其内部结构；只有用户明确确认时，agent 才能基于其中内容提出知识沉淀建议。
 
-Raw 保存已转换成 Obsidian / LLM 可读形态的来源材料，例如论文总结、读书笔记、课程转写和网页整理稿。Wiki 是 agent 可维护的长期记忆层。Wiki 页面使用 YAML header 记录 `last_updated`、`update_count`、`last_queried`、`query_count`、`sources`、`topic` 和 `keywords`，用于 query、ingest 和 lint 判断时效、维护次数、使用次数、来源、主题归属和检索入口。`30_知识库/个人上下文.md` 属于本地 Wiki，用于保存长期兴趣、近期计划、推荐偏好和当前项目，不放入 `SundayNoteAgent/`。
+Raw 保存论文、书籍、课程等外部资料的来源忠实总结，不混入后续思考；Routine 保存个人活动、阶段判断和项目验证。两者作为并列证据来源，由 Ingest 提炼进入 Wiki。
+
+Wiki 是 agent 可维护的长期知识层和默认 Query 入口。进入 Wiki 的知识增量不限于个人项目或对话信息；相较直接使用 LLM、普通网络搜索或临时重读来源，能提高检索效率、回答深度或提供独特结构与见解的稳定知识都可以进入。来源忠实总结留在 Raw；基于一份或多份来源进一步思考形成的结构、关系、矛盾、方法框架和稳定判断进入 Wiki。
+
+每份长期 Raw 最终都应至少被一个相关 Wiki 页面链接；没有 Wiki backlink 的 Raw 由 Lint 作为覆盖缺口持续报告。Routine 只有实际支撑稳定知识的记录才需要 Wiki backlink，普通 Daily 不要求全部承接。Wiki 正文在相关知识附近链接 Raw / Routine，header `sources` 汇总页面级来源；初版不要求两者严格同步。
+
+Query 只搜索 Wiki，读取 Wiki 后由 agent 按问题需要决定是否读取页面链接的 Raw / Routine；不直接扩大搜索范围。Lint 主要检查 Wiki 的 header、结构、可达性和向下链接，不把 Raw / Routine 当作普通改写对象。Wiki 页面使用 YAML header 记录 `last_updated`、`update_count`、`last_queried`、`query_count`、`sources`、`topic` 和 `keywords`。`30_知识库/个人上下文.md` 属于本地 Wiki，用于保存长期兴趣、近期计划、推荐偏好和当前项目，不放入 `SundayNoteAgent/`。
 
 论文整理按信息层分工：PDF 原文和全部解析过程产物进入 `.import_files/`；单篇论文总结以 `10_原始材料/<论文标题>.md` 保存，引用图像进入 `assets/figures/`；跨论文技术对比、方法谱系和选型准则进入 Wiki；带具体项目目标、约束、决策和下一步计划的调研报告或方案设计进入 `23_项目复盘/`。项目验证后沉淀出的稳定经验再回写 Wiki。
 
@@ -65,9 +71,9 @@ Raw 保存已转换成 Obsidian / LLM 可读形态的来源材料，例如论文
 
 `SundayNoteAgent/config/sunday-note-vault.yaml` 保存机器可读的目录映射默认值；安装器会在父 vault 缺少配置时创建 `.sunday-note-agent/config/sunday-note-vault.yaml`。人读文档仍直接使用当前目录名；skills 和未来脚本优先读取父 vault `.sunday-note-agent/` 下的本地配置，避免把 Raw、Wiki 等语义层和中文目录名绑定。`.import_files/` 使用独立路径配置，不属于 `layers`。
 
-`30_知识库/索引.md`、`30_知识库/知识库维护日志.md` 和个人上下文页面属于本地 Wiki 维护文件。索引是核心导航入口，不重复 header 信息；维护日志记录 ingest / query / lint 带来的状态变化；个人上下文集中保存能降低 agent 沟通成本的稳定个人偏好和计划。这些文件默认不进入 Git。
+`30_知识库/索引.md`、`30_知识库/知识库维护日志.md` 和个人上下文页面属于本地 Wiki 维护文件。索引只组织核心 Wiki 页面，不枚举全部 Raw / Routine；维护日志只记录真实执行的内容新增、合并、重要修订和来源关系修复，不记录普通 Query、只读 Lint 或仅使用次数变化；个人上下文集中保存能降低 agent 沟通成本的稳定个人偏好和计划。这些文件默认不进入 Git。
 
-必要 Obsidian 配置是可迁移基线，不是插件安装包。仓库保存 `config/` 下的框架级配置、脱敏 Claudian 默认配置和布局快照，不保存社区插件的 `main.js`、`manifest.json`、`styles.css`，也不保存 Daily Notes、Calendar、Templates、QuickAdd actions、terminal wrapper、workspace、Claudian sessions、设备 ID、CLI 绝对路径、环境变量或代理等本地配置。Obsidian 内默认通过 Claudian（`realclaudian`）调用 agent，Codex provider 使用当前设备可见的 `codex` 命令或本机 Claudian 设置。恢复 `config/layout-snapshots/` 中的布局快照前，用户需要先在 Obsidian 中安装并启用必备插件。
+必要 Obsidian 配置构成可迁移基线。仓库保存 `config/` 下的框架级配置、脱敏 Claudian 默认配置和布局快照；社区插件文件、Daily Notes、Calendar、Templates、QuickAdd actions、terminal wrapper、workspace、Claudian sessions、设备 ID、CLI 绝对路径、环境变量和代理由父 vault 本地维护。Obsidian 内默认通过 Claudian（`realclaudian`）调用 agent，Codex provider 使用当前设备可见的 `codex` 命令或本机 Claudian 设置。恢复 `config/layout-snapshots/` 中的布局快照前，用户需要先在 Obsidian 中安装并启用必备插件。
 
 QuickAdd 是模板、捕获和例行维护动作的主要入口。本仓库提供最小 Routine 模板和统计入口 `SundayNoteAgent/automation/quickadd/rollup.js`；具体 QuickAdd choice 仍由父 vault 配置。统计项由父 vault `.sunday-note-agent/config/quickadd-rollups.json` 配置；周统计按 ISO week 推导 7 天 Daily，month pack 包含周日落在该自然月的 ISO weeks。周或 month pack 目标缺失时，rollup 先用配置模板创建文档，再只维护标记之间的自动块；人工计划和总结区域不会被改写。
 

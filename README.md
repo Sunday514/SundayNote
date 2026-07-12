@@ -94,6 +94,16 @@ Obsidian 内默认使用 Claudian（`realclaudian`）作为 agent 入口，Codex
 - [路线图](docs/roadmap.md)
 - [子项目开发规则](AGENTS.md)
 
+## 回归检查
+
+修改安装器、QuickAdd 自动化或 query / lint 脚本后，运行：
+
+```bash
+bash tests/run.sh
+```
+
+检查只使用 Bash、Node 和 Python 标准运行时，在临时目录中生成脱敏 fixture，不读取父 vault。
+
 ## 隐私边界
 
 本仓库只保存可复用工具层，不保存个人知识库正文。不要把以下内容提交到 SundayNoteAgent：
