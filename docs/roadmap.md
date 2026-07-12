@@ -1,6 +1,6 @@
 ---
 last_updated: 2026-07-13
-update_count: 26
+update_count: 27
 last_queried: ""
 query_count: 0
 sources:
@@ -35,13 +35,12 @@ Lint ──检查 Wiki 结构、内容和向下链接
 
 Raw 保存外部资料的忠实总结，Routine 保存用户活动和项目上下文，Wiki 保存稳定知识并作为默认 Query 入口。每份长期 Raw 最终都需要 Wiki backlink；Routine 只链接实际支撑稳定知识的记录。完整读写边界由 `docs/architecture.md` 和安装后的 `AGENTS.md` 定义。
 
-待办按集成导出和后续维护分组。同组子项可以协同开发，每个子项保留独立模块、验收条件和 fixture。
+待办按项目维护和后续能力分组。同组子项可以协同开发，每个子项保留独立模块、验收条件和 fixture。
 
 ## 已完成
 
 - 安装器支持重复安装和更新，托管文件覆盖更新，本地配置与个人内容保持不变。
 - Daily、Weekly、month pack 最小模板和通用 rollup 已纳入仓库维护。
-- `tests/run.sh` 已提供安装器、rollup、Query/Lint 基础 fixture 的统一入口。
 - 架构文档、目录文档和 scaffold 已同步 Wiki 中心知识流。
 - 项目开发规则允许父 vault 作为显式临时集成测试实例；自动回归和验收仍以通用 fixture 为准。
 - P0-A1 Ingest skill 已固定为从指定 Raw、Routine 或已确认对话向 Wiki 沉淀知识，包含最小写作契约、来源链接和明确写入边界。
@@ -49,47 +48,7 @@ Raw 保存外部资料的忠实总结，Routine 保存用户活动和项目上�
 - P0-C1 至 P0-C3 已完成 Wiki-only 字面检索、安全使用记录和最小证据 Query；候选排序使用可解释的词覆盖与 header 信号，index 不占用内容页优先级，Raw / Routine 只沿直接链接按需读取。标准 fixture、父 vault 只读 A/B 和独立证据复核均已通过。
 - Vault 层目录和维护文件采用固定布局；安装器、skills、QuickAdd 和论文总结工具共享同一目录契约，`.sunday-note-agent/config/` 只保存具体功能配置。
 - P1-A2 仓库忽略规则已只保留本项目的 agent 开发状态；父 vault 的运行状态和生成目录由安装后的 `.gitignore` 维护。
-
-## P0-D：集成、测试与导出
-
-### P0-D1：统一回归入口
-
-模块：`tests/`
-
-依赖：P0-A1、P0-B1 至 P0-B3、P0-C1 至 P0-C3。
-
-目标：用一个命令验证三个 skill 相关脚本和知识流契约。
-
-实现内容：
-
-- `tests/run.sh` 汇总各模块 fixture，不引入测试框架或网络依赖。
-- 自动回归使用临时 vault；父 vault 只用于显式临时集成检查。
-- 每个 P0 模块在对应 fixture 中独立断言自己的输入、输出和写入边界。
-
-验收：
-
-- `bash tests/run.sh` 一次通过全部核心检查。
-- 测试不依赖父 vault 的具体内容或本地状态，也不留下长期产物。
-
-### P0-D2：安装导出
-
-模块：`install/`、`install/README.md`
-
-依赖：P0-D1。
-
-目标：把更新后的三个 skill 和脚本安全导出到 vault。
-
-实现内容：
-
-- 安装器继续覆盖托管 skill 和脚本，保留 vault 本地配置、模板和正文。
-- 安装说明记录 Wiki-only Query、来源覆盖审计和 Ingest 承接关系。
-- 安装 fixture 验证新增、更新和重复运行。
-
-验收：
-
-- 三个 skill 和相关脚本与仓库源码一致。
-- 重复安装不会覆盖 vault 本地配置或个人内容。
-- 安装器不自动整理父 vault 的 Wiki、Raw 或 Routine。
+- P0-D1 至 P0-D2 已完成统一回归和安装导出验收；`tests/run.sh` 使用临时 vault 验证三个核心 skill、Query/Lint 脚本、QuickAdd、首次安装、托管更新和重复安装。导出副本与仓库同名源文件一致，本地配置、模板及 Raw / Routine / Wiki 内容保持不变。
 
 ## P1-A：项目维护
 
@@ -191,9 +150,8 @@ Raw 保存外部资料的忠实总结，Routine 保存用户活动和项目上�
 
 ## 实施顺序
 
-1. P0-D 统一验证并导出全部 P0 改动。
-2. P1 各组按实际需要独立实施。
-3. P2 只在验证达到稳定复用门槛后实施。
+1. P1 各组按实际需要独立实施。
+2. P2 只在验证达到稳定复用门槛后实施。
 
 ## 持续约束
 

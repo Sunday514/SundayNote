@@ -102,7 +102,7 @@ Obsidian 内默认使用 Claudian（`realclaudian`）作为 agent 入口，Codex
 bash tests/run.sh
 ```
 
-检查只使用 Bash、Node 和 Python 标准运行时，在临时目录中生成脱敏 fixture，不读取父 vault。
+检查只使用 Bash、Node 和 Python 标准运行时，在临时目录中生成脱敏 fixture，验证核心 skill、安装导出、Query/Lint 脚本和 QuickAdd，不读取父 vault。
 
 ## 隐私边界
 

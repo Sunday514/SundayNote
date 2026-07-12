@@ -76,6 +76,24 @@ bash SundayNoteAgent/install/install.sh --vault-root . --with-paper-summarizer
 
 项目模板只保存稳定结构和自动块标记，不包含具体打卡类别或个人正文。父 vault 的模板副本创建后不再覆盖；自动化脚本使用固定的 Routine 和模板路径。论文总结脚本使用当前 Python 环境，导入工作目录为 `.import_files`，摘要目录为 `10_原始材料`。
 
+## 知识流
+
+- Ingest 从用户指定的 Raw、Routine 或已确认对话中提炼稳定知识，只写入 Wiki，并保留实际来源链接。
+- Query 只搜索 Wiki；Wiki 证据不足时，只沿页面中的直接链接按需读取 Raw / Routine。
+- Lint 使用 `lint_headers.py` 检查 Wiki header，使用 `audit_reachability.py` 检查 Wiki 导航、Raw backlink 和已有 Routine 证据链接；诊断模式保持只读。
+
+安装器覆盖三个核心 skill 及其同名源文件，保留托管目录中的额外文件。父 vault 的配置、模板和内容不进入托管覆盖范围。
+
+## 验证
+
+在工具仓库根目录运行：
+
+```bash
+bash tests/run.sh
+```
+
+该命令使用临时 vault 验证首次安装、托管文件更新、重复安装、核心 skill 导出和安装后脚本运行，不读取实际父 vault。
+
 ## Claudian
 
 Claudian（`realclaudian`）是 Obsidian 内默认的 agent 入口。安装器会在缺失时创建 `.claudian/claudian-settings.json`，作为可迁移默认值：
