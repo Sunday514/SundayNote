@@ -1,6 +1,6 @@
 ---
 name: sunday-note-lint
-description: 检查 Wiki header、导航、来源覆盖和指定内容，并编排维护任务。用户要求 lint、维护、清理或修复时，生成方案并用 subagent 逐项执行低风险修改；用户要求检查、诊断、输出方案、只读或不要修改时，只报告问题、方案和拟发送命令。
+description: 用户要求检查、诊断、清理或修复知识库时使用。
 ---
 
 # Lint
@@ -26,6 +26,7 @@ description: 检查 Wiki header、导航、来源覆盖和指定内容，并编�
 - Raw、Routine 只作为证据读取；Journal、Schema 不进入普通维护范围。
 - `wiki_unreachable` 只通过 Wiki 导航关系处理，不把 Raw / Routine 加入 index。
 - `raw_unlinked` 交给使用 Ingest 的 subagent；执行前确定一个 Wiki 目标页，来源文件保持不变。
+- 只有提炼、合并或改写 Wiki 知识的任务使用 Ingest；header、链接和导航等机械修复按 Lint 任务执行。
 - 主 agent 负责任务拆分、调度、复核和最终日志，不直接改写普通 Wiki 正文。
 - subagent 只修改任务列出的文件，不修改维护日志；同一文件不会同时出现在多个未完成任务中。
 

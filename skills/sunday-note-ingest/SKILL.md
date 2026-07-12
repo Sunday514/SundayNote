@@ -1,6 +1,6 @@
 ---
 name: sunday-note-ingest
-description: 将用户指定的 Raw、Routine、Project 或已确认对话中的稳定知识提炼并写入 Wiki。用于用户要求 ingest、摄取资料、沉淀知识、把来源总结编译进 Wiki，或将新知识合并到已有主题页时。
+description: 用户要求将资料、结论、经验或已确认对话沉淀、合并或更新到知识库时使用。
 ---
 
 # Ingest
@@ -33,7 +33,7 @@ description: 将用户指定的 Raw、Routine、Project 或已确认对话中的
 
 ## 写入边界
 
-- 用户明确调用 Ingest 即授权普通 Wiki 正文及其必要 header、index 和维护日志写入。
+- 用户明确要求把内容写入或更新 Wiki，即授权普通 Wiki 正文及其必要 header、index 和维护日志写入。
 - 涉及个人上下文、删除、归档或未确认结论时，写入前请求确认。
 - 一轮可能修改多个 Wiki 页面时，先列出全部目标页面并统一确认范围。
 - 不触发 Query、Lint、全 vault 审计或外部搜索。
