@@ -1,6 +1,6 @@
 ---
 last_updated: 2026-07-12
-update_count: 16
+update_count: 21
 last_queried: ""
 query_count: 0
 sources:
@@ -19,9 +19,9 @@ keywords:
 
 # 路线图
 
-## 当前判断
+## 当前方向
 
-SundayNoteAgent 已具备安装导出、Ingest、Query、Lint、QuickAdd rollup、迁移工具和可选论文总结能力。下一阶段不增加新的知识层、搜索基础设施或后台维护机制，重点是把现有能力收缩到清晰的 LLM Wiki 知识流：
+SundayNoteAgent 采用以下知识流：
 
 ```text
 Raw / Routine ──Ingest──> Wiki
@@ -33,295 +33,339 @@ Query ──搜索 Wiki──────────┤
 Lint ──检查 Wiki 结构、内容和向下链接
 ```
 
-三个核心 skill 以 Wiki 为维护目标和默认查询入口，Raw / Routine 提供来源证据：
+Raw 保存外部资料的忠实总结，Routine 保存用户活动和项目上下文，Wiki 保存稳定知识并作为默认 Query 入口。每份长期 Raw 最终都需要 Wiki backlink；Routine 只链接实际支撑稳定知识的记录。完整读写边界由 `docs/architecture.md` 和安装后的 `AGENTS.md` 定义。
 
-- Raw 保存论文、书籍、课程等来源的忠实总结，不混入后续思考、跨来源判断或项目结论。
-- Routine 保存用户主导的过程上下文；Project 是其中承载目标、约束、决策和验证的视图。
-- Wiki 保存从 Raw、Routine 和已确认对话中提炼出的稳定知识，是默认查询入口和 agent 主要维护目标。
-- Journal 保持用户个人表达层，除非用户明确指定，否则不进入 Ingest、Query 或 Lint。
-- `.import_files/` 继续作为导入工作区，不进入知识图和普通查询。
+待办按 Lint、Query、集成导出和后续维护分组。同组子项可以协同开发，每个子项保留独立模块、验收条件和 fixture。
 
-Wiki 在每个主题页面的相应判断、方法、限制或项目应用旁保留来源链接。`30_知识库/索引.md` 只组织核心 Wiki 页面；Raw / Routine 通过主题 Wiki 页面按需可达。
+## 已完成
 
-## 目标契约
+- 安装器支持重复安装和更新，托管文件覆盖更新，本地配置与个人内容保持不变。
+- Daily、Weekly、month pack 最小模板和通用 rollup 已纳入仓库维护。
+- `tests/run.sh` 已提供安装器、rollup、Query/Lint 基础 fixture 的统一入口。
+- 架构文档、目录文档和 scaffold 已同步 Wiki 中心知识流。
+- 项目开发规则允许父 vault 作为显式临时集成测试实例；自动回归和验收仍以通用 fixture 为准。
+- P0-A1 Ingest skill 已固定为从指定 Raw、Routine 或已确认对话向 Wiki 沉淀知识，包含最小写作契约、来源链接和明确写入边界。
 
-### 可达性
+## P0-B：Lint
 
-- 每份长期 Raw 来源总结最终都应至少被一个相关 Wiki 页面链接。
-- Raw 中没有 Wiki backlink 的文档属于明确的 Wiki 覆盖缺口；Lint 持续生成未链接 Raw 清单，Ingest 负责建立承接关系。
-- Routine 不要求逐篇进入 Wiki。只有支撑稳定判断、项目决策或个人长期上下文的记录才建立链接。
-- Wiki 可以通过 Project、Weekly 或 Monthly 间接到达 Daily，不为追求覆盖率把每篇 Daily 直接加入 Wiki。
-- 来源链接优先放在正文中对应结论附近；Wiki header 的 `sources` 只保留页面级来源集合。初版不检查两者严格同步，也不建设 claim 级来源模型。
-- 不在 Raw / Routine 中维护反向链接；Obsidian backlink 和 Wiki 的正向链接提供反向发现能力。
+### P0-B1：分层来源覆盖审计
 
-### 读写边界
+模块：`skills/sunday-note-lint/scripts/audit_reachability.py`
 
-| 层 | Ingest | Query | Lint |
-|---|---|---|---|
-| Raw | 读取来源总结 | 只沿 Wiki 链接按需读取 | 只验证链接和未编译候选 |
-| Routine | 读取稳定事实、项目决策和验证 | 只沿 Wiki 链接按需读取 | 只验证 Wiki 指向的目标 |
-| Wiki | 创建或更新稳定知识 | 默认搜索、读取；只更新使用记录 | 诊断；获得明确授权后维护 |
-| Journal | 用户明确指定时读取 | 用户明确指定时读取 | 不默认检查 |
-| Schema | 读取规则与路径配置 | 仅工作流问题需要 | 由仓库开发流程维护 |
+目标：提供只读、确定性的 Wiki 导航与来源覆盖报告。
 
-三个 skill 以 Wiki 为维护目标和默认检索入口，并按任务需要读取 Raw / Routine 证据。
+图模型：
 
-### Query 使用记录
+- Wiki 导航只计算 `Wiki → Wiki`，从 Wiki index 检查 Wiki scope 可达性。
+- Raw 承接只计算 `Wiki → Raw`，每份长期 Raw 至少需要一个 Wiki backlink。
+- Routine 只验证已有的 `Wiki → Routine` 链接，不检查 Routine backlink。
+- Raw 和 Routine 参与链接解析，不参与 Wiki 导航可达性。
+- Journal、Schema、`.import_files/` 和未显式指定的目录不进入审计。
 
-- `query_count` 表示 Wiki 页面实际作为最终回答依据或来源路由的次数；搜索候选不计数。
-- `last_queried` 表示最近一次实际使用日期。
-- 只统计最终影响回答的 Wiki 页面；仅被命中、精读后排除或重复读取的页面不计数。
-- 同一页面同一轮最多计一次；Raw / Routine 不增加 Query header。
-- 查询只允许更新这两个 Wiki header 字段，不因查询修改正文、`last_updated`、`update_count`、index 或维护日志。
-- 使用次数只是维护优先级的弱信号，不能单独决定合并、归档或删除。
+实现内容：
 
-## 已完成：同步知识流契约
-
-目标：在修改 skill 和脚本前，先让仓库规则对 Raw、Routine、Wiki 和来源链接使用同一套定义。
-
-已同步：
-
-- 重写 `docs/architecture.md` 中的信息流、Wiki 进入门槛、来源关系和三个核心操作。
-- 在 `docs/directory-structure.md` 中明确 `10_原始材料/` 是长期来源总结层，`.import_files/` 才是导入和中间产物工作区。
-- 更新 `install/scaffold/AGENTS.md`，使安装后的 agent 只把 Wiki 作为知识维护目标；Raw / Routine 默认不由普通知识维护改写。
-- 保留现有目录和 `sunday-note-vault.yaml` 路径键，不重命名 `10_原始材料/`，不迁移父 vault 文件。
-- 明确 Wiki 正文链接和 header `sources` 的分工；不新增来源关系数据库、页面类型系统或图索引缓存。
-- 文档统一描述 Query 的 Wiki-only 搜索、Lint 的 Wiki 诊断范围和维护日志的真实内容变更记录。
+- CLI 明确接收 Wiki entry、Wiki scope、Raw scope、Routine scope、vault root 和输出格式。
+- 复用 wikilink、Markdown link、路径解析和歧义检测能力。
+- 分别构建 Wiki 导航边、Raw backlink 和 Routine 证据链接。
+- 输出 `wiki_unreachable`、`raw_unlinked`、`broken_links` 和 `ambiguous_links`。
+- 输出 Markdown 和 JSON；不写文件，不维护缓存或运行状态。
 
 验收：
 
-- README 只提供入口，架构文档说明知识流，目录文档说明真实目录，scaffold 提供可执行规则。
-- 同一层的读取权限、写入权限和链接职责在所有文档中一致。
-- 文档不会把“从 Wiki 可达”描述成“总 index 必须枚举所有 Raw / Routine”。
-- 长期 Raw 必须有 Wiki backlink；Routine 仍只链接实际支撑稳定知识的记录。
-- 不新增目录、manifest、数据库、评分字段或后台任务。
+- fixture 覆盖 Wiki→Wiki、Wiki→Raw、Wiki→Project、断链和同名歧义。
+- Raw 建立 Wiki backlink 后从 `raw_unlinked` 消失。
+- 普通 Daily 无 backlink 不进入报告。
+- Wiki index 可达性只计算 Wiki scope。
+- 审计不读取指定范围外的目录。
 
-## P0：建立 Wiki 来源覆盖基线
+### P0-B2：Wiki header 检查
 
-目标：先确认长期 Raw 来源总结都已由 Wiki 承接，再启用 Wiki-only Query，避免形成知识盲区。
+模块：`skills/sunday-note-lint/scripts/lint_headers.py`
 
-需要改动：
+目标：只执行可由 Wiki header 确定的机械检查。
 
-- 使用脱敏 fixture 定义三类关系：Wiki 到 Raw、Wiki 到 Project / Routine、Wiki 到 Wiki。
-- 对父 vault 做一次只读覆盖审计，统计：
-  - 有 Wiki backlink 的 Raw 来源总结；
-  - 没有 Wiki backlink 的 Raw 来源总结；
-  - Wiki 中无法解析的 Raw / Routine 链接；
-  - 能从核心 Wiki index 到达的 Wiki 页面。
-- Lint 每次覆盖检查都输出“未链接 Raw 清单”；初版只生成确定性报告，不新增持久状态文件，也不让清单本身产生 Wiki backlink。
-- 不自动批量创建 Wiki、不自动把所有来源塞入 index；优先把未链接 Raw 补入已有同主题 Wiki，只有缺少稳定主题页时才新建。
-- 先完成必要的 Wiki 承接，再切换 Query 搜索范围。
+实现内容：
+
+- 检查必需字段、日期、非负计数、空 `sources`、空 `topic`、空 `keywords` 和重复 `topic`。
+- 保留 `query_count` 与 `last_queried` 的格式和一致性检查。
+- 输出 Markdown 和 JSON，并保持只读。
+- CLI 只保留 scope、root、排除项、格式和结果数量等直接相关参数。
+- index、入口可达性、链接图和正文正则候选由其他模块负责。
 
 验收：
 
-- VLA 强化学习一类已有主题能先命中 Wiki 页面，再从正文链接到对应论文总结或项目记录。
-- 每份未被 Wiki 承接的长期 Raw 总结都进入未链接 Raw 清单，并持续保留到相关 Wiki backlink 建立。
-- 普通 Daily 没有 Wiki backlink 不构成问题。
-- 覆盖审计只读，不修改父 vault。
+- 脚本只读取显式 scope。
+- header 合法与常见错误均有标准库 fixture。
+- 输出不包含正文质量、链接可达性或主观价值判断。
+- 运行前后输入文件字节不变。
 
-## P0：把 Ingest 收缩为 Raw / Routine 到 Wiki 的编译入口
+### P0-B3：Lint skill
 
-目标：Ingest 判断来源中哪些稳定增量值得进入 Wiki，并维护对应来源链接。
+模块：`skills/sunday-note-lint/SKILL.md`
 
-需要改动：
+依赖：P0-B1、P0-B2。
 
-- 精简 `skills/sunday-note-ingest/SKILL.md`：
-  - 输入是用户指定的 Raw 总结、Routine / Project 记录或已确认对话信息；
-  - 默认写入目标只有 Wiki；
-  - 优先更新已有同主题页面，新建页面门槛高于更新；
-  - 不改写 Raw 来源总结，不自动整理 Routine，不摄取 Journal；
-  - 只有用户明确要求处理 Journal 时才将其中已确认、可复用内容作为来源。
-- 保留现有知识增量判断，并明确检索效率、回答深度、独特见解和知识结构化都可以构成增量，不要求增量必须来自个人项目或对话。
-- 把来源事实、跨来源综合、项目结论和用户确认信息分开表达，禁止把 agent 推断写成来源结论。
-- 在 Wiki 的具体判断附近加入 Raw / Routine wikilink；`sources` 汇总页面级来源。
-- 新来源只影响局部主题时不更新总 index；只有新增核心 Wiki 入口或导航关系变化时才维护 index。
-- 维护日志只记录实际执行的新增、合并或重要修订，不记录纯分析和未执行建议。
-- 外部 PDF、书籍或课程的来源总结仍由 paper summarizer、迁移工具或用户准备；不把通用来源解析重新塞进 Ingest skill。
+目标：诊断 Wiki 健康度，并在用户明确要求时执行 Wiki 维护。
 
-需要删除或收缩：
+实现内容：
 
-- “为材料选择 Raw / Routine / Wiki / Journal / Schema 任意去向”的宽泛路由职责。
-- 固定 SCQA、金字塔等写作框架提示；保留“结论、证据、适用条件和来源链接”这一最小内容契约。
-- 与 Lint 重复的全库价值评估、孤立页检查和维护编排。
+- 诊断请求只读取、报告问题和给出建议。
+- header 检查调用 `lint_headers.py`，链接与覆盖检查调用 `audit_reachability.py`。
+- Raw / Routine 只作为来源目标读取，不进入普通改写范围。
+- `raw_unlinked` 交给 Ingest 承接；Routine 无 backlink 不作为问题。
+- 只有用户明确要求执行维护时才修改 Wiki。
+- 维护日志只记录真实内容修改；诊断、blocked 和无变更运行不写日志。
+- worker 作为运行时可选优化，不写入固定工作流或 API。
+- `query_count` 只作为复查优先级的弱信号。
 
 验收：
 
-- 给定一篇论文总结，Ingest 更新相关 Wiki 判断并在对应位置链接该总结，Raw 文件不变。
-- 给定一个项目验证结论，Ingest 只把稳定、可复用部分写入 Wiki，并链接原 Project 记录。
-- 同一主题重复摄取时优先合并，不产生按来源堆积的 Wiki 页面。
-- Ingest 不会为了建立可达性而链接所有 Routine 文件。
+- skill 正文保持简洁，frontmatter 只包含 `name` 和 `description`。
+- 诊断模式没有文件写入和 worker 创建。
+- 两个脚本的职责没有重叠。
+- 删除、归档、个人判断和证据不足的修改需要用户确认。
 
-## P0：把 Query 收缩为 Wiki 搜索和按链接读取证据
+## P0-C：Query
 
-目标：Wiki 成为唯一默认搜索入口；Raw / Routine 只通过已选 Wiki 页面中的链接按需读取。
+### P0-C1：Wiki 字面检索
 
-需要改动：
+模块：`skills/sunday-note-query/scripts/query_search.py`
 
-- 修改 `query_search.py`，只读取配置中的 Wiki 路径。
-- `rg` 使用 fixed-string；关键词去空、大小写归一、按首次出现顺序去重，并保留中英文短语。
-- `rg` 只负责快速发现候选，最终由同一个 Python 字面计分函数计算文件名和正文命中，保证有无 `rg` 时排序原则一致。
-- 候选输出继续保持小而可解释：路径、总分、各关键词命中、`topic`、`keywords` 和 `sources`；不增加 embedding、摘要缓存或搜索权重配置。
-- LLM 先选不超过 3 个 Wiki 页面精读，再自行判断是否读取其中与问题直接相关的 Raw / Routine 链接。该行为只在 skill 中说明一句，不实现递归搜索、固定跳数、自动图遍历或额外状态。
-- Wiki 已足够回答时不读取来源；需要精确事实、方法细节、来源限制、项目验证或冲突核对时才沿链接读取。
-- 普通 Query 没有 Wiki 命中时，明确报告 Wiki 覆盖缺口并建议 Ingest，不静默回退为全库 Raw / Routine 搜索。
-- Query 不增加 Raw / Routine 搜索回退、扩展 scope 或其他绕过 Wiki 的兼容分支。
+目标：以 Wiki 为唯一搜索范围，输出小而可解释的候选列表。
 
-使用记录：
+实现内容：
 
-- 保留并加固 `update_query_header.py`，不删除 `last_queried` 和 `query_count`。
-- 脚本通过 vault 配置验证所有目标都位于 Wiki；拒绝 Raw、Routine、Journal、Schema 和 vault 外路径。
-- 所有目标先完成路径、header、字段和计数预检，再开始写入，避免后续文件失败造成可预见的部分更新。
-- 只更新最终实际影响回答的 Wiki 页面；同一页面一轮去重。
-- 用户明确要求本轮完全不写文件时跳过使用记录。
+- 从 vault 配置解析 Wiki 路径，只扫描该范围内的 Markdown。
+- 关键词去空、大小写归一、按首次出现顺序去重，并保留完整短语。
+- `rg` 使用 fixed-string，只负责候选发现。
+- Python 统一计算文件名和正文的字面命中数；总分能够由显示的各词命中数相加得到。
+- 有无 `rg` 使用同一评分与排序原则。
+- 候选输出路径、总分、各词命中、`topic`、`keywords` 和 `sources`。
+- 无匹配时返回明确的 Wiki 覆盖缺口；不搜索 Raw / Routine，不增加 scope 回退。
 
 验收：
 
-- `C++`、`.NET`、`[`、中英文短语和普通项目名都按字面匹配。
-- Query 搜索结果不直接出现 Raw / Routine 文件。
-- 读取 `VLA 强化学习` Wiki 后，从相应结论附近的链接读取所需论文总结。
-- Wiki 无覆盖时返回清晰缺口，不假装 vault 中没有相关来源。
-- 只有实际作为答案依据或来源路由的 Wiki 页面增加一次计数；正文和其他 header 字段字节不变。
-- 多文件记录中任一目标预检失败时全部不写入。
+- `C++`、`.NET`、`[`、中英文短语和普通项目名均按字面匹配。
+- 重复词只计一次，文件名与正文计分一致。
+- 有无 `rg` 的候选集合和排序原则一致。
+- 输出不包含 Raw / Routine 文件，运行前后 vault 文件不变。
 
-## P0：把 Lint 收缩为 Wiki 诊断和链接审计
+### P0-C2：Wiki 使用记录
 
-目标：Lint 诊断 Wiki 的结构、内容和向下链接，并把 Raw / Routine 作为只读来源目标进行验证。
+模块：`skills/sunday-note-query/scripts/update_query_header.py`
 
-Skill 需要改动：
+目标：安全记录实际参与回答的 Wiki 页面使用次数。
 
-- 精简 `skills/sunday-note-lint/SKILL.md`，删除默认写维护日志、强制创建 worker、固定任务表和运行时特定参数。
-- 用户要求检查、分析或诊断时只输出问题和建议，不修改文件。
-- 只有用户明确要求执行维护时才更新 Wiki；高风险、证据不足、删除、归档和个人判断继续要求确认。
-- 维护日志只记录真实执行的内容修改；blocked 任务、无变更扫描和未执行建议不写日志。
-- Query 使用次数只用于安排复查优先级；零使用不能证明低价值，高使用不能证明内容正确。
+实现内容：
 
-脚本需要改动：
-
-- `lint_headers.py` 只保留 Wiki header 必需字段、日期和计数格式、空来源、空 topic / keywords、重复 topic，以及能由 header 直接判断的机械问题。
-- 从 `lint_headers.py` 删除 `--entry`、index 覆盖、全库图遍历、正文正则候选和与 `audit_reachability.py` 重复的逻辑。
-- `audit_reachability.py` 成为唯一链接图检查入口，并明确区分：
-  - 需要从 Wiki index 可达的 Wiki scope；
-  - 仅用于解析和验证的 Raw / Routine 文件；
-  - Raw 中没有 Wiki backlink 的明确覆盖缺口。
-- 链接审计只读取显式 Wiki、Raw 和 Routine 路径，不扫描 Journal、Schema 或 vault 其他目录。
-- 机械脚本只报告断链、歧义、Wiki 可达性和未链接 Raw 清单；初版不判断链接位置、来源覆盖比例或 claim 级支撑关系。
+- 通过 vault 配置解析 Wiki 根目录，只接受其中的 Markdown 页面。
+- Raw、Routine、Journal、Schema 和 vault 外路径全部拒绝。
+- 所有目标先完成路径、header、字段和计数预检，再开始写入。
+- 同一页面同一轮只计一次。
+- 只更新 `last_queried` 和 `query_count`；正文及其他 header 字段保持不变。
+- 用户明确要求完全只读时跳过记录。
 
 验收：
 
-- 诊断请求没有写入副作用，也不创建 worker。
-- Wiki 到 Raw / Routine 的有效链接能被解析，断链能定位到源 Wiki 页面和具体目标。
-- 每份 Raw 无 backlink 都进入未链接 Raw 清单；Routine 无 backlink 不进入全局问题列表。
-- 同一 reachability fixture 只有 `audit_reachability.py` 一个权威结果。
-- `lint_headers.py` 不读取用户未指定的目录，代码和 CLI 参数明显减少。
+- 候选命中和精读后排除的页面不计数。
+- 实际作为回答依据或来源路由的 Wiki 页面计数加一。
+- 任一目标预检失败时全部目标保持不变。
+- 路径边界、去重和正文不变由标准库 fixture 覆盖。
 
-## P0：扩展回归基线并完成切换
+### P0-C3：Query skill
 
-目标：用一条命令保护新的 Wiki 中心知识流，然后再把它安装到父 vault。
+模块：`skills/sunday-note-query/SKILL.md`
 
-需要补充的 fixture：
+依赖：P0-C1、P0-C2；发布依赖 P0-B1。
 
-- Ingest 规则 fixture 或最小文档场景：同主题合并、正文相应位置保留来源链接、Raw / Routine 不变。
-- Query：Wiki-only scope、特殊字符、完整短语、重复词、有无 `rg` 排序一致、无覆盖报告。
-- Query 记录：实际证据计数、候选不计数、同轮去重、Wiki 路径边界、多目标预检和正文不变。
-- Lint：Wiki index 可达性、Wiki 到 Raw / Routine 链接、断链、未链接 Raw 清单、Routine 不要求全覆盖。
-- 安装器：更新后的三个 skill 和脚本能够覆盖到父 vault，父 vault 本地配置和正文仍不被安装器覆盖。
+目标：用最少 Wiki 证据回答问题，并按需读取页面中的来源链接。
 
-切换顺序：
+实现内容：
 
-1. 同步架构、scaffold 和 skill 契约。
-2. 实现并验证来源覆盖审计。
-3. 补齐全部长期 Raw 和必要 Routine 到 Wiki 的链接。
-4. 收缩 Ingest 和 Lint。
-5. 最后把 Query 搜索范围切换为 Wiki-only。
-6. 运行完整 fixture，再通过安装器部署当前 checkout。
+- 从用户问题提取 3–8 个名称、日期、项目线索、术语或短语。
+- 调用 Wiki 字面检索并选择不超过 3 个页面精读。
+- 由 agent 判断是否读取 Wiki 中直接相关的 Raw / Routine 链接，不引入递归搜索或图遍历机制。
+- Wiki 已足够回答时不读取来源；需要事实细节、来源限制、项目验证或冲突核对时读取链接文档。
+- 只为最终影响回答的 Wiki 页面更新使用记录。
+- 新产生的稳定知识给出 Ingest 建议；Query 不修改 Wiki 正文。
+
+验收：
+
+- skill 正文保持简洁，frontmatter 只包含 `name` 和 `description`。
+- 普通 Query 不直接搜索 Raw / Routine。
+- Wiki 无匹配时报告覆盖缺口。
+- 同一轮的候选、精读页面和实际证据范围能够明确区分。
+
+## P0-D：集成、测试与导出
+
+### P0-D1：统一回归入口
+
+模块：`tests/`
+
+依赖：P0-A1、P0-B1 至 P0-B3、P0-C1 至 P0-C3。
+
+目标：用一个命令验证三个 skill 相关脚本和知识流契约。
+
+实现内容：
+
+- `tests/run.sh` 汇总各模块 fixture，不引入测试框架或网络依赖。
+- 自动回归使用临时 vault；父 vault 只用于显式临时集成检查。
+- 每个 P0 模块在对应 fixture 中独立断言自己的输入、输出和写入边界。
 
 验收：
 
 - `bash tests/run.sh` 一次通过全部核心检查。
-- 测试不读取父 vault 个人正文，不产生缓存或持久运行状态。
-- 切换后用至少 3 个真实问题验证：技术来源、项目决策和个人上下文均能先命中 Wiki，再按需到达证据。
-- 如果覆盖基线不足，不提前关闭 Query 的现有检索路径。
+- 测试不依赖父 vault 的具体内容或本地状态，也不留下长期产物。
 
-## P1：清理仓库契约漂移
+### P0-D2：安装导出
 
-目标：让 README、安装说明、目录说明和实际导出产物一一对应。
+模块：`install/`、`install/README.md`
 
-需要改动：
+依赖：P0-D1。
 
-- README 只保留项目入口、最短安装路径和测试入口；安装细节归 `install/README.md`。
-- 清理仓库 `.gitignore` 中已失效的目录规则。
-- 核对 `community-plugins.json`：默认列表只保留核心流程必需插件，可选插件不作为默认启用项。
-- 删除 skill 收缩后失效的脚本参数、文档示例、兼容分支和重复说明。
+目标：把更新后的三个 skill 和脚本安全导出到 vault。
 
-验收：
+实现内容：
 
-- 文档中的仓库路径均真实存在，或明确标记为安装后父 vault 路径。
-- 安装器帮助、README 和实际产物列表一致。
-- 同一事实只在职责最近的文档中完整说明，其他位置只保留入口。
-
-## P2：精简可选论文总结能力
-
-目标：稳定地产生单篇来源总结，使其成为 Wiki 可引用的 Raw 证据，不让 paper skill 直接维护跨论文 Wiki。
-
-需要改动：
-
-- 将具身智能术语表移出通用 paper skill；领域术语属于父 vault 本地上下文。
-- 评估把校验与最终状态写入合并为一个 finalize 命令；只有能删除现有步骤时才实施。
-- 为 `--no-parse` 准备流程和 summary 校验增加轻量 fixture；完整 Docling 解析保留为人工集成检查。
-- 保持单篇总结来源忠实，并提供稳定标题或路径供 Wiki wikilink 引用。
-- 不增加自动联网补 metadata、模型下载器、论文推荐或跨论文 Wiki 写入。
+- 安装器继续覆盖托管 skill 和脚本，保留 vault 本地配置、模板和正文。
+- 安装说明记录 Wiki-only Query、来源覆盖审计和 Ingest 承接关系。
+- 安装 fixture 验证新增、更新和重复运行。
 
 验收：
 
-- 可选 skill 保持领域中立，主流程命令数量不增加。
-- 默认测试不要求 GPU、模型 artifacts 或网络。
-- 论文产物仍只进入父 vault 的导入工作区、Raw 和 figures；跨论文综合由 Ingest 写入 Wiki。
+- 三个 skill 和相关脚本与仓库源码一致。
+- 重复安装不会覆盖 vault 本地配置或个人内容。
+- 安装器不自动整理父 vault 的 Wiki、Raw 或 Routine。
 
-## P2：压缩快照型配置
+## P1-A：项目维护
 
-目标：减少 Claudian / Obsidian 插件版本变化带来的无关配置负担。
+### P1-A1：项目入口文档
 
-需要改动：
+模块：`README.md`、`install/README.md`、`docs/directory-structure.md`
 
-- 先验证 Claudian 可工作的最小配置字段，再删除模型选择、UI 偏好和可由插件默认值提供的快照字段。
-- 保留 Codex provider 启用、workspace-write 安全模式和必要入口配置，不保存设备路径、环境变量、会话或权限运行状态。
-- layout snapshot 继续独立保存，不并入安装器自动覆盖流程。
+目标：让项目入口、安装细节和目录职责各自保持单一权威说明。
+
+实现内容：
+
+- README 保留项目入口、最短安装路径、更新命令、测试入口和文档链接。
+- 安装细节及导出产物归 `install/README.md`。
+- 真实目录和父 vault 路径归 `docs/directory-structure.md`。
+- 清理失效路径、重复段落和已删除 CLI 示例。
+
+验收：
+
+- 文档中的仓库路径真实存在，安装后路径有明确标记。
+- 安装器帮助、README 和实际导出内容一致。
+- 同一事实只在职责最近的文档中完整说明。
+
+### P1-A2：仓库忽略规则
+
+模块：`.gitignore`
+
+目标：只忽略本项目真实产生的本地目录和运行状态。
+
+实现内容：
+
+- 核对每条规则对应的当前目录或工具。
+- 删除失效路径和父 vault 专用规则。
+- 安装后 vault 的忽略规则继续由 `install/scaffold/.gitignore` 维护。
+
+验收：
+
+- 仓库本地运行状态不会进入 Git。
+- 源码、模板、fixture 和受托管配置不会被误忽略。
+
+## P1-B：Vault 集成配置
+
+### P1-B1：默认 Obsidian 插件基线
+
+模块：`config/obsidian/community-plugins.json`
+
+目标：默认列表只包含知识库核心流程需要的插件。
+
+实现内容：
+
+- 核对每个默认插件对应的实际流程。
+- 可选 UI、个人偏好和未被安装流程使用的插件不进入默认列表。
+- 插件文件与运行状态继续由父 vault 本地维护。
+
+验收：
+
+- 新 vault 能运行模板、QuickAdd 和 agent 入口。
+- 删除任一默认插件前均有对应流程验证。
+
+### P1-B2：Claudian 共享配置
+
+模块：`config/claudian/claudian-settings.json`
+
+目标：保留可迁移的最小 agent 入口配置。
+
+实现内容：
+
+- 保留 Codex provider、workspace-write 安全模式和必要入口字段。
+- 模型选择、UI 偏好、设备路径、环境变量、会话和权限运行状态由父 vault 本地维护。
+- layout snapshot 保持独立，不进入安装器覆盖流程。
 
 验收：
 
 - 新 vault 能打开 Claudian 并发现导出的 skills。
-- 共享配置不固定具体设备、临时模型选择或个人 UI 偏好。
-- 插件升级产生的配置 diff 明显减少。
+- 共享配置不固定设备或临时模型选择。
+- 插件升级产生的无关配置 diff 保持最少。
 
-## P3：用真实抽检验证 audit 是否值得固化
+## P1-C：来源工具
 
-目标：先验证回答质量抽检能否稳定改变 Wiki 的 Ingest / Lint 决策，再决定是否新增 skill。
+### P1-C1：论文总结 skill
 
-验证方式：
+模块：`skills/paper-summarizer/`
 
-- 人工选择 3 轮真实问题，对比只读 Wiki 和沿链接补充 Raw / Routine 后的回答。
-- 只记录错误引用、缺失 Wiki 承接、断裂来源关系和由此产生的实际维护动作，不建设评分系统。
-- 只有当输入、对照方式和输出契约连续稳定，并且结果实际改变维护决策时，才新增最小 `sunday-note-audit` skill。
-- 如需固化，第一版只包含 `SKILL.md`，不新增脚本、不写 Wiki、不更新 header、不进入日常 Query / Ingest。
+目标：稳定地产生来源忠实、可被 Wiki 引用的单篇 Raw 总结。
+
+实现内容：
+
+- 通用 skill 保持领域中立，领域术语由父 vault 本地上下文提供。
+- 评估合并校验与状态写入；只有能减少命令和代码时实施。
+- 为 `--no-parse` 和 summary 校验补充轻量 fixture。
+- 输出提供稳定标题或路径供 Wiki wikilink 引用。
+- 产物范围保持在导入工作区、Raw 和 figures。
 
 验收：
 
-- 未达到稳定复用门槛时不新增 audit skill。
-- Audit 与 `audit_reachability.py` 名称相近但职责明确：前者评估回答证据质量，后者只审计链接图。
+- 默认测试不需要 GPU、模型 artifacts 或网络。
+- 主流程命令数量不增加。
+- skill 不直接维护跨论文 Wiki。
+
+## P2：回答质量 Audit 可行性
+
+模块候选：`skills/sunday-note-audit/SKILL.md`
+
+目标：验证回答证据质量检查能否稳定改变 Ingest 或 Lint 决策，再决定是否新增 skill。
+
+验证内容：
+
+- 使用三个脱敏问题样本，对比只读 Wiki 与沿链接补充 Raw / Routine 后的回答。
+- 记录错误引用、缺失 Wiki 承接、断裂来源关系和对应维护建议。
+- 不建设评分系统，不写 Wiki，不更新 header。
+
+验收：
+
+- 只有连续样本产生稳定输入、输出和实际维护价值时才新增 skill。
+- 第一版只包含简短 `SKILL.md`。
+- Audit 负责回答证据质量，`audit_reachability.py` 负责确定性链接图，两者职责独立。
+
+## 实施顺序
+
+1. P0-B1、P0-B2 两个 Lint 脚本可以并行实现，随后完成 P0-B3。
+2. P0-C1、P0-C2 两个 Query 脚本可以并行实现；P0-B1 可用后完成 P0-C3。
+3. P0-D 统一验证并导出全部 P0 改动。
+4. P1 各组按实际需要独立实施。
+5. P2 只在验证达到稳定复用门槛后实施。
 
 ## 持续约束
 
-- Query 由语义自然触发，不要求用户显式调用，也不在回答中复述检索机制。
-- Wiki 是默认查询入口和知识维护目标；Raw / Routine 是按链接读取的高价值证据层。
-- 来源忠实总结留在 Raw；基于一份或多份来源进一步思考形成的结构、关系和稳定结论进入 Wiki；具体目标应用留在 Project。
-- 每份长期 Raw 最终都必须有 Wiki backlink；未链接 Raw 由 Lint 持续报告，不通过总 index 或清单 wikilink 制造形式覆盖。
-- Query 只搜索 Wiki，不增加 Raw / Routine 回退或扩展 scope；读取 Wiki 后由 agent 自行决定是否读取页面中的链接。
-- Journal 默认不摄取、不查询、不 lint；用户明确指定时再处理。
-- 不建设全 vault 总索引，不要求所有 Routine 都有 Wiki backlink。
-- 不新增向量数据库、Dataview 硬依赖、图数据库、后台自动维护或持久搜索缓存。
+- 每个模块只保留一套权威实现，机械检查交给小脚本，语义判断留给 skill 或用户。
+- 不建设全 vault 总索引、向量数据库、图数据库、后台自动维护或持久搜索缓存。
 - 不新增 `density_score`、`value_score`、`confidence_score` 等主观评分字段。
-- 不把 `query_count` 当作自动删除或归档依据。
-- 不为 subagent 建通用框架，不把特定运行时参数写成跨 agent 契约。
-- 不恢复 Weekly / Monthly 专用脚本；rollup 继续从最小模板创建目标并只维护自动块。
-- 不扩展 rollup 或 Query 为任意工作流 DSL；新增配置能力必须来自已出现的真实复用场景。
-- 机械检查交给小脚本，语义判断留给 skill 或用户；每项职责只保留一套权威实现。
+- Query 只搜索 Wiki，Raw / Routine 只通过 Wiki 链接按需读取。
+- `query_count` 只作为维护优先级的弱信号。
+- Journal 只有用户明确指定时才进入知识流。
+- 新增配置能力需要已经出现的真实复用场景。
