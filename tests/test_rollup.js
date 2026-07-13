@@ -74,8 +74,8 @@ function makeApp(initialFiles) {
 function baseFiles() {
   return {
     ".sunday-note-agent/config/quickadd-rollups.json": repoText("config/quickadd-rollups.json"),
-    "个人模板/周记录.md": repoText("templates/周记录.md"),
-    "个人模板/月记录.md": repoText("templates/月记录.md"),
+    "个人模板/每周记录.md": repoText("templates/每周记录.md"),
+    "个人模板/每月记录.md": repoText("templates/每月记录.md"),
     "个人模板/每日记录.md": [
       "## 打卡",
       "",
@@ -100,6 +100,11 @@ async function testWeeklyRollup() {
   assert.match(output, /\| 临时事项 &#124; 户外 \| 1 \| 1 \| 100% \|/);
   assert.match(output, /2026-06-30\.md\|2026-06-30\]\]（未创建）/);
   assert.match(output, /## 个人周总结/);
+  assert.match(output, /- 本周总结事项/);
+  assert.match(output, /- 分析或改进建议/);
+  assert.doesNotMatch(output, /\{\{title\}\}/);
+  assert.match(output, /obsidian:\/\/quickadd\?choice=.*&value-week=2026-W27/);
+  assert.equal((output.match(/刷新本周统计/g) || []).length, 1);
 
   fixture.files.set(targetPath, `${output}\n\n人工补充`);
   await rollup({ app: fixture.app, variables: { rollup: "weekly_checkins", week: "2026-W27" } });
@@ -128,6 +133,11 @@ async function testMonthlyRollup() {
   for (const week of ["W27", "W28", "W29", "W30"]) assert.match(output, new RegExp(week));
   assert.doesNotMatch(output, /W31/);
   assert.match(output, /## 个人月总结/);
+  assert.match(output, /- 本月总结事项/);
+  assert.match(output, /- 分析或改进建议/);
+  assert.doesNotMatch(output, /\{month\}/);
+  assert.match(output, /obsidian:\/\/quickadd\?choice=.*&value-month=2026-07/);
+  assert.equal((output.match(/刷新每月统计/g) || []).length, 1);
 }
 
 async function testRequiredContextStopsWithoutWriting() {

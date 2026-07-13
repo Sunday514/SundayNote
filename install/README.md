@@ -55,7 +55,8 @@ bash SundayNoteAgent/install/install.sh --vault-root . --with-paper-summarizer
 - `首页.md`：vault 首页。
 - `.import_files/`：隐藏导入工作目录。
 - `10_原始材料/`、`20_每日记录/`、`21_每周记录/`、`22_每月记录/`、`23_项目复盘/`、`30_知识库/`、`40_个人写作/`、`个人模板/`。
-- `个人模板/每日记录.md`、`周记录.md`、`月记录.md`：无具体打卡项的最小 Routine 骨架，只在缺失时创建。
+- `个人模板/每日记录.md`：无具体打卡项的最小 Routine 骨架，只在缺失时创建。
+- `个人模板/每周记录.md`、`每月记录.md`：包含统计刷新链接的 Weekly 和 month pack 骨架，每次安装刷新。
 - `30_知识库/个人上下文.md`：空的个人上下文 Wiki 页面，`keywords` 初始为空，后续只记录真实兴趣词、方向词、项目词或常用问法。
 - `.obsidian/community-plugins.json` 基线；Obsidian 默认通过 Claudian 调用 agent，workspace 和 Claudian 会话状态由每台设备本地维护。
 - `.stignore`：保留已有规则并补充 `/SundayNoteAgent` 和 `/.import_files`，避免工具仓库与导入中间产物进入 Syncthing 同步。
@@ -65,7 +66,7 @@ bash SundayNoteAgent/install/install.sh --vault-root . --with-paper-summarizer
 
 不论是新 vault 还是已有 vault，安装器都会补建缺失的标准一级目录和 `.import_files/`，但不创建二级结构，也不整理已有内容。工具入口的维护方式是：
 
-- 每次覆盖父 vault 的 `AGENTS.md`、三个基础 skill 和 `.sunday-note-agent/quickadd/` 中的同名源文件。
+- 每次覆盖父 vault 的 `AGENTS.md`、三个基础 skill、`.sunday-note-agent/quickadd/` 中的同名源文件、Weekly 和 month pack 模板。
 - 传入 `--with-paper-summarizer` 时首次导出 `paper-summarizer`；已导出时，普通重跑也会刷新它。
 - 托管目录中不与源仓库同名的额外文件会保留。
 - 父 vault `.sunday-note-agent/config/quickadd-rollups.json` 下的 QuickAdd 统计配置；仅在缺失时创建。
@@ -82,7 +83,7 @@ bash SundayNoteAgent/install/install.sh --vault-root . --with-paper-summarizer
 - Query 只搜索 Wiki；Wiki 证据不足时，只沿页面中的直接链接按需读取 Raw / Routine。
 - Lint 使用 `lint_headers.py` 检查 Wiki header，使用 `audit_reachability.py` 检查 Wiki 导航、Raw backlink 和已有 Routine 证据链接；诊断模式保持只读。
 
-安装器覆盖三个核心 skill 及其同名源文件，保留托管目录中的额外文件。父 vault 的配置、模板和内容不进入托管覆盖范围。
+安装器覆盖三个核心 skill、Weekly 和 month pack 模板及其同名源文件，保留托管目录中的额外文件。父 vault 的 Daily 模板、配置和内容不进入托管覆盖范围。
 
 ## 验证
 

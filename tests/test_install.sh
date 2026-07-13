@@ -43,6 +43,12 @@ test ! -e "$vault/.agents/skills/paper-summarizer" || fail "optional skill was i
 assert_file_contains "$vault/.stignore" "/SundayNoteAgent"
 assert_file_contains "$vault/.stignore" "/.import_files"
 assert_same_file "$ROOT/install/scaffold/AGENTS.md" "$vault/AGENTS.md"
+assert_same_file "$ROOT/templates/每周记录.md" "$vault/个人模板/每周记录.md"
+assert_file_contains "$vault/个人模板/每周记录.md" "value-week={{title}}"
+assert_file_contains "$vault/个人模板/每周记录.md" "- [ ] 本周计划事项"
+assert_same_file "$ROOT/templates/每月记录.md" "$vault/个人模板/每月记录.md"
+assert_file_contains "$vault/个人模板/每月记录.md" "value-month={month}"
+assert_file_contains "$vault/个人模板/每月记录.md" "- [ ] 本月计划事项"
 assert_source_tree_exported "$ROOT/skills/sunday-note-ingest" "$vault/.agents/skills/sunday-note-ingest"
 assert_source_tree_exported "$ROOT/skills/sunday-note-lint" "$vault/.agents/skills/sunday-note-lint"
 assert_source_tree_exported "$ROOT/skills/sunday-note-query" "$vault/.agents/skills/sunday-note-query"
@@ -148,6 +154,8 @@ assert_source_tree_exported "$ROOT/skills/sunday-note-lint" "$vault/.agents/skil
 assert_source_tree_exported "$ROOT/skills/sunday-note-query" "$vault/.agents/skills/sunday-note-query"
 assert_source_tree_exported "$ROOT/skills/paper-summarizer" "$vault/.agents/skills/paper-summarizer"
 assert_source_tree_exported "$ROOT/automation/quickadd" "$vault/.sunday-note-agent/quickadd"
+assert_same_file "$ROOT/templates/每周记录.md" "$vault/个人模板/每周记录.md"
+assert_same_file "$ROOT/templates/每月记录.md" "$vault/个人模板/每月记录.md"
 
 printf '%s\n' "stale optional skill" > "$vault/.agents/skills/paper-summarizer/SKILL.md"
 bash "$ROOT/install/install.sh" --vault-root "$vault" >/dev/null
@@ -156,6 +164,8 @@ if grep -Fq "stale optional skill" "$vault/.agents/skills/paper-summarizer/SKILL
 fi
 assert_local_content_unchanged
 assert_source_tree_exported "$ROOT/skills/paper-summarizer" "$vault/.agents/skills/paper-summarizer"
+assert_same_file "$ROOT/templates/每周记录.md" "$vault/个人模板/每周记录.md"
+assert_same_file "$ROOT/templates/每月记录.md" "$vault/个人模板/每月记录.md"
 test "$(grep -Fxc -- "/SundayNoteAgent" "$vault/.stignore")" -eq 1 || fail "Syncthing ignore rule was duplicated"
 test "$(grep -Fxc -- "/.import_files" "$vault/.stignore")" -eq 1 || fail "Syncthing import ignore rule was duplicated"
 

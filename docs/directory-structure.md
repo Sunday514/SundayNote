@@ -1,6 +1,6 @@
 ---
 last_updated: "2026-07-13"
-update_count: 10
+update_count: 11
 last_queried: ""
 query_count: 0
 sources:
@@ -78,7 +78,7 @@ QuickAdd 是模板、捕获和例行维护动作的主要入口。本仓库提�
 
 具体打卡项保存在本地 Daily 模板中。Daily 创建统一使用个人模板中的 `每日记录.md`；模板中以冒号结尾的 checkbox 定义可填每日详情的稳定统计类别，其他 checkbox 使用完整文本作为统计身份。某天不参与统计的项目可以直接从当天 Daily 中删除。Weekly 统计优先按 Daily 模板中的 checkbox 顺序输出，同时兼容历史 Daily 中额外出现的完整打卡项。
 
-`SundayNoteAgent/templates/` 只保存无具体条目的 Daily、Weekly 和 month pack 最小骨架。`个人模板/` 是父 vault 的实际副本；安装器只在缺失时创建，之后可由用户添加打卡类别和个人段落。周/月模板只定义人工区域和自动块标记，标记内容统一由 rollup 生成，避免模板与脚本重复维护。
+`SundayNoteAgent/templates/` 只保存无具体条目的 Daily、Weekly 和 month pack 最小骨架。Weekly 模板使用 Calendar 支持的 `{{title}}` 占位符；Weekly 和 month pack 模板都在自动块中提供统计刷新链接，由安装器同步到 `个人模板/`。Daily 模板只在缺失时创建。点击刷新后，标记内容统一由 rollup 生成，人工计划和总结区域保持不变。
 
 `SundayNoteAgent/migration/` 保存可复用的知识库迁移辅助工具，例如从外部知识源导出导入工作区文件或转换成 Raw 来源材料。迁移工具不得保存密钥、个人正文或一次性运行状态。
 

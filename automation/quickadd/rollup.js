@@ -3,15 +3,15 @@ const VAULT_LAYOUT = Object.freeze({
   weekly: "21_每周记录",
   monthly: "22_每月记录",
   daily_template: "个人模板/每日记录.md",
-  weekly_template: "个人模板/周记录.md",
-  monthly_template: "个人模板/月记录.md",
+  weekly_template: "个人模板/每周记录.md",
+  monthly_template: "个人模板/每月记录.md",
 });
 
-module.exports = async function rollup(params) {
+module.exports = async function rollup(params, settings = {}) {
   const { app, variables = {} } = params;
   const vaultLayout = VAULT_LAYOUT;
   const rollupConfig = await readRollupConfig(app);
-  const rollupName = String(variables.rollup || "").trim();
+  const rollupName = String(variables.rollup || settings.rollup || "").trim();
   const spec = rollupConfig.rollups && rollupConfig.rollups[rollupName];
 
   if (!rollupName || !spec) {
@@ -287,7 +287,11 @@ async function nextTargetContent(app, path, spec, autoBlock, vaultLayout, contex
   } else if (spec.target.template) {
     const templatePath = resolvePath(vaultLayout, spec.target.template);
     const template = await app.vault.adapter.read(templatePath);
-    oldContent = renderTemplate(template, { ...vaultLayout, ...context });
+    oldContent = renderTemplate(template, {
+      ...vaultLayout,
+      ...context,
+      title: context.week || context.label,
+    });
   } else {
     throw new Error(`Rollup target does not exist: ${path}`);
   }
@@ -316,7 +320,8 @@ function activeFileInFolder(active, vaultLayout, folderKey) {
 }
 
 function renderTemplate(template, context) {
-  return String(template || "").replace(/\{([A-Za-z0-9_]+)\}/g, (_match, key) => {
+  return String(template || "").replace(/\{\{([A-Za-z0-9_]+)\}\}|\{([A-Za-z0-9_]+)\}/g, (_match, doubleKey, singleKey) => {
+    const key = doubleKey || singleKey;
     const value = context[key];
     if (value === undefined || value === null) return "";
     return String(value);
