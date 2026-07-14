@@ -1,6 +1,6 @@
 ---
-last_updated: 2026-07-13
-update_count: 12
+last_updated: 2026-07-15
+update_count: 14
 last_queried: ""
 query_count: 0
 sources:
@@ -85,7 +85,7 @@ Raw 和 Routine 是两类并列来源：
 - Routine 回答用户做了什么、如何判断以及项目如何验证，保留个人活动总结。
 - Ingest 读取 Raw、Routine 或已确认对话，把稳定知识提炼进 Wiki，并在相关位置保留来源链接。
 - Query 默认只搜索 Wiki；读取 Wiki 后，由 agent 按问题需要决定是否读取页面链接的 Raw / Routine，不实现递归搜索或额外图状态。
-- Lint 检查 Wiki header、内容结构、Wiki 可达性和指向 Raw / Routine 的链接；不把 Raw / Routine 当作普通改写对象。
+- Lint 只在用户显式调用 `$sunday-note-lint` 时执行。每次调用都逐页检查整个 Wiki 的 header、内容结构、可达性和指向 Raw / Routine 的链接；用户未限制写入时自治完成明确的低风险维护，显式只读约束下只输出全局计划。Lint 不把 Raw / Routine 当作普通改写对象。
 - Journal 独立存在，只在用户明确要求时被引用。
 - Schema 约束以上行为。
 
@@ -159,7 +159,7 @@ Header 用于三个动作：
 
 `30_知识库/索引.md` 是 Wiki 导航入口，只组织核心 Wiki 页面、核心工作流、项目背景和待复查页面，不枚举全部 Raw / Routine，也不重复 header 信息。Raw / Routine 通过相关 Wiki 页面正文中的链接按需可达。
 
-`30_知识库/知识库维护日志.md` 只记录真实执行的内容演化，例如新增、合并、重要修订、来源关系修复和进入索引。普通 Query、只读 Lint、blocked 任务、未执行建议以及仅更新 `last_queried` / `query_count` 不写维护日志。Header 是页面当前维护数据，Log 是实际内容变化历史。
+`30_知识库/知识库维护日志.md` 只记录真实执行的内容演化，例如新增、合并、重要修订、来源关系修复和进入索引。普通 Query、无内容变更的 Lint、blocked 任务、未执行建议以及仅更新 `last_queried` / `query_count` 不写维护日志。Header 是页面当前维护数据，Log 是实际内容变化历史。
 
 ## 维护原则
 

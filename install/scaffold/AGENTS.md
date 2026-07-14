@@ -20,7 +20,7 @@
 - Raw 和 Routine 是并列证据来源，Wiki 是知识维护目标。
 - Ingest 从 Raw、Routine 或已确认对话中提炼稳定知识，只写入 Wiki，并在相关知识附近保留来源链接。
 - Query 只搜索 Wiki；读取 Wiki 后，按问题需要读取页面链接的 Raw 或 Routine。
-- Lint 检查 Wiki 的 header、内容结构、可达性和来源链接；Raw 和 Routine 保持只读。
+- Lint 仅在用户显式调用 `$sunday-note-lint` 时触发，每次逐页检查整个 Wiki 的 header、内容结构、可达性和来源链接；用户未限制写入时自治执行明确的低风险维护，显式只读请求只输出全局计划。Raw 和 Routine 保持只读。
 - 每份长期 Raw 最终都应至少被一个相关 Wiki 页面链接；Routine 只链接实际支撑稳定知识的记录。
 
 ## 写入规则

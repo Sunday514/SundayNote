@@ -1,6 +1,6 @@
 ---
-last_updated: "2026-07-13"
-update_count: 11
+last_updated: "2026-07-15"
+update_count: 13
 last_queried: ""
 query_count: 0
 sources:
@@ -60,7 +60,7 @@ Wiki 是 agent 可维护的长期知识层和默认 Query 入口。进入 Wiki �
 
 每份长期 Raw 最终都应至少被一个相关 Wiki 页面链接；没有 Wiki backlink 的 Raw 由 Lint 作为覆盖缺口持续报告。Routine 只有实际支撑稳定知识的记录才需要 Wiki backlink，普通 Daily 不要求全部承接。Wiki 正文在相关知识附近链接 Raw / Routine，header `sources` 汇总页面级来源；初版不要求两者严格同步。
 
-Query 只搜索 Wiki，读取 Wiki 后由 agent 按问题需要决定是否读取页面链接的 Raw / Routine；不直接扩大搜索范围。Lint 主要检查 Wiki 的 header、结构、可达性和向下链接，不把 Raw / Routine 当作普通改写对象。Wiki 页面使用 YAML header 记录 `last_updated`、`update_count`、`last_queried`、`query_count`、`sources`、`topic` 和 `keywords`。`30_知识库/个人上下文.md` 属于本地 Wiki，用于保存长期兴趣、近期计划、推荐偏好和当前项目，不放入 `SundayNoteAgent/`。
+Query 只搜索 Wiki，读取 Wiki 后由 agent 按问题需要决定是否读取页面链接的 Raw / Routine；不直接扩大搜索范围。Lint 仅由用户显式调用 `$sunday-note-lint` 触发，每次逐页检查整个 Wiki 的 header、结构、可达性和向下链接；显式只读请求只输出全局计划，不执行写入。Lint 不把 Raw / Routine 当作普通改写对象。Wiki 页面使用 YAML header 记录 `last_updated`、`update_count`、`last_queried`、`query_count`、`sources`、`topic` 和 `keywords`。`30_知识库/个人上下文.md` 属于本地 Wiki，用于保存长期兴趣、近期计划、推荐偏好和当前项目，不放入 `SundayNoteAgent/`。
 
 论文整理按信息层分工：PDF 原文和全部解析过程产物进入 `.import_files/`；单篇论文总结以 `10_原始材料/<论文标题>.md` 保存，引用图像进入 `assets/figures/`；跨论文技术对比、方法谱系和选型准则进入 Wiki；带具体项目目标、约束、决策和下一步计划的调研报告或方案设计进入 `23_项目复盘/`。项目验证后沉淀出的稳定经验再回写 Wiki。
 
@@ -70,7 +70,7 @@ Query 只搜索 Wiki，读取 Wiki 后由 agent 按问题需要决定是否读�
 
 本页列出的一级目录和维护文件路径是固定 vault 布局。安装器负责补建缺失目录，skills 和自动化脚本直接使用这些路径；`.sunday-note-agent/config/` 只保存 QuickAdd 等具体功能配置。
 
-`30_知识库/索引.md`、`30_知识库/知识库维护日志.md` 和个人上下文页面属于本地 Wiki 维护文件。索引只组织核心 Wiki 页面，不枚举全部 Raw / Routine；维护日志只记录真实执行的内容新增、合并、重要修订和来源关系修复，不记录普通 Query、只读 Lint 或仅使用次数变化；个人上下文集中保存能降低 agent 沟通成本的稳定个人偏好和计划。这些文件默认不进入 Git。
+`30_知识库/索引.md`、`30_知识库/知识库维护日志.md` 和个人上下文页面属于本地 Wiki 维护文件。索引只组织核心 Wiki 页面，不枚举全部 Raw / Routine；维护日志只记录真实执行的内容新增、合并、重要修订和来源关系修复，不记录普通 Query、无内容变更的 Lint 或仅使用次数变化；个人上下文集中保存能降低 agent 沟通成本的稳定个人偏好和计划。这些文件默认不进入 Git。
 
 必要 Obsidian 配置构成可迁移基线。仓库保存 `config/` 下的框架级配置、脱敏 Claudian 默认配置和布局快照；社区插件文件、Daily Notes、Calendar、Templates、QuickAdd actions、terminal wrapper、workspace、Claudian sessions、设备 ID、CLI 绝对路径、环境变量和代理由父 vault 本地维护。Obsidian 内默认通过 Claudian（`realclaudian`）调用 agent，Codex provider 使用当前设备可见的 `codex` 命令或本机 Claudian 设置。恢复 `config/layout-snapshots/` 中的布局快照前，用户需要先在 Obsidian 中安装并启用必备插件。
 

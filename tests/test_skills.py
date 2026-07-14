@@ -13,6 +13,7 @@ CORE_SKILLS = (
     "sunday-note-lint",
     "sunday-note-query",
 )
+LINT_DESCRIPTION = "仅在用户显式调用 `$sunday-note-lint` 时，对整个 Wiki 执行检查与维护。"
 
 
 def parse_skill(path: Path) -> tuple[dict[str, str], str]:
@@ -43,6 +44,14 @@ def main() -> None:
         assert frontmatter["name"] == skill_name, skill_file
         assert frontmatter["description"], skill_file
         assert body.strip(), skill_file
+
+        if skill_name == "sunday-note-lint":
+            assert frontmatter["description"] == LINT_DESCRIPTION, skill_file
+            assert "全局 Lint plan" in body and "整轮维护共用这份计划" in body, skill_file
+            assert "单篇小段落删改可由主 agent 直接完成" in body, skill_file
+            assert "用户明确要求只读" in body and "不修改文件" in body, skill_file
+            assert "`raw_unlinked` 不由 Lint 直接写入 Wiki" in body, skill_file
+            assert "先判断知识增量再提炼或合并" in body, skill_file
 
         for relative_path in re.findall(r"`(scripts/[^`]+\.py)`", body):
             assert (skill_dir / relative_path).is_file(), f"missing referenced script: {relative_path}"
