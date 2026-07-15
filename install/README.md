@@ -81,7 +81,7 @@ bash SundayNoteAgent/install/install.sh --vault-root . --with-paper-summarizer
 
 - Ingest 从用户指定的 Raw、Routine 或已确认对话中提炼稳定知识，只写入 Wiki，并保留实际来源链接。
 - Query 只搜索 Wiki；Wiki 证据不足时，只沿页面中的直接链接按需读取 Raw / Routine。
-- Lint 仅在用户显式调用 `$sunday-note-lint` 时触发，每次逐页检查整个 Wiki；使用 `lint_headers.py` 检查 Wiki header，使用 `audit_reachability.py` 检查 Wiki 导航、Raw backlink 和已有 Routine 证据链接。用户未限制写入时自治完成明确的低风险维护，显式只读请求只输出全局计划。
+- Lint 仅在用户显式调用 `$sunday-note-lint` 时触发，每次逐页检查整个 Wiki；使用 `lint_headers.py` 和 `audit_reachability.py` 提供机械诊断基线。用户未限制写入时按唯一全局计划把 Wiki 维护交给 subagent，显式只读请求只输出计划；机械问题只进入最终报告。
 
 安装器覆盖三个核心 skill、Weekly 和 month pack 模板及其同名源文件，保留托管目录中的额外文件。父 vault 的 Daily 模板、配置和内容不进入托管覆盖范围。
 

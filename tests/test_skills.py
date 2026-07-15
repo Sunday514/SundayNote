@@ -47,11 +47,13 @@ def main() -> None:
 
         if skill_name == "sunday-note-lint":
             assert frontmatter["description"] == LINT_DESCRIPTION, skill_file
-            assert "全局 Lint plan" in body and "整轮维护共用这份计划" in body, skill_file
-            assert "单篇小段落删改可由主 agent 直接完成" in body, skill_file
+            assert "唯一的全局 Lint plan" in body and "计划不再新增任务" in body, skill_file
+            assert "所有计划内 Wiki 写入均交给 subagent" in body, skill_file
+            assert "机械问题只进入最终报告" in body, skill_file
             assert "用户明确要求只读" in body and "不修改文件" in body, skill_file
             assert "`raw_unlinked` 不由 Lint 直接写入 Wiki" in body, skill_file
             assert "先判断知识增量再提炼或合并" in body, skill_file
+            assert "单篇小段落删改可由主 agent" not in body, skill_file
 
         for relative_path in re.findall(r"`(scripts/[^`]+\.py)`", body):
             assert (skill_dir / relative_path).is_file(), f"missing referenced script: {relative_path}"

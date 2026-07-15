@@ -1,6 +1,6 @@
 ---
-last_updated: "2026-07-15"
-update_count: 13
+last_updated: "2026-07-16"
+update_count: 14
 last_queried: ""
 query_count: 0
 sources:
@@ -70,7 +70,7 @@ Query 只搜索 Wiki，读取 Wiki 后由 agent 按问题需要决定是否读�
 
 本页列出的一级目录和维护文件路径是固定 vault 布局。安装器负责补建缺失目录，skills 和自动化脚本直接使用这些路径；`.sunday-note-agent/config/` 只保存 QuickAdd 等具体功能配置。
 
-`30_知识库/索引.md`、`30_知识库/知识库维护日志.md` 和个人上下文页面属于本地 Wiki 维护文件。索引只组织核心 Wiki 页面，不枚举全部 Raw / Routine；维护日志只记录真实执行的内容新增、合并、重要修订和来源关系修复，不记录普通 Query、无内容变更的 Lint 或仅使用次数变化；个人上下文集中保存能降低 agent 沟通成本的稳定个人偏好和计划。这些文件默认不进入 Git。
+`30_知识库/索引.md`、`30_知识库/知识库维护日志.md` 和个人上下文页面属于本地 Wiki 维护文件。索引只组织核心 Wiki 页面，不枚举全部 Raw / Routine；维护日志记录 Ingest 新建 Wiki 页面的创建登记，以及有实际知识维护的 Lint 在整轮结束时由主 agent 写入的一条整轮维护记录。普通 Ingest 页面更新、Query、只读或无实际知识维护的 Lint、仅使用次数变化不写维护日志。个人上下文集中保存能降低 agent 沟通成本的稳定个人偏好和计划。这些文件默认不进入 Git。
 
 必要 Obsidian 配置构成可迁移基线。仓库保存 `config/` 下的框架级配置、脱敏 Claudian 默认配置和布局快照；社区插件文件、Daily Notes、Calendar、Templates、QuickAdd actions、terminal wrapper、workspace、Claudian sessions、设备 ID、CLI 绝对路径、环境变量和代理由父 vault 本地维护。Obsidian 内默认通过 Claudian（`realclaudian`）调用 agent，Codex provider 使用当前设备可见的 `codex` 命令或本机 Claudian 设置。恢复 `config/layout-snapshots/` 中的布局快照前，用户需要先在 Obsidian 中安装并启用必备插件。
 

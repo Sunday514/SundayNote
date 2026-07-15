@@ -1,6 +1,6 @@
 ---
 last_updated: 2026-07-15
-update_count: 31
+update_count: 32
 last_queried: ""
 query_count: 0
 sources:
@@ -44,7 +44,7 @@ Raw 保存外部资料的忠实总结，Routine 保存用户活动和项目上�
 - 架构文档、目录文档和 scaffold 已同步 Wiki 中心知识流。
 - 项目开发规则允许父 vault 作为显式临时集成测试实例；自动回归和验收仍以通用 fixture 为准。
 - P0-A1 Ingest skill 已固定为从指定 Raw、Routine 或已确认对话向 Wiki 沉淀知识，包含最小写作契约、来源链接和明确写入边界。
-- P0-B1 至 P0-B3 已完成分层来源审计、确定性 Wiki header 检查和 Lint 全库维护编排；Lint 仅由 `$sunday-note-lint` 显式触发，逐页检查整个 Wiki，完成审计后建立一份供整轮分派和跟踪的全局计划。显式只读请求在计划后停止；普通维护中，长文本、多轮工具、跨文档和 Raw 承接任务交给 subagent，明确的单页小改可由主 agent 执行，不确定或高风险任务标记为 blocked 后继续。
+- P0-B1 至 P0-B3 已完成分层来源审计、确定性机械检查和 Lint 全库知识维护编排；Lint 仅由 `$sunday-note-lint` 显式触发，逐页审计整个 Wiki，完成后建立唯一全局计划。显式只读请求在计划后停止；所有计划内 Wiki 写入由 subagent 执行，主 agent 只负责编排、复核、最终报告和一次维护日志，机械问题只报告。
 - P0-C1 至 P0-C3 已完成 Wiki-only 字面检索、安全使用记录和最小证据 Query；候选排序使用可解释的词覆盖与 header 信号，index 不占用内容页优先级，Raw / Routine 只沿直接链接按需读取。标准 fixture、父 vault 只读 A/B 和独立证据复核均已通过。
 - Vault 层目录和维护文件采用固定布局；安装器、skills、QuickAdd 和论文总结工具共享同一目录契约，`.sunday-note-agent/config/` 只保存具体功能配置。
 - P1-A2 仓库忽略规则已只保留本项目的 agent 开发状态；父 vault 的运行状态和生成目录由安装后的 `.gitignore` 维护。

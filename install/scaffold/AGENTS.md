@@ -20,7 +20,7 @@
 - Raw 和 Routine 是并列证据来源，Wiki 是知识维护目标。
 - Ingest 从 Raw、Routine 或已确认对话中提炼稳定知识，只写入 Wiki，并在相关知识附近保留来源链接。
 - Query 只搜索 Wiki；读取 Wiki 后，按问题需要读取页面链接的 Raw 或 Routine。
-- Lint 仅在用户显式调用 `$sunday-note-lint` 时触发，每次逐页检查整个 Wiki 的 header、内容结构、可达性和来源链接；用户未限制写入时自治执行明确的低风险维护，显式只读请求只输出全局计划。Raw 和 Routine 保持只读。
+- Lint 仅在用户显式调用 `$sunday-note-lint` 时触发，每次逐页检查整个 Wiki 的知识结构、可达性和来源关系；用户未限制写入时按唯一全局计划把 Wiki 维护交给 subagent，显式只读请求只输出计划。机械问题只报告，Raw 和 Routine 保持只读。
 - 每份长期 Raw 最终都应至少被一个相关 Wiki 页面链接；Routine 只链接实际支撑稳定知识的记录。
 
 ## 写入规则
@@ -31,7 +31,7 @@
 - 当天流水账、一次性安排、未验证猜测、未经提炼的摘录和临时命令输出不进入 Wiki。
 - Wiki 在具体判断、方法、限制或项目应用附近保留 Raw / Routine wikilink；header `sources` 汇总页面级来源。
 - `30_知识库/索引.md` 只组织核心 Wiki 页面，不枚举全部 Raw / Routine。
-- `30_知识库/知识库维护日志.md` 只记录真实执行的内容新增、合并、重要修订和来源关系修复。
+- `30_知识库/知识库维护日志.md` 记录 Ingest 新建 Wiki 页面的创建登记；有实际知识维护的 Lint 在整轮结束时由主 agent 写一条整轮维护记录。
 
 Wiki 页面使用以下 YAML header：
 
