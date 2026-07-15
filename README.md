@@ -1,12 +1,12 @@
 # SundayNoteAgent
 
-SundayNoteAgent 是一套用于 Obsidian 知识库的 agent 工具层。它提供安装器、Codex / agent skills、QuickAdd 自动化脚本、固定 vault 布局、最小 Routine 模板和框架文档，适合放在私人知识库中的 `SundayNoteAgent/` 目录下作为工具层独立 repo 使用。
+SundayNoteAgent 是一套用于 Obsidian 知识库的 agent 工具层。它提供安装器、Codex / agent skills、QuickAdd 自动化脚本、固定 vault 布局和最小 Routine 模板，适合放在私人知识库中的 `SundayNoteAgent/` 目录下作为工具层独立 repo 使用。
 
 个人笔记、带具体条目的个人模板、附件、图片、本地 Obsidian 工作流配置和运行状态由父知识库管理，不属于本仓库。
 
 ## 安装
 
-在 vault 根目录拉下工具层，然后安装配置和架构：
+在 vault 根目录拉下工具层，然后安装配置和目录骨架：
 
 ```bash
 mkdir -p ~/Notes/MyVault
@@ -69,29 +69,51 @@ bash SundayNoteAgent/install/install.sh --vault-root .
 
 安装器只部署当前 checkout，不自动执行 Git 操作。
 
-## 目录
+## 目录结构
+
+父 vault 使用固定一级布局，安装器和 skills 直接依赖这些路径：
+
+| 路径 | 角色 | 默认维护边界 |
+|---|---|---|
+| `首页.md` | 知识库导航入口 | 由父 vault 维护 |
+| `.import_files/` | PDF、docx、网页导出、解析产物和临时日志 | 只由导入流程管理 |
+| `10_原始材料/` | 论文、书籍、课程等长期来源总结 | 默认只读 |
+| `20_每日记录/` | Daily Routine | 改写前确认 |
+| `21_每周记录/` | Weekly Routine | 改写前确认 |
+| `22_每月记录/` | Monthly Routine | 改写前确认 |
+| `23_项目复盘/` | Project Routine | 改写前确认 |
+| `30_知识库/` | agent 可维护的长期 Wiki | 按 skills 和根规则维护 |
+| `40_个人写作/` | 可选 Journal | 仅用户明确要求时读写 |
+| `assets/figures/` | 长期引用图像 | 文档使用相对路径引用 |
+| `个人模板/` | 父 vault 本地模板 | 个人内容不回写工具仓库 |
+| `SundayNoteAgent/` | 可公开的工具层源码 | 由 Git 和安装器维护 |
+| `.agents/` | 安装后的 agent skills | 由安装器托管 |
+| `.sunday-note-agent/` | 自动化脚本和功能配置 | 由安装器托管 |
+| `.claudian/` | Claudian 本地设置和会话 | 仅部署脱敏默认设置 |
+| `.obsidian/` | Obsidian 配置和运行状态 | 仅部署必要基线配置 |
+
+`.import_files/` 是导入流程的临时目录，不属于知识分层。完成整理的长期来源总结进入 `10_原始材料/`，长期引用的图像进入 `assets/figures/`。
+
+工具仓库结构：
 
 ```text
 AGENTS.md                 # 子项目开发规则
 automation/               # QuickAdd 等自动化脚本源文件
 config/                   # QuickAdd、Obsidian 和 Claudian 配置源文件
-docs/                     # 框架说明和维护文档
 install/                  # 安装器和父知识库 scaffold
 migration/                # 可复用知识库迁移辅助工具
 skills/                   # Codex / agent skills
 templates/                # 无具体条目的 Routine 最小模板
+tests/                    # 脱敏 fixture 和统一回归入口
 ```
 
 `templates/` 保存 Daily、Weekly 和 month pack 的最小结构契约；安装器只在父 vault 对应模板缺失时创建副本，之后由父 vault 添加具体打卡类别和个人内容。`config/claudian/` 保存脱敏的 Claudian 默认配置；`config/layout-snapshots/` 保存手动恢复用的 Obsidian 布局快照，不由安装器自动导出。
 
 Obsidian 内默认使用 Claudian（`realclaudian`）作为 agent 入口，Codex provider 在 Claudian 中启用；各 provider 使用当前设备可见的 CLI 命令或本地 Claudian 设置。共享配置不写系统绝对路径、设备 ID、环境变量或代理；`.obsidian/workspace.json`、`.obsidian/workspace-mobile.json` 和 `.claudian/sessions/` 按设备本地维护；Terminal 插件只作为本机可选工具。
 
-## 文档入口
+## 相关入口
 
 - [安装器说明](install/README.md)
-- [框架架构](docs/architecture.md)
-- [目录说明](docs/directory-structure.md)
-- [路线图](docs/roadmap.md)
 - [子项目开发规则](AGENTS.md)
 
 ## 回归检查
