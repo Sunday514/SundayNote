@@ -3,11 +3,18 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
-const rollup = require(path.join(root, "automation/quickadd/rollup.js"));
 
 function repoText(relativePath) {
   return fs.readFileSync(path.join(root, relativePath), "utf8");
 }
+
+const quickAddConfig = JSON.parse(repoText("config/obsidian/quickadd.json"));
+const scriptPaths = quickAddConfig.choices.map((choice) => choice.macro.commands[0].path);
+assert.deepEqual([...new Set(scriptPaths)], ["SundayNoteAgent/automation/quickadd/rollup.js"]);
+assert.ok(scriptPaths.every((scriptPath) => scriptPath.split("/").every((part) => !part.startsWith("."))));
+const rollupPath = scriptPaths[0].replace(/^SundayNoteAgent\//, "");
+const rollup = require(path.join(root, rollupPath));
+assert.equal(typeof rollup, "function");
 
 function file(pathname) {
   return {

@@ -4,6 +4,7 @@ set -euo pipefail
 PROJECT_DIR_NAME="SundayNoteAgent"
 VAULT_ROOT=""
 WITH_PAPER_SUMMARIZER=0
+OPTIONAL_CONFIG_PYTHON=""
 
 usage() {
   cat <<'USAGE'
@@ -14,7 +15,7 @@ Usage:
 
 Install or update SundayNoteAgent-managed files from the current checkout.
 Without --vault-root, the vault root is the parent of SundayNoteAgent/.
-The installer creates missing vault-local files but does not overwrite them.
+The installer creates missing vault-local files and refreshes only managed files and plugin fields.
 Paper summarizer is optional because it requires a docling-capable environment.
 USAGE
 }
@@ -247,8 +248,9 @@ require_source_file "$SCAFFOLD_DIR/AGENTS.md"
 require_source_file "$SCAFFOLD_DIR/首页.md"
 require_source_file "$SCAFFOLD_DIR/.gitignore"
 require_source_file "$SOURCE_ROOT/config/quickadd-rollups.json"
-require_source_file "$SOURCE_ROOT/config/claudian/claudian-settings.json"
-require_source_file "$SOURCE_ROOT/config/obsidian/community-plugins.json"
+require_source_file "$SOURCE_ROOT/config/obsidian/calendar.json"
+require_source_file "$SOURCE_ROOT/config/obsidian/quickadd.json"
+require_source_file "$SCRIPT_DIR/configure_optional_integrations.py"
 require_source_file "$SOURCE_ROOT/templates/每日记录.md"
 require_source_file "$SOURCE_ROOT/templates/每周记录.md"
 require_source_file "$SOURCE_ROOT/templates/每月记录.md"
@@ -265,20 +267,22 @@ if [ ! -d "$VAULT_ROOT/$PROJECT_DIR_NAME" ]; then
   exit 1
 fi
 
+if command -v python3 >/dev/null 2>&1; then
+  OPTIONAL_CONFIG_PYTHON="$(command -v python3)"
+elif command -v python >/dev/null 2>&1; then
+  OPTIONAL_CONFIG_PYTHON="$(command -v python)"
+fi
+
 preflight_container_dir "$VAULT_ROOT/.agents"
 preflight_container_dir "$VAULT_ROOT/.agents/skills"
 preflight_container_dir "$VAULT_ROOT/.sunday-note-agent"
 preflight_container_dir "$VAULT_ROOT/.sunday-note-agent/config"
-preflight_container_dir "$VAULT_ROOT/.claudian"
-preflight_container_dir "$VAULT_ROOT/.obsidian"
 
 preflight_managed_file "$VAULT_ROOT/AGENTS.md"
 preflight_local_file "$VAULT_ROOT/首页.md"
 preflight_local_file "$VAULT_ROOT/.gitignore"
 preflight_append_file "$VAULT_ROOT/.stignore"
 preflight_local_file "$VAULT_ROOT/.sunday-note-agent/config/quickadd-rollups.json"
-preflight_local_file "$VAULT_ROOT/.claudian/claudian-settings.json"
-preflight_local_file "$VAULT_ROOT/.obsidian/community-plugins.json"
 preflight_local_file "$VAULT_ROOT/个人模板/每日记录.md"
 preflight_managed_file "$VAULT_ROOT/个人模板/每周记录.md"
 preflight_managed_file "$VAULT_ROOT/个人模板/每月记录.md"
@@ -286,7 +290,6 @@ preflight_managed_file "$VAULT_ROOT/个人模板/每月记录.md"
 preflight_managed_dir "$VAULT_ROOT/.agents/skills/sunday-note-ingest"
 preflight_managed_dir "$VAULT_ROOT/.agents/skills/sunday-note-lint"
 preflight_managed_dir "$VAULT_ROOT/.agents/skills/sunday-note-query"
-preflight_managed_dir "$VAULT_ROOT/.sunday-note-agent/quickadd"
 if [ "$install_paper_summarizer" -eq 1 ]; then
   preflight_managed_dir "$paper_skill_path"
 fi
@@ -307,12 +310,17 @@ copy_managed_dir "$SOURCE_ROOT/skills/sunday-note-query" "$VAULT_ROOT/.agents/sk
 if [ "$install_paper_summarizer" -eq 1 ]; then
   copy_managed_dir "$SOURCE_ROOT/skills/paper-summarizer" "$paper_skill_path"
 fi
-copy_managed_dir "$SOURCE_ROOT/automation/quickadd" "$VAULT_ROOT/.sunday-note-agent/quickadd"
-
 copy_if_missing "$SOURCE_ROOT/config/quickadd-rollups.json" "$VAULT_ROOT/.sunday-note-agent/config/quickadd-rollups.json"
-copy_if_missing "$SOURCE_ROOT/config/claudian/claudian-settings.json" "$VAULT_ROOT/.claudian/claudian-settings.json"
-copy_if_missing "$SOURCE_ROOT/config/obsidian/community-plugins.json" "$VAULT_ROOT/.obsidian/community-plugins.json"
 
+if [ -n "$OPTIONAL_CONFIG_PYTHON" ]; then
+  if ! "$OPTIONAL_CONFIG_PYTHON" "$SCRIPT_DIR/configure_optional_integrations.py" --vault-root "$VAULT_ROOT"; then
+    echo "可选集成配置失败；核心安装已完成，Calendar/QuickAdd 未全部配置。" >&2
+  fi
+else
+  echo "可选工作流未配置：Calendar Weekly 创建（未找到 python3 或 python；核心安装已完成）。"
+  echo "可选工作流未配置：QuickAdd Routine 自动化（未找到 python3 或 python；核心安装已完成）。"
+fi
 echo "Installed or updated Sunday Note vault at: $VAULT_ROOT"
-echo "Managed rules, skills, and QuickAdd files were refreshed from: $PROJECT_DIR_NAME"
-echo "Vault-local content and existing configuration were preserved."
+echo "Managed rules, skills, and Routine files were refreshed from: $PROJECT_DIR_NAME"
+echo "Vault-local content and unmanaged configuration were preserved."
+echo "安装期间应关闭 Obsidian；如果刚才正在运行，请退出后重新运行安装器，再启动 Obsidian。"

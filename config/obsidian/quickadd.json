@@ -1,0 +1,48 @@
+{
+  "choices": [
+    {
+      "id": "sunday-note-rollup-week",
+      "name": "统计本周打卡",
+      "type": "Macro",
+      "command": true,
+      "macro": {
+        "id": "sunday-note-rollup-week-macro",
+        "name": "统计本周打卡",
+        "commands": [
+          {
+            "id": "sunday-note-rollup-week-script",
+            "name": "rollup",
+            "type": "UserScript",
+            "path": "SundayNoteAgent/automation/quickadd/rollup.js",
+            "settings": {
+              "rollup": "weekly_checkins"
+            }
+          }
+        ]
+      },
+      "runOnStartup": false
+    },
+    {
+      "id": "sunday-note-rollup-month-pack",
+      "name": "刷新每月统计",
+      "type": "Macro",
+      "command": true,
+      "macro": {
+        "id": "sunday-note-rollup-month-pack-macro",
+        "name": "刷新每月统计",
+        "commands": [
+          {
+            "id": "sunday-note-rollup-month-pack-script",
+            "name": "rollup",
+            "type": "UserScript",
+            "path": "SundayNoteAgent/automation/quickadd/rollup.js",
+            "settings": {
+              "rollup": "month_pack_checkins"
+            }
+          }
+        ]
+      },
+      "runOnStartup": false
+    }
+  ]
+}

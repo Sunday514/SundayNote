@@ -56,6 +56,6 @@ keywords: [] # 真实检索词
 - 日期使用 `YYYY-MM-DD`；Daily 文件名使用 `YYYY-MM-DD.md`。
 - 长期引用的图像放在 `assets/figures/`，临时图片放在 `.import_files/`；Markdown 使用相对路径并默认显示宽度 640。
 - 行内公式使用 `$...$`，块级公式使用独立的 `$$...$$`。
-- `.claudian/`、`.obsidian/` 的会话、workspace、设备路径、环境变量和代理属于本地运行状态。
-- `AGENTS.md`、`.agents/skills/sunday-note-*`、已启用的 `paper-summarizer` 和 `.sunday-note-agent/quickadd/` 是安装器托管副本；修改 `SundayNoteAgent/` 内对应源文件后重跑安装器。
+- `.obsidian/` 中除安装器明确维护的 Calendar 和 QuickAdd 项目字段外，插件设置、会话、workspace、设备路径、环境变量和代理属于本地运行状态。
+- `AGENTS.md`、`.agents/skills/sunday-note-*` 和已启用的 `paper-summarizer` 是安装器托管副本；修改 `SundayNoteAgent/` 内对应源文件后重跑安装器。
 - `SundayNoteAgent/` 是可公开的工具项目；遵循其中的 `AGENTS.md`，不写入个人内容或本地运行状态。

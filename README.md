@@ -2,7 +2,7 @@
 
 SundayNoteAgent 是一套用于 Obsidian 知识库的 agent 工具层。它提供安装器、Codex / agent skills、QuickAdd 自动化脚本、固定 vault 布局和最小 Routine 模板，适合放在私人知识库中的 `SundayNoteAgent/` 目录下作为工具层独立 repo 使用。
 
-个人笔记、带具体条目的个人模板、附件、图片、本地 Obsidian 工作流配置和运行状态由父知识库管理，不属于本仓库。
+个人笔记、带具体条目的个人模板、附件、图片和本地运行状态由父知识库管理，不属于本仓库。
 
 ## 安装
 
@@ -40,7 +40,7 @@ bash SundayNoteAgent/install/install.sh
 
 ## 安装后内容
 
-安装器会创建父知识库骨架、必要 Obsidian 基线配置，并设置 agent 工具入口：
+安装器会创建父知识库骨架并设置 agent 工具入口：
 
 ```text
 .agents/skills/sunday-note-ingest                  # 安装器托管副本
@@ -48,13 +48,14 @@ bash SundayNoteAgent/install/install.sh
 .agents/skills/sunday-note-query                   # 安装器托管副本
 .agents/skills/paper-summarizer                    # 安装器托管副本，可选
 .sunday-note-agent/config/quickadd-rollups.json
-.sunday-note-agent/quickadd/                       # 安装器托管副本
 .stignore                                          # 保留已有规则并补充工具层和导入目录
 个人模板/每日记录.md、每周记录.md、每月记录.md          # Routine 最小骨架
 30_知识库/个人上下文.md                          # 空 Wiki 页面，只在缺失时创建
 ```
 
-重复运行安装器会从 `SundayNoteAgent/` 覆盖根规则、skills、QuickAdd 脚本、Weekly 和 month pack 模板中的同名文件，但保留目标目录中的其他文件。Daily 模板只在缺失时创建。安装器会在父 vault 的 `.stignore` 中补充 `/SundayNoteAgent` 和 `/.import_files`，并保留已有规则。论文总结 skill 首次启用时传入 `--with-paper-summarizer`；启用后普通重跑也会继续更新。统计、Claudian 和 Obsidian 配置是 vault 本地文件，只在缺失时创建。
+重复运行安装器会从 `SundayNoteAgent/` 刷新根规则、skills、Weekly 和 month pack 模板中的同名文件，但保留目标目录中的其他文件。Daily 模板和统计配置只在缺失时创建。安装器会在父 vault 的 `.stignore` 中补充 `/SundayNoteAgent` 和 `/.import_files`，并保留已有规则。论文总结 skill 首次启用时传入 `--with-paper-summarizer`；启用后普通重跑也会继续更新。
+
+用户先安装并启用需要的 Obsidian 插件，然后关闭 Obsidian、运行安装器，完成后再启动 Obsidian。Calendar 可用时，安装器维护 Weekly 创建格式、目录和模板字段；QuickAdd 可用时，安装器维护“统计本周打卡”和“刷新每月统计”两个 Routine choice，并从可见的 `SundayNoteAgent/automation/quickadd/rollup.js` 加载脚本。其他插件字段、choices 和社区插件启用列表保持不变。缺失的可选插件不会阻断核心安装，安装结果会列出未配置的工作流。
 
 ## 更新
 
@@ -88,9 +89,8 @@ bash SundayNoteAgent/install/install.sh --vault-root .
 | `个人模板/` | 父 vault 本地模板 | 个人内容不回写工具仓库 |
 | `SundayNoteAgent/` | 可公开的工具层源码 | 由 Git 和安装器维护 |
 | `.agents/` | 安装后的 agent skills | 由安装器托管 |
-| `.sunday-note-agent/` | 自动化脚本和功能配置 | 由安装器托管 |
-| `.claudian/` | Claudian 本地设置和会话 | 仅部署脱敏默认设置 |
-| `.obsidian/` | Obsidian 配置和运行状态 | 仅部署必要基线配置 |
+| `.sunday-note-agent/` | QuickAdd 统计配置 | 缺失时由安装器创建，之后由父 vault 维护 |
+| `.obsidian/` | Obsidian 插件配置和运行状态 | 仅合并已预装可选插件的项目字段 |
 
 `.import_files/` 是导入流程的临时目录，不属于知识分层。完成整理的长期来源总结进入 `10_原始材料/`，长期引用的图像进入 `assets/figures/`。
 
@@ -99,7 +99,7 @@ bash SundayNoteAgent/install/install.sh --vault-root .
 ```text
 AGENTS.md                 # 子项目开发规则
 automation/               # QuickAdd 等自动化脚本源文件
-config/                   # QuickAdd、Obsidian 和 Claudian 配置源文件
+config/                   # QuickAdd 自动化与可选 Obsidian 集成配置
 install/                  # 安装器和父知识库 scaffold
 migration/                # 可复用知识库迁移辅助工具
 skills/                   # Codex / agent skills
@@ -107,9 +107,7 @@ templates/                # 无具体条目的 Routine 最小模板
 tests/                    # 脱敏 fixture 和统一回归入口
 ```
 
-`templates/` 保存 Daily、Weekly 和 month pack 的最小结构契约；安装器只在父 vault 对应模板缺失时创建副本，之后由父 vault 添加具体打卡类别和个人内容。`config/claudian/` 保存脱敏的 Claudian 默认配置；`config/layout-snapshots/` 保存手动恢复用的 Obsidian 布局快照，不由安装器自动导出。
-
-Obsidian 内默认使用 Claudian（`realclaudian`）作为 agent 入口，Codex provider 在 Claudian 中启用；各 provider 使用当前设备可见的 CLI 命令或本地 Claudian 设置。共享配置不写系统绝对路径、设备 ID、环境变量或代理；`.obsidian/workspace.json`、`.obsidian/workspace-mobile.json` 和 `.claudian/sessions/` 按设备本地维护；Terminal 插件只作为本机可选工具。
+`templates/` 保存 Daily、Weekly 和 month pack 的最小结构契约；Daily 模板只在缺失时创建，Weekly 和 month pack 模板由安装器刷新。`config/obsidian/` 只保存 Calendar 和 QuickAdd 的最小项目字段，不包含插件启用列表、workspace、设备路径、环境变量、代理、sessions 或权限运行状态。
 
 ## 相关入口
 
