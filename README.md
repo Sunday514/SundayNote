@@ -46,14 +46,17 @@ bash SundayNoteAgent/install/install.sh
 .agents/skills/sunday-note-ingest                  # 安装器托管副本
 .agents/skills/sunday-note-lint                    # 安装器托管副本
 .agents/skills/sunday-note-query                   # 安装器托管副本
+.agents/skills/sunday-note-context                 # 安装器托管副本
 .agents/skills/paper-summarizer                    # 安装器托管副本，可选
 .sunday-note-agent/config/quickadd-rollups.json
 .stignore                                          # 保留已有规则并补充工具层和导入目录
 个人模板/每日记录.md、每周记录.md、每月记录.md          # Routine 最小骨架
-30_知识库/个人上下文.md                          # 空 Wiki 页面，只在缺失时创建
+个人上下文.md                                     # 根目录五章空页面，只在缺失时创建
 ```
 
-重复运行安装器会从 `SundayNoteAgent/` 刷新根规则、skills、Weekly 和 month pack 模板中的同名文件，但保留目标目录中的其他文件。Daily 模板和统计配置只在缺失时创建。安装器会在父 vault 的 `.stignore` 中补充 `/SundayNoteAgent` 和 `/.import_files`，并保留已有规则。论文总结 skill 首次启用时传入 `--with-paper-summarizer`；启用后普通重跑也会继续更新。
+重复运行安装器会刷新托管的根规则、skills、Weekly 和 month pack 模板，并保留个人上下文与已生成的个性化响应段。Daily 模板和本地统计配置只在缺失时创建。论文总结 skill 首次启用时传入 `--with-paper-summarizer`；启用后普通重跑也会继续更新。
+
+安装完成后可主动要求 agent“初始化个人上下文”，具体流程见[安装器说明](install/README.md)。
 
 用户先安装并启用需要的 Obsidian 插件，然后关闭 Obsidian、运行安装器，完成后再启动 Obsidian。Calendar 可用时，安装器维护 Weekly 创建格式、目录和模板字段；QuickAdd 可用时，安装器维护“统计本周打卡”和“刷新每月统计”两个 Routine choice，并从可见的 `SundayNoteAgent/automation/quickadd/rollup.js` 加载脚本。其他插件字段、choices 和社区插件启用列表保持不变。缺失的可选插件不会阻断核心安装，安装结果会列出未配置的工作流。
 
@@ -77,6 +80,7 @@ bash SundayNoteAgent/install/install.sh --vault-root .
 | 路径 | 角色 | 默认维护边界 |
 |---|---|---|
 | `首页.md` | 知识库导航入口 | 由父 vault 维护 |
+| `个人上下文.md` | 个性化任务所需的稳定上下文 | 只在用户明确初始化或校准后更新 |
 | `.import_files/` | PDF、docx、网页导出、解析产物和临时日志 | 只由导入流程管理 |
 | `10_原始材料/` | 论文、书籍、课程等长期来源总结 | 默认只读 |
 | `20_每日记录/` | Daily Routine | 改写前确认 |

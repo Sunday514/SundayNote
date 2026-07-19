@@ -47,7 +47,7 @@ make_command_path() {
 }
 
 shell_only_path="$TMP_ROOT/shell-only-bin"
-make_command_path "$shell_only_path" bash cat chmod cp date dirname grep mkdir tail touch
+make_command_path "$shell_only_path" bash cat chmod cp dirname grep mkdir mktemp rm tail touch
 
 vault="$TMP_ROOT/vault"
 mkdir -p "$vault/SundayNoteAgent"
@@ -55,7 +55,7 @@ mkdir -p "$vault/SundayNoteAgent"
 install_output="$(PATH="$shell_only_path" "$shell_only_path/bash" "$ROOT/install/install.sh" --vault-root "$vault")"
 
 test -f "$vault/AGENTS.md" || fail "new vault is missing AGENTS.md"
-test -f "$vault/30_知识库/个人上下文.md" || fail "new vault is missing personal context"
+test -f "$vault/个人上下文.md" || fail "new vault is missing root personal context"
 test -f "$vault/个人模板/每日记录.md" || fail "new vault is missing Daily template"
 test ! -e "$vault/.agents/skills/paper-summarizer" || fail "optional skill was installed without opt-in"
 test ! -e "$vault/.obsidian/community-plugins.json" || fail "installer created a community plugin baseline"
@@ -80,6 +80,8 @@ done
 assert_file_contains "$vault/.stignore" "/SundayNoteAgent"
 assert_file_contains "$vault/.stignore" "/.import_files"
 assert_same_file "$ROOT/install/scaffold/AGENTS.md" "$vault/AGENTS.md"
+assert_same_file "$ROOT/skills/sunday-note-context/assets/个人上下文.md" "$vault/个人上下文.md"
+
 assert_same_file "$ROOT/templates/每周记录.md" "$vault/个人模板/每周记录.md"
 assert_file_contains "$vault/个人模板/每周记录.md" "value-week={{title}}"
 assert_file_contains "$vault/个人模板/每周记录.md" "- [ ] 本周计划事项"
@@ -89,6 +91,7 @@ assert_file_contains "$vault/个人模板/每月记录.md" "- [ ] 本月计划�
 assert_source_tree_exported "$ROOT/skills/sunday-note-ingest" "$vault/.agents/skills/sunday-note-ingest"
 assert_source_tree_exported "$ROOT/skills/sunday-note-lint" "$vault/.agents/skills/sunday-note-lint"
 assert_source_tree_exported "$ROOT/skills/sunday-note-query" "$vault/.agents/skills/sunday-note-query"
+assert_source_tree_exported "$ROOT/skills/sunday-note-context" "$vault/.agents/skills/sunday-note-context"
 
 integrated="$TMP_ROOT/integrated"
 mkdir -p \
@@ -139,7 +142,7 @@ EOF
 
 cp "$integrated/.obsidian/community-plugins.json" "$TMP_ROOT/community-plugins.before.json"
 python3_only_path="$TMP_ROOT/python3-only-bin"
-make_command_path "$python3_only_path" bash cat chmod cp date dirname grep mkdir python3 tail touch
+make_command_path "$python3_only_path" bash cat chmod cp dirname grep mkdir mktemp python3 rm tail touch
 test ! -e "$python3_only_path/python" || fail "python3-only fixture unexpectedly exposes python"
 integration_output="$(PATH="$python3_only_path" "$python3_only_path/bash" "$ROOT/install/install.sh" --vault-root "$integrated")"
 assert_output_contains "$integration_output" "已配置可选工作流：Calendar Weekly 创建。"
@@ -266,6 +269,7 @@ assert_file_contains <(printf '%s' "$audit_output") '"raw_unlinked": []'
 printf '%s\n' "local rollup config" > "$vault/.sunday-note-agent/config/quickadd-rollups.json"
 printf '%s\n' "local template" > "$vault/个人模板/每日记录.md"
 printf '%s\n' "stale managed rule" > "$vault/AGENTS.md"
+printf '%s\n' "personal context sentinel" >> "$vault/个人上下文.md"
 printf '%s\n' "stale managed script" > "$vault/.agents/skills/sunday-note-query/scripts/query_search.py"
 printf '%s\n' "extra skill file" > "$vault/.agents/skills/sunday-note-query/local.md"
 printf '%s\n' "local ignore" > "$vault/.stignore"
@@ -277,6 +281,7 @@ cp "$vault/个人模板/每日记录.md" "$snapshot/template"
 cp "$vault/10_原始材料/集成来源.md" "$snapshot/raw"
 cp "$vault/20_每日记录/2026-07-13.md" "$snapshot/routine"
 cp "$vault/30_知识库/集成测试.md" "$snapshot/wiki"
+cp "$vault/个人上下文.md" "$snapshot/personal-context"
 
 assert_local_content_unchanged() {
   assert_same_file "$snapshot/config" "$vault/.sunday-note-agent/config/quickadd-rollups.json"
@@ -284,6 +289,7 @@ assert_local_content_unchanged() {
   assert_same_file "$snapshot/raw" "$vault/10_原始材料/集成来源.md"
   assert_same_file "$snapshot/routine" "$vault/20_每日记录/2026-07-13.md"
   assert_same_file "$snapshot/wiki" "$vault/30_知识库/集成测试.md"
+  assert_same_file "$snapshot/personal-context" "$vault/个人上下文.md"
 }
 
 bash "$ROOT/install/install.sh" --vault-root "$vault" --with-paper-summarizer >/dev/null
@@ -300,9 +306,22 @@ assert_local_content_unchanged
 assert_source_tree_exported "$ROOT/skills/sunday-note-ingest" "$vault/.agents/skills/sunday-note-ingest"
 assert_source_tree_exported "$ROOT/skills/sunday-note-lint" "$vault/.agents/skills/sunday-note-lint"
 assert_source_tree_exported "$ROOT/skills/sunday-note-query" "$vault/.agents/skills/sunday-note-query"
+assert_source_tree_exported "$ROOT/skills/sunday-note-context" "$vault/.agents/skills/sunday-note-context"
 assert_source_tree_exported "$ROOT/skills/paper-summarizer" "$vault/.agents/skills/paper-summarizer"
 assert_same_file "$ROOT/templates/每周记录.md" "$vault/个人模板/每周记录.md"
 assert_same_file "$ROOT/templates/每月记录.md" "$vault/个人模板/每月记录.md"
+
+printf '%s\n' \
+  '' \
+  '<!-- sunday-note:personal-context:start -->' \
+  '## 个性化响应' \
+  '个人上下文：[[个人上下文]]' \
+  'prompt paragraph sentinel' \
+  '<!-- sunday-note:personal-context:end -->' >> "$vault/AGENTS.md"
+bash "$ROOT/install/install.sh" --vault-root "$vault" >/dev/null
+assert_file_contains "$vault/AGENTS.md" "prompt paragraph sentinel"
+test "$(grep -Fxc -- "prompt paragraph sentinel" "$vault/AGENTS.md")" -eq 1 || fail "personal prompt sentinel was duplicated"
+assert_local_content_unchanged
 
 printf '%s\n' "stale optional skill" > "$vault/.agents/skills/paper-summarizer/SKILL.md"
 bash "$ROOT/install/install.sh" --vault-root "$vault" >/dev/null
@@ -315,6 +334,16 @@ assert_same_file "$ROOT/templates/每周记录.md" "$vault/个人模板/每周�
 assert_same_file "$ROOT/templates/每月记录.md" "$vault/个人模板/每月记录.md"
 test "$(grep -Fxc -- "/SundayNoteAgent" "$vault/.stignore")" -eq 1 || fail "Syncthing ignore rule was duplicated"
 test "$(grep -Fxc -- "/.import_files" "$vault/.stignore")" -eq 1 || fail "Syncthing import ignore rule was duplicated"
+
+marker_vault="$TMP_ROOT/marker-incomplete"
+mkdir -p "$marker_vault/SundayNoteAgent"
+printf '%s\n' '# old rules' '<!-- sunday-note:personal-context:start -->' 'sentinel' > "$marker_vault/AGENTS.md"
+cp "$marker_vault/AGENTS.md" "$TMP_ROOT/marker-incomplete.before"
+if bash "$ROOT/install/install.sh" --vault-root "$marker_vault" >"$TMP_ROOT/marker-incomplete.out" 2>&1; then
+  fail "incomplete personal context markers did not stop installation"
+fi
+assert_same_file "$TMP_ROOT/marker-incomplete.before" "$marker_vault/AGENTS.md"
+assert_file_contains "$TMP_ROOT/marker-incomplete.out" "refusing to overwrite AGENTS.md"
 
 conflict="$TMP_ROOT/conflict"
 mkdir -p "$conflict/SundayNoteAgent" "$conflict/.sunday-note-agent"

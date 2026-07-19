@@ -5,6 +5,17 @@ PROJECT_DIR_NAME="SundayNoteAgent"
 VAULT_ROOT=""
 WITH_PAPER_SUMMARIZER=0
 OPTIONAL_CONFIG_PYTHON=""
+PERSONAL_CONTEXT_START='<!-- sunday-note:personal-context:start -->'
+PERSONAL_CONTEXT_END='<!-- sunday-note:personal-context:end -->'
+RENDERED_AGENTS=""
+
+cleanup() {
+  if [ -n "$RENDERED_AGENTS" ] && [ -f "$RENDERED_AGENTS" ]; then
+    rm -f -- "$RENDERED_AGENTS"
+  fi
+}
+
+trap cleanup EXIT
 
 usage() {
   cat <<'USAGE'
@@ -162,6 +173,90 @@ copy_managed_dir() {
   cp -R "$src/." "$dst/"
 }
 
+validate_marker_block() {
+  local path="$1"
+  local start_count
+  local end_count
+  local line
+  local state=before
+
+  start_count="$(grep -Fc -- "$PERSONAL_CONTEXT_START" "$path" || true)"
+  end_count="$(grep -Fc -- "$PERSONAL_CONTEXT_END" "$path" || true)"
+  if [ "$start_count" -ne 1 ] || [ "$end_count" -ne 1 ]; then
+    echo "personal context markers must appear exactly once in order: $path" >&2
+    return 1
+  fi
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    if [ "$line" = "$PERSONAL_CONTEXT_START" ]; then
+      [ "$state" = before ] || return 1
+      state=inside
+    elif [ "$line" = "$PERSONAL_CONTEXT_END" ]; then
+      [ "$state" = inside ] || {
+        echo "personal context markers are out of order: $path" >&2
+        return 1
+      }
+      state=after
+    fi
+  done < "$path"
+
+  if [ "$state" != after ]; then
+    echo "personal context markers are incomplete: $path" >&2
+    return 1
+  fi
+}
+
+prepare_managed_agents() {
+  local template="$SCAFFOLD_DIR/AGENTS.md"
+  local target="$VAULT_ROOT/AGENTS.md"
+  local line
+  local state=before
+  local start_count=0
+  local end_count=0
+  local has_personal_context=0
+
+  start_count="$(grep -Fc -- "$PERSONAL_CONTEXT_START" "$template" || true)"
+  end_count="$(grep -Fc -- "$PERSONAL_CONTEXT_END" "$template" || true)"
+  if [ "$start_count" -ne 0 ] || [ "$end_count" -ne 0 ]; then
+    echo "managed AGENTS.md scaffold must not contain personal context markers: $template" >&2
+    return 1
+  fi
+
+  if [ -f "$target" ]; then
+    start_count="$(grep -Fc -- "$PERSONAL_CONTEXT_START" "$target" || true)"
+    end_count="$(grep -Fc -- "$PERSONAL_CONTEXT_END" "$target" || true)"
+    if [ "$start_count" -eq 0 ] && [ "$end_count" -eq 0 ]; then
+      :
+    else
+      validate_marker_block "$target" || {
+        echo "refusing to overwrite AGENTS.md with an invalid personal context block" >&2
+        return 1
+      }
+      has_personal_context=1
+    fi
+  fi
+
+  RENDERED_AGENTS="$(mktemp)"
+  cp -p "$template" "$RENDERED_AGENTS"
+  if [ "$has_personal_context" -eq 1 ]; then
+    if [ -s "$RENDERED_AGENTS" ] && [ -n "$(tail -c 1 "$RENDERED_AGENTS")" ]; then
+      printf '\n' >> "$RENDERED_AGENTS"
+    fi
+    printf '\n' >> "$RENDERED_AGENTS"
+    while IFS= read -r line || [ -n "$line" ]; do
+      if [ "$line" = "$PERSONAL_CONTEXT_START" ]; then
+        state=inside
+      fi
+      if [ "$state" = inside ]; then
+        printf '%s\n' "$line" >> "$RENDERED_AGENTS"
+      fi
+      if [ "$line" = "$PERSONAL_CONTEXT_END" ]; then
+        state=after
+      fi
+    done < "$target"
+  fi
+}
+
 ensure_vault_dirs() {
   mkdir -p \
     "$VAULT_ROOT/.agents" \
@@ -190,37 +285,13 @@ ensure_vault_dirs() {
 }
 
 ensure_personal_context_file() {
-  local target="$VAULT_ROOT/30_知识库/个人上下文.md"
-  local current_date
+  local target="$VAULT_ROOT/个人上下文.md"
 
   if [ -e "$target" ] || [ -L "$target" ]; then
     return
   fi
 
-  current_date="$(date +%F)"
-  cat > "$target" <<EOF
----
-last_updated: $current_date
-update_count: 1
-last_queried: ""
-query_count: 0
-sources: []
-topic: "个人兴趣与近期计划"
-keywords: []
----
-
-# 个人上下文
-
-## 兴趣方向
-
-## 近期计划
-
-## 推荐偏好
-
-## 当前项目
-
-## 不感兴趣
-EOF
+  cp -- "$SOURCE_ROOT/skills/sunday-note-context/assets/个人上下文.md" "$target"
 }
 
 ensure_syncthing_ignores() {
@@ -255,6 +326,8 @@ require_source_file "$SOURCE_ROOT/templates/每日记录.md"
 require_source_file "$SOURCE_ROOT/templates/每周记录.md"
 require_source_file "$SOURCE_ROOT/templates/每月记录.md"
 require_source_dir "$SOURCE_ROOT/automation/quickadd"
+require_source_dir "$SOURCE_ROOT/skills/sunday-note-context"
+require_source_file "$SOURCE_ROOT/skills/sunday-note-context/assets/个人上下文.md"
 require_source_dir "$SOURCE_ROOT/skills/sunday-note-ingest"
 require_source_dir "$SOURCE_ROOT/skills/sunday-note-lint"
 require_source_dir "$SOURCE_ROOT/skills/sunday-note-query"
@@ -283,6 +356,7 @@ preflight_local_file "$VAULT_ROOT/首页.md"
 preflight_local_file "$VAULT_ROOT/.gitignore"
 preflight_append_file "$VAULT_ROOT/.stignore"
 preflight_local_file "$VAULT_ROOT/.sunday-note-agent/config/quickadd-rollups.json"
+preflight_local_file "$VAULT_ROOT/个人上下文.md"
 preflight_local_file "$VAULT_ROOT/个人模板/每日记录.md"
 preflight_managed_file "$VAULT_ROOT/个人模板/每周记录.md"
 preflight_managed_file "$VAULT_ROOT/个人模板/每月记录.md"
@@ -290,12 +364,14 @@ preflight_managed_file "$VAULT_ROOT/个人模板/每月记录.md"
 preflight_managed_dir "$VAULT_ROOT/.agents/skills/sunday-note-ingest"
 preflight_managed_dir "$VAULT_ROOT/.agents/skills/sunday-note-lint"
 preflight_managed_dir "$VAULT_ROOT/.agents/skills/sunday-note-query"
+preflight_managed_dir "$VAULT_ROOT/.agents/skills/sunday-note-context"
 if [ "$install_paper_summarizer" -eq 1 ]; then
   preflight_managed_dir "$paper_skill_path"
 fi
+prepare_managed_agents
 
 ensure_vault_dirs
-copy_managed_file "$SCAFFOLD_DIR/AGENTS.md" "$VAULT_ROOT/AGENTS.md"
+copy_managed_file "$RENDERED_AGENTS" "$VAULT_ROOT/AGENTS.md"
 copy_if_missing "$SCAFFOLD_DIR/首页.md" "$VAULT_ROOT/首页.md"
 copy_if_missing "$SCAFFOLD_DIR/.gitignore" "$VAULT_ROOT/.gitignore"
 ensure_syncthing_ignores
@@ -304,6 +380,7 @@ copy_managed_file "$SOURCE_ROOT/templates/每周记录.md" "$VAULT_ROOT/个人�
 copy_managed_file "$SOURCE_ROOT/templates/每月记录.md" "$VAULT_ROOT/个人模板/每月记录.md"
 ensure_personal_context_file
 
+copy_managed_dir "$SOURCE_ROOT/skills/sunday-note-context" "$VAULT_ROOT/.agents/skills/sunday-note-context"
 copy_managed_dir "$SOURCE_ROOT/skills/sunday-note-ingest" "$VAULT_ROOT/.agents/skills/sunday-note-ingest"
 copy_managed_dir "$SOURCE_ROOT/skills/sunday-note-lint" "$VAULT_ROOT/.agents/skills/sunday-note-lint"
 copy_managed_dir "$SOURCE_ROOT/skills/sunday-note-query" "$VAULT_ROOT/.agents/skills/sunday-note-query"

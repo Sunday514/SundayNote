@@ -11,16 +11,14 @@
 - `.import_files/`：原始文件、解析产物和临时日志；只由导入流程管理。
 - `10_原始材料/`：论文、书籍、课程等外部资料的忠实总结；默认只读。
 - `20_每日记录/`、`21_每周记录/`、`22_每月记录/`、`23_项目复盘/`：用户活动和项目上下文；写入或改写前需要确认。
-- `30_知识库/`：稳定、可复用的 Wiki 知识；可由 agent 维护，也是默认 Query 入口。
+- `30_知识库/`：稳定、可复用的 Wiki 知识；可由 agent 维护，也是默认检索入口。
 - `40_个人写作/`：用户个人表达；只有用户明确要求时才读取或修改。
 - Schema：规则、配置、模板和工具；只有用户要求维护时才修改。
 
 ## 知识流
 
 - Raw 和 Routine 是并列证据来源，Wiki 是知识维护目标。
-- Ingest 从 Raw、Routine 或已确认对话中提炼稳定知识，只写入 Wiki，并在相关知识附近保留来源链接。
-- Query 只搜索 Wiki；读取 Wiki 后，按问题需要读取页面链接的 Raw 或 Routine。
-- Lint 仅在用户显式调用 `$sunday-note-lint` 时触发，每次逐页检查整个 Wiki 的知识结构、可达性和来源关系；用户未限制写入时按唯一全局计划把 Wiki 维护交给 subagent，显式只读请求只输出计划。机械问题只报告，Raw 和 Routine 保持只读。
+- 从 Raw、Routine 或已确认对话中提炼稳定知识时只写入 Wiki，并在相关知识附近保留来源链接。
 - 每份长期 Raw 最终都应至少被一个相关 Wiki 页面链接；Routine 只链接实际支撑稳定知识的记录。
 
 ## 写入规则
@@ -31,25 +29,7 @@
 - 当天流水账、一次性安排、未验证猜测、未经提炼的摘录和临时命令输出不进入 Wiki。
 - Wiki 在具体判断、方法、限制或项目应用附近保留 Raw / Routine wikilink；header `sources` 汇总页面级来源。
 - `30_知识库/索引.md` 只组织核心 Wiki 页面，不枚举全部 Raw / Routine。
-- `30_知识库/知识库维护日志.md` 记录 Ingest 新建 Wiki 页面的创建登记；有实际知识维护的 Lint 在整轮结束时由主 agent 写一条整轮维护记录。
-
-Wiki 页面使用以下 YAML header：
-
-```yaml
-last_updated: YYYY-MM-DD # 内容或来源实质变化日期
-update_count: 1 # 内容或来源实质变化次数
-last_queried: "" # 最近一次作为 Query 证据使用的日期
-query_count: 0 # 作为 Query 证据或来源路由使用的次数
-sources: [] # 页面级长期来源
-topic: "" # 单一稳定主题
-keywords: [] # 真实检索词
-```
-
-个人上下文是 Wiki 内的 canonical 页面：
-
-- 只保存稳定、已确认、能降低未来沟通成本的兴趣、计划、偏好和项目状态。
-- 不归档完整对话或 Routine 流水；写入或更新前需要用户确认。
-- `keywords` 使用真实兴趣词、方向词、项目词或常用问法。
+- `30_知识库/知识库维护日志.md` 记录新建 Wiki 页面的创建登记；有实际全库维护时在整轮结束后由主 agent 写一条整轮维护记录。
 
 ## 格式与托管
 
@@ -57,5 +37,4 @@ keywords: [] # 真实检索词
 - 长期引用的图像放在 `assets/figures/`，临时图片放在 `.import_files/`；Markdown 使用相对路径并默认显示宽度 640。
 - 行内公式使用 `$...$`，块级公式使用独立的 `$$...$$`。
 - `.obsidian/` 中除安装器明确维护的 Calendar 和 QuickAdd 项目字段外，插件设置、会话、workspace、设备路径、环境变量和代理属于本地运行状态。
-- `AGENTS.md`、`.agents/skills/sunday-note-*` 和已启用的 `paper-summarizer` 是安装器托管副本；修改 `SundayNoteAgent/` 内对应源文件后重跑安装器。
-- `SundayNoteAgent/` 是可公开的工具项目；遵循其中的 `AGENTS.md`，不写入个人内容或本地运行状态。
+- 根规则、已安装的 agent 工具和托管模板由安装器刷新；修改 `SundayNoteAgent/` 内对应源文件后重跑安装器。

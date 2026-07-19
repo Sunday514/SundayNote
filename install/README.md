@@ -10,6 +10,7 @@
 .agents/skills/sunday-note-ingest                  # 安装器托管副本
 .agents/skills/sunday-note-lint                    # 安装器托管副本
 .agents/skills/sunday-note-query                   # 安装器托管副本
+.agents/skills/sunday-note-context                 # 安装器托管副本
 .agents/skills/paper-summarizer                    # 安装器托管副本，可选
 .sunday-note-agent/config/quickadd-rollups.json
 .obsidian/plugins/calendar/data.json               # 已预装启用时合并项目字段
@@ -59,17 +60,17 @@ bash SundayNoteAgent/install/install.sh --vault-root . --with-paper-summarizer
 - `10_原始材料/`、`20_每日记录/`、`21_每周记录/`、`22_每月记录/`、`23_项目复盘/`、`30_知识库/`、`40_个人写作/`、`个人模板/`。
 - `个人模板/每日记录.md`：无具体打卡项的最小 Routine 骨架，只在缺失时创建。
 - `个人模板/每周记录.md`、`每月记录.md`：包含统计刷新链接的 Weekly 和 month pack 骨架，每次安装刷新。
-- `30_知识库/个人上下文.md`：空的个人上下文 Wiki 页面，`keywords` 初始为空，后续只记录真实兴趣词、方向词、项目词或常用问法。
+- `个人上下文.md`：按兴趣与经验、价值取舍、证据与知识演化、判断与协作、表达偏好组织的根目录空页面。
 - `.stignore`：保留已有规则并补充 `/SundayNoteAgent` 和 `/.import_files`，避免工具仓库与导入中间产物进入 Syncthing 同步。
 - `SundayNoteAgent/` 工具层目录。
 
 其中 `.import_files/` 是 PDF、docx、网页导出和解析中间产物的临时导入目录；`40_个人写作/` 只是空目录骨架，安装器不定义其中内容，也不维护其内部结构。
 
-三个核心 Skills、固定一级目录和最小 Routine 模板不依赖社区插件。Calendar、QuickAdd 缺失或未启用时，核心安装照常完成，安装结果会明确列出未配置的可选工作流。
+四个核心 Skills、固定一级目录和最小 Routine 模板不依赖社区插件。Calendar、QuickAdd 缺失或未启用时，核心安装照常完成，安装结果会明确列出未配置的可选工作流。
 
 不论是新 vault 还是已有 vault，安装器都会补建缺失的标准一级目录和 `.import_files/`，但不创建二级结构，也不整理已有内容。工具入口的维护方式是：
 
-- 每次覆盖父 vault 的 `AGENTS.md`、三个基础 skill、Weekly 和 month pack 模板。
+- 每次刷新父 vault 的 `AGENTS.md` 托管规则、四个基础 skill、Weekly 和 month pack 模板。
 - 传入 `--with-paper-summarizer` 时首次导出 `paper-summarizer`；已导出时，普通重跑也会刷新它。
 - 托管目录中不与源仓库同名的额外文件会保留。
 - 父 vault `.sunday-note-agent/config/quickadd-rollups.json` 下的 QuickAdd 统计配置只在缺失时创建，已有配置保持不变。
@@ -78,17 +79,19 @@ bash SundayNoteAgent/install/install.sh --vault-root . --with-paper-summarizer
 - Calendar、QuickAdd 的其他字段、其他 choices 和 `.obsidian/community-plugins.json` 保持不变。
 - 父 vault `.stignore` 保留已有内容，每次安装确保包含根目录规则 `/SundayNoteAgent` 和 `/.import_files`。
 
-只要 `30_知识库/个人上下文.md` 缺失，安装器就创建空 scaffold；已有文件不会被覆盖。
+根目录 `个人上下文.md` 缺失时，安装器创建空 scaffold；已有文件保持不变。根 `AGENTS.md` 中恰好一对个人上下文标记会连同完整个性化响应段在重装时保留；两个标记都缺失时只部署托管根规则，标记残缺、逆序或重复时安装器停止覆盖并报告错误。
+
+安装完成后建议用户主动要求 agent“初始化个人上下文”，或显式调用 `$sunday-note-context`。该流程逐题生成完整个人上下文，再从中提炼一段个性化响应 prompt 和个人上下文链接；两份完整草案必须经一次明确确认才会写入。根规则不预留该段，安装器也不自动触发或提醒该流程。
 
 项目模板只保存稳定结构和自动块标记，不包含具体打卡类别或个人正文。Daily 模板只在缺失时创建，Weekly 和 month pack 模板由安装器刷新；自动化脚本和统计配置使用固定的 Routine 与模板路径。论文总结脚本使用当前 Python 环境，导入工作目录为 `.import_files`，摘要目录为 `10_原始材料`。
 
 ## 知识流
 
 - Ingest 从用户指定的 Raw、Routine 或已确认对话中提炼稳定知识，只写入 Wiki，并保留实际来源链接。
-- Query 只搜索 Wiki；Wiki 证据不足时，只沿页面中的直接链接按需读取 Raw / Routine。
+- Query 搜索 Wiki，并在个性化任务需要时读取根目录个人上下文；Wiki 证据不足时，只沿页面中的直接链接按需读取 Raw / Routine。
 - Lint 仅在用户显式调用 `$sunday-note-lint` 时触发，每次逐页检查整个 Wiki；使用 `lint_headers.py` 和 `audit_reachability.py` 提供机械诊断基线。用户未限制写入时按唯一全局计划把 Wiki 维护交给 subagent，显式只读请求只输出计划；机械问题只进入最终报告。
 
-安装器覆盖三个核心 skill、Weekly 和 month pack 模板，保留托管目录中的额外文件。父 vault 的 Daily 模板、QuickAdd 统计配置和知识内容不进入托管覆盖范围。
+安装器覆盖四个核心 skill、Weekly 和 month pack 模板，保留托管目录中的额外文件。父 vault 的 Daily 模板、QuickAdd 统计配置、个人上下文和其他知识内容不进入托管覆盖范围。
 
 ## 验证
 
