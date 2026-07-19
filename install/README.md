@@ -79,7 +79,7 @@ bash SundayNoteAgent/install/install.sh --vault-root . --with-paper-summarizer
 - Calendar、QuickAdd 的其他字段、其他 choices 和 `.obsidian/community-plugins.json` 保持不变。
 - 父 vault `.stignore` 保留已有内容，每次安装确保包含根目录规则 `/SundayNoteAgent` 和 `/.import_files`。
 
-根目录 `个人上下文.md` 缺失时，安装器创建空 scaffold；已有文件保持不变。根 `AGENTS.md` 中恰好一对个人上下文标记会连同完整个性化响应段在重装时保留；两个标记都缺失时只部署托管根规则，标记残缺、逆序或重复时安装器停止覆盖并报告错误。
+根目录 `个人上下文.md` 缺失时，安装器创建空 scaffold；已有文件保持不变。根 `AGENTS.md` 以唯一的末尾章节 `## 个性化响应` 识别并保留个性化响应段；没有该章节时只部署托管根规则，标题重复时停止覆盖并报告错误。
 
 安装完成后建议用户主动要求 agent“初始化个人上下文”，或显式调用 `$sunday-note-context`。该流程逐题生成完整个人上下文，再从中提炼一段个性化响应 prompt 和个人上下文链接；两份完整草案必须经一次明确确认才会写入。根规则不预留该段，安装器也不自动触发或提醒该流程。
 

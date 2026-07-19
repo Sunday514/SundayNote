@@ -313,14 +313,15 @@ assert_same_file "$ROOT/templates/每月记录.md" "$vault/个人模板/每月�
 
 printf '%s\n' \
   '' \
-  '<!-- sunday-note:personal-context:start -->' \
   '## 个性化响应' \
-  '个人上下文：[[个人上下文]]' \
   'prompt paragraph sentinel' \
-  '<!-- sunday-note:personal-context:end -->' >> "$vault/AGENTS.md"
+  '' \
+  '仅在当前任务需要进一步了解个人长期项目、取舍或表达偏好时，再读取：' \
+  '- [[个人上下文]]' >> "$vault/AGENTS.md"
 bash "$ROOT/install/install.sh" --vault-root "$vault" >/dev/null
 assert_file_contains "$vault/AGENTS.md" "prompt paragraph sentinel"
 test "$(grep -Fxc -- "prompt paragraph sentinel" "$vault/AGENTS.md")" -eq 1 || fail "personal prompt sentinel was duplicated"
+test "$(grep -Fxc -- "## 个性化响应" "$vault/AGENTS.md")" -eq 1 || fail "personal prompt heading was duplicated"
 assert_local_content_unchanged
 
 printf '%s\n' "stale optional skill" > "$vault/.agents/skills/paper-summarizer/SKILL.md"
@@ -334,16 +335,6 @@ assert_same_file "$ROOT/templates/每周记录.md" "$vault/个人模板/每周�
 assert_same_file "$ROOT/templates/每月记录.md" "$vault/个人模板/每月记录.md"
 test "$(grep -Fxc -- "/SundayNoteAgent" "$vault/.stignore")" -eq 1 || fail "Syncthing ignore rule was duplicated"
 test "$(grep -Fxc -- "/.import_files" "$vault/.stignore")" -eq 1 || fail "Syncthing import ignore rule was duplicated"
-
-marker_vault="$TMP_ROOT/marker-incomplete"
-mkdir -p "$marker_vault/SundayNoteAgent"
-printf '%s\n' '# old rules' '<!-- sunday-note:personal-context:start -->' 'sentinel' > "$marker_vault/AGENTS.md"
-cp "$marker_vault/AGENTS.md" "$TMP_ROOT/marker-incomplete.before"
-if bash "$ROOT/install/install.sh" --vault-root "$marker_vault" >"$TMP_ROOT/marker-incomplete.out" 2>&1; then
-  fail "incomplete personal context markers did not stop installation"
-fi
-assert_same_file "$TMP_ROOT/marker-incomplete.before" "$marker_vault/AGENTS.md"
-assert_file_contains "$TMP_ROOT/marker-incomplete.out" "refusing to overwrite AGENTS.md"
 
 conflict="$TMP_ROOT/conflict"
 mkdir -p "$conflict/SundayNoteAgent" "$conflict/.sunday-note-agent"

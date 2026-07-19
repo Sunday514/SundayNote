@@ -5,8 +5,7 @@ PROJECT_DIR_NAME="SundayNoteAgent"
 VAULT_ROOT=""
 WITH_PAPER_SUMMARIZER=0
 OPTIONAL_CONFIG_PYTHON=""
-PERSONAL_CONTEXT_START='<!-- sunday-note:personal-context:start -->'
-PERSONAL_CONTEXT_END='<!-- sunday-note:personal-context:end -->'
+PERSONAL_CONTEXT_HEADING='## 个性化响应'
 RENDERED_AGENTS=""
 
 cleanup() {
@@ -173,66 +172,27 @@ copy_managed_dir() {
   cp -R "$src/." "$dst/"
 }
 
-validate_marker_block() {
-  local path="$1"
-  local start_count
-  local end_count
-  local line
-  local state=before
-
-  start_count="$(grep -Fc -- "$PERSONAL_CONTEXT_START" "$path" || true)"
-  end_count="$(grep -Fc -- "$PERSONAL_CONTEXT_END" "$path" || true)"
-  if [ "$start_count" -ne 1 ] || [ "$end_count" -ne 1 ]; then
-    echo "personal context markers must appear exactly once in order: $path" >&2
-    return 1
-  fi
-
-  while IFS= read -r line || [ -n "$line" ]; do
-    if [ "$line" = "$PERSONAL_CONTEXT_START" ]; then
-      [ "$state" = before ] || return 1
-      state=inside
-    elif [ "$line" = "$PERSONAL_CONTEXT_END" ]; then
-      [ "$state" = inside ] || {
-        echo "personal context markers are out of order: $path" >&2
-        return 1
-      }
-      state=after
-    fi
-  done < "$path"
-
-  if [ "$state" != after ]; then
-    echo "personal context markers are incomplete: $path" >&2
-    return 1
-  fi
-}
-
 prepare_managed_agents() {
   local template="$SCAFFOLD_DIR/AGENTS.md"
   local target="$VAULT_ROOT/AGENTS.md"
   local line
   local state=before
-  local start_count=0
-  local end_count=0
+  local heading_count=0
   local has_personal_context=0
 
-  start_count="$(grep -Fc -- "$PERSONAL_CONTEXT_START" "$template" || true)"
-  end_count="$(grep -Fc -- "$PERSONAL_CONTEXT_END" "$template" || true)"
-  if [ "$start_count" -ne 0 ] || [ "$end_count" -ne 0 ]; then
-    echo "managed AGENTS.md scaffold must not contain personal context markers: $template" >&2
+  heading_count="$(grep -Fxc -- "$PERSONAL_CONTEXT_HEADING" "$template" || true)"
+  if [ "$heading_count" -ne 0 ]; then
+    echo "managed AGENTS.md scaffold must not contain a personal context section: $template" >&2
     return 1
   fi
 
   if [ -f "$target" ]; then
-    start_count="$(grep -Fc -- "$PERSONAL_CONTEXT_START" "$target" || true)"
-    end_count="$(grep -Fc -- "$PERSONAL_CONTEXT_END" "$target" || true)"
-    if [ "$start_count" -eq 0 ] && [ "$end_count" -eq 0 ]; then
-      :
-    else
-      validate_marker_block "$target" || {
-        echo "refusing to overwrite AGENTS.md with an invalid personal context block" >&2
-        return 1
-      }
+    heading_count="$(grep -Fxc -- "$PERSONAL_CONTEXT_HEADING" "$target" || true)"
+    if [ "$heading_count" -eq 1 ]; then
       has_personal_context=1
+    elif [ "$heading_count" -gt 1 ]; then
+      echo "personal context heading must appear at most once: $target" >&2
+      return 1
     fi
   fi
 
@@ -244,14 +204,11 @@ prepare_managed_agents() {
     fi
     printf '\n' >> "$RENDERED_AGENTS"
     while IFS= read -r line || [ -n "$line" ]; do
-      if [ "$line" = "$PERSONAL_CONTEXT_START" ]; then
+      if [ "$line" = "$PERSONAL_CONTEXT_HEADING" ]; then
         state=inside
       fi
       if [ "$state" = inside ]; then
         printf '%s\n' "$line" >> "$RENDERED_AGENTS"
-      fi
-      if [ "$line" = "$PERSONAL_CONTEXT_END" ]; then
-        state=after
       fi
     done < "$target"
   fi
