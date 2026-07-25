@@ -4,65 +4,25 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
-import pypdfium2 as pdfium
-from docling.backend.docling_parse_backend import DoclingParseDocumentBackend
-from docling.datamodel.base_models import InputFormat
-from docling.datamodel.pipeline_options import PdfPipelineOptions
-from docling.document_converter import DocumentConverter, PdfFormatOption
-from PIL import Image
-
-REQUIRED_ARTIFACTS = [
-    "run_manifest.json",
-    "status.json",
-    "main_text.md",
-    "parsed.md",
-    "parsed.json",
-    "figure_index.json",
-    "figure_index.md",
-    "figures",
-]
 DEFAULT_ARTIFACTS_PATH = (Path.home() / ".cache" / "docling" / "models").resolve()
-MAIN_TEXT_BOUNDARY_HEADINGS = {
-    "references",
-    "bibliography",
-    "acknowledgements",
-    "acknowledgments",
-}
-MAIN_TEXT_BOUNDARY_PREFIXES = (
-    "appendix",
-    "appendices",
-    "supplementary",
-)
+UNKNOWN = "未明确"
+LOW_TEXT_DENSITY_THRESHOLD = 80
+LEGACY_ARTIFACTS = ("run_manifest.json", "main_text.md", "figure_index.md")
 
 
 @dataclass(frozen=True)
 class ParseArtifacts:
-    main_text: Path
     parsed_md: Path
     parsed_json: Path
     figure_index_json: Path
-    figure_index_md: Path
     parse_status: Path
-    manifest: Path
 
 
-def is_main_text_boundary(line: str) -> bool:
-    match = re.match(r"^#{1,6}\s+(.+?)\s*$", line.strip())
-    if not match:
-        return False
-    heading = re.sub(r"\s+", " ", match.group(1).strip()).lower().strip(":")
-    heading = re.sub(r"^\d+(?:\.\d+)*\s+", "", heading)
-    return heading in MAIN_TEXT_BOUNDARY_HEADINGS or heading.startswith(MAIN_TEXT_BOUNDARY_PREFIXES)
-
-
-def extract_main_text(markdown: str) -> str:
-    offset = 0
-    for line in markdown.splitlines(keepends=True):
-        if is_main_text_boundary(line):
-            return markdown[:offset].rstrip() + "\n"
-        offset += len(line)
-    return markdown
+def write_json(path: Path, payload: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def _text_lookup(document_dict: dict[str, object]) -> dict[str, dict[str, object]]:
@@ -78,15 +38,15 @@ def _text_lookup(document_dict: dict[str, object]) -> dict[str, dict[str, object
 
 def _safe_caption_text(caption_ref: object, text_lookup: dict[str, dict[str, object]]) -> str:
     if not isinstance(caption_ref, dict):
-        return "not_specified"
+        return UNKNOWN
     ref = caption_ref.get("$ref")
     if not isinstance(ref, str):
-        return "not_specified"
+        return UNKNOWN
     text_obj = text_lookup.get(ref)
     if not text_obj:
-        return "not_specified"
-    text = text_obj.get("text") or text_obj.get("orig") or "not_specified"
-    return str(text).strip() or "not_specified"
+        return UNKNOWN
+    text = text_obj.get("text") or text_obj.get("orig") or UNKNOWN
+    return str(text).strip() or UNKNOWN
 
 
 def _pdf_bbox_to_pil_crop(
@@ -113,16 +73,18 @@ def export_figures(
     document_dict: dict[str, object],
     output_dir: Path,
     scale: float = 2.0,
-) -> tuple[list[dict[str, object]], str]:
+) -> list[dict[str, object]]:
+    import pypdfium2 as pdfium
+
     pictures = document_dict.get("pictures", [])
     if not isinstance(pictures, list):
-        return [], "# Figures\n\nNo figures extracted.\n"
+        return []
 
     text_lookup = _text_lookup(document_dict)
     figures_dir = output_dir / "figures"
     figures_dir.mkdir(parents=True, exist_ok=True)
     pdf = pdfium.PdfDocument(str(pdf_path))
-    page_cache: dict[int, tuple[Image.Image, float, float]] = {}
+    page_cache: dict[int, tuple[Any, float, float]] = {}
     entries: list[dict[str, object]] = []
 
     try:
@@ -157,7 +119,7 @@ def export_figures(
             relative_image_path = image_path.relative_to(output_dir).as_posix()
             cropped.save(image_path)
             captions = picture.get("captions", [])
-            caption_text = "not_specified"
+            caption_text = UNKNOWN
             if isinstance(captions, list) and captions:
                 caption_text = _safe_caption_text(captions[0], text_lookup)
             entries.append(
@@ -171,33 +133,88 @@ def export_figures(
     finally:
         pdf.close()
 
-    lines = ["# Figures", ""]
-    if not entries:
-        lines.append("No figures extracted.")
-    else:
-        for entry in entries:
-            rel_path = str(entry["image_path"])
-            lines.extend(
-                [
-                    f"## {entry['figure_id']}",
-                    f"- Page: {entry['page_no']}",
-                    f"- Image Path: {entry['image_path']}",
-                    f"- Caption: {entry['caption']}",
-                    "",
-                    f"![{entry['figure_id']}]({rel_path})",
-                    "",
-                ]
-            )
-    return entries, "\n".join(lines).strip() + "\n"
+    return entries
 
 
-def build_manifest(output_dir: Path, pdf_path: Path) -> dict[str, object]:
+def pdf_page_count(pdf_path: Path) -> int:
+    import pypdfium2 as pdfium
+
+    pdf = pdfium.PdfDocument(str(pdf_path))
+    try:
+        return len(pdf)
+    finally:
+        pdf.close()
+
+
+def _list_count(document_dict: dict[str, object], key: str) -> int:
+    value = document_dict.get(key, [])
+    return len(value) if isinstance(value, list) else 0
+
+
+def _label_count(document_dict: dict[str, object], label: str) -> int:
+    count = 0
+    for key in ("texts", "tables", "pictures"):
+        items = document_dict.get(key, [])
+        if not isinstance(items, list):
+            continue
+        for item in items:
+            if isinstance(item, dict) and str(item.get("label", "")).lower() == label:
+                count += 1
+    return count
+
+
+def _visible_text(value: object) -> list[str]:
+    fragments: list[str] = []
+    if isinstance(value, dict):
+        text = value.get("text")
+        original = value.get("orig")
+        if isinstance(text, str) and text.strip():
+            fragments.append(text)
+        elif isinstance(original, str) and original.strip():
+            fragments.append(original)
+        for key in ("data", "table_cells", "cells"):
+            if key in value:
+                fragments.extend(_visible_text(value[key]))
+    elif isinstance(value, list):
+        for item in value:
+            fragments.extend(_visible_text(item))
+    return fragments
+
+
+def document_text_chars(document_dict: dict[str, object]) -> int:
+    fragments: list[str] = []
+    for key in ("texts", "tables"):
+        fragments.extend(_visible_text(document_dict.get(key, [])))
+    return len(re.sub(r"\s+", "", "".join(fragments)))
+
+
+def build_parse_health(
+    *,
+    document_dict: dict[str, object],
+    pages: int,
+    exported_figures: int,
+    ocr: bool,
+) -> dict[str, object]:
+    text_chars = document_text_chars(document_dict)
+    chars_per_page = round(text_chars / pages, 2) if pages else 0.0
+    pictures_detected = _list_count(document_dict, "pictures")
+    warnings: list[str] = []
+    if pages >= 2 and chars_per_page < LOW_TEXT_DENSITY_THRESHOLD:
+        warnings.append("low_text_density")
+        if not ocr:
+            warnings.append("ocr_recommended")
+    if pictures_detected > exported_figures:
+        warnings.append("figure_export_incomplete")
     return {
-        "pdf_path": str(pdf_path.resolve()),
-        "output_dir": str(output_dir.resolve()),
-        "artifacts": {
-            name: str((output_dir / name).resolve()) for name in REQUIRED_ARTIFACTS
-        },
+        "pdf_pages": pages,
+        "text_chars": text_chars,
+        "text_chars_per_page": chars_per_page,
+        "pictures_detected": pictures_detected,
+        "figures_exported": exported_figures,
+        "tables_detected": _list_count(document_dict, "tables"),
+        "formulas_detected": _label_count(document_dict, "formula"),
+        "code_items_detected": _label_count(document_dict, "code"),
+        "warnings": warnings,
     }
 
 
@@ -206,7 +223,12 @@ def create_converter(
     ocr: bool = False,
     device: str = "auto",
     artifacts_path: Path | None = DEFAULT_ARTIFACTS_PATH,
-) -> tuple[DocumentConverter, str | None]:
+) -> tuple[Any, str | None]:
+    from docling.backend.docling_parse_backend import DoclingParseDocumentBackend
+    from docling.datamodel.base_models import InputFormat
+    from docling.datamodel.pipeline_options import PdfPipelineOptions
+    from docling.document_converter import DocumentConverter, PdfFormatOption
+
     pipeline_options = PdfPipelineOptions()
     pipeline_options.do_ocr = ocr
     pipeline_options.do_code_enrichment = True
@@ -234,7 +256,7 @@ def parse_pdf(
     ocr: bool = False,
     device: str = "auto",
     artifacts_path: Path | None = DEFAULT_ARTIFACTS_PATH,
-    converter: DocumentConverter | None = None,
+    converter: Any | None = None,
     resolved_artifacts_path: str | None = None,
 ) -> ParseArtifacts:
     pdf_path = pdf_path.expanduser().resolve()
@@ -243,23 +265,49 @@ def parse_pdf(
 
     output_dir = output_dir.expanduser().resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
-    manifest_path = output_dir / "run_manifest.json"
+    for legacy_name in LEGACY_ARTIFACTS:
+        (output_dir / legacy_name).unlink(missing_ok=True)
     parse_status_path = output_dir / "status.json"
-    manifest_path.write_text(
-        json.dumps(build_manifest(output_dir, pdf_path), ensure_ascii=False, indent=2),
-        encoding="utf-8",
+    artifacts = ParseArtifacts(
+        parsed_md=output_dir / "parsed.md",
+        parsed_json=output_dir / "parsed.json",
+        figure_index_json=output_dir / "figure_index.json",
+        parse_status=parse_status_path,
     )
-
-    if converter is None:
-        converter, resolved_artifacts_path = create_converter(
-            ocr=ocr,
-            device=device,
-            artifacts_path=artifacts_path,
-        )
-
+    health: dict[str, object] | None = None
     try:
+        if converter is None:
+            converter, resolved_artifacts_path = create_converter(
+                ocr=ocr,
+                device=device,
+                artifacts_path=artifacts_path,
+            )
         result = converter.convert(str(pdf_path))
+        document = result.document
+        markdown = document.export_to_markdown()
+        document_dict = document.export_to_dict()
+        figure_entries = export_figures(pdf_path, document_dict, output_dir)
+        health = build_parse_health(
+            document_dict=document_dict,
+            pages=pdf_page_count(pdf_path),
+            exported_figures=len(figure_entries),
+            ocr=ocr,
+        )
+        artifacts.parsed_md.write_text(markdown, encoding="utf-8")
+        write_json(artifacts.parsed_json, document_dict)
+        write_json(artifacts.figure_index_json, figure_entries)
+        if health["pdf_pages"] == 0 or health["text_chars"] == 0:
+            raise ValueError("Docling produced no usable page or text content.")
     except Exception as exc:
+        message = (
+            str(exc)
+            if str(exc).startswith("Docling produced no usable")
+            else (
+                "Docling failed to parse or export the PDF. "
+                "Verify that model artifacts are initialized and rerun with --ocr only if needed. "
+                f"Original error: {exc}"
+            )
+        )
         parse_status = {
             "ok": False,
             "pdf_path": str(pdf_path.resolve()),
@@ -269,44 +317,13 @@ def parse_pdf(
             "formula_enrichment_enabled": True,
             "selected_backend": "docling_parse",
             "artifacts_path": resolved_artifacts_path,
-            "error": (
-                "Docling failed to parse the PDF. "
-                "Verify that model artifacts are initialized and rerun with --ocr only if needed. "
-                f"Original error: {exc}"
-            ),
+            "health": health,
+            "error": message,
             "error_type": type(exc).__name__,
         }
-        parse_status_path.write_text(
-            json.dumps(parse_status, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
-        raise RuntimeError(parse_status["error"]) from exc
+        write_json(parse_status_path, parse_status)
+        raise RuntimeError(message) from exc
 
-    document = result.document
-    markdown = document.export_to_markdown()
-    document_dict = document.export_to_dict()
-    figure_entries, figure_index_md = export_figures(pdf_path, document_dict, output_dir)
-
-    artifacts = ParseArtifacts(
-        main_text=output_dir / "main_text.md",
-        parsed_md=output_dir / "parsed.md",
-        parsed_json=output_dir / "parsed.json",
-        figure_index_json=output_dir / "figure_index.json",
-        figure_index_md=output_dir / "figure_index.md",
-        parse_status=parse_status_path,
-        manifest=manifest_path,
-    )
-    artifacts.main_text.write_text(extract_main_text(markdown), encoding="utf-8")
-    artifacts.parsed_md.write_text(markdown, encoding="utf-8")
-    artifacts.parsed_json.write_text(
-        json.dumps(document_dict, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-    artifacts.figure_index_json.write_text(
-        json.dumps(figure_entries, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-    artifacts.figure_index_md.write_text(figure_index_md, encoding="utf-8")
     parse_status = {
         "ok": True,
         "pdf_path": str(pdf_path.resolve()),
@@ -316,11 +333,9 @@ def parse_pdf(
         "formula_enrichment_enabled": True,
         "selected_backend": "docling_parse",
         "artifacts_path": resolved_artifacts_path,
+        "health": health,
         "error": None,
         "error_type": None,
     }
-    artifacts.parse_status.write_text(
-        json.dumps(parse_status, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    write_json(artifacts.parse_status, parse_status)
     return artifacts

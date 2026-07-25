@@ -1,6 +1,6 @@
 ---
 name: paper-summarizer
-description: 从本地 PDF 论文解析正文和图表，整理贡献、方法、实验与局限，并生成以论文标题命名的单篇 Raw 总结。用于论文精读和来源摘要任务；PDF 和全部解析过程产物留在 `.import_files/`，实际引用图像写入 vault 的 assets 图像目录。不用于跨论文 Wiki 沉淀、项目调研报告或方案设计。
+description: 用户要求精读或总结本地 PDF 论文时使用。
 ---
 
 # Paper Summarizer
@@ -15,9 +15,8 @@ description: 从本地 PDF 论文解析正文和图表，整理贡献、方法�
 ## 资源
 
 - `assets/summary_template.json`：摘要结构和写作规则。
-- `assets/embodied_ai_terminology.json`：仅用于归一论文中实际出现的具身智能术语。
 - `scripts/prepare_paper_summary.py`：准备工作区、复制 PDF、写 metadata 并运行 Docling。
-- `scripts/validate_summary.py`、`scripts/write_summary_status.py`：把校验和状态写回导入工作区。
+- `scripts/validate_summary.py`：校验证据、metadata、结构和图像，并更新导入状态。
 
 ## 工作流
 
@@ -31,14 +30,14 @@ python .agents/skills/paper-summarizer/scripts/prepare_paper_summary.py --vault-
 
 可附加 `--metadata`、`--title`、`--authors`、`--published-at`、`--paper-link` 或 `--code-link`。缺失信息写“未明确”，不要编造。
 
-4. 读取脚本输出的 `metadata_path`、`work_dir`、`parse_dir`、`figure_source_dir`、`figures_dir` 和 `summary_path`，再读取解析正文与图表索引。
+4. 检查 `parse_dir/status.json` 的 health 和 warning，再读取完整的 `parsed.md`、`parsed.json` 与 `figure_index.json`。
 5. 按 `assets/summary_template.json` 写入 `summary_path`。直接解释问题、方法、证据和局限，不复述论文目录，不写“本文 / 本节 / 下面整理”等包装语句。
-6. 最多选择 2-3 张有助于理解方法或实验的图，从 `figure_source_dir` 复制到 `figures_dir`，并使用从 `summary_path` 指向图像的相对路径；默认形如 `../assets/figures/<paper-slug>/<文件名>`。
-7. 校验并更新状态：
+6. 在 `work_dir/summarize/summary_evidence.json` 写入 `{"version":1,"evidence":{"<evidence_key>":[{"page":1,"excerpt":"..."}]}}`。为模板声明的每个 `evidence_key` 提供至少一条记录；摘录必须是对应页 `parsed.json` 中实际出现的 12-300 字符文本。可选 `figure_id` 必须来自同页图像索引。
+7. 最多选择 2-3 张有助于理解方法或实验的图，从 `figure_source_dir` 复制到 `figures_dir`，保留候选图文件名，并使用从 `summary_path` 指向图像的相对路径；默认形如 `../assets/figures/<paper-slug>/<文件名>`。
+8. 校验并更新状态：
 
 ```bash
 python .agents/skills/paper-summarizer/scripts/validate_summary.py <summary_path> --work-dir <work_dir>
-python .agents/skills/paper-summarizer/scripts/write_summary_status.py <summary_path> --work-dir <work_dir>
 ```
 
 事实性判断只来自解析文本或 metadata。PDF 不存在、Docling 解析失败、模型 artifacts 缺失或校验失败时停止并报告失败步骤；不要把论文产物写入 `SundayNoteAgent/`。

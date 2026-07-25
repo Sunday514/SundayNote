@@ -343,6 +343,9 @@ copy_managed_dir "$SOURCE_ROOT/skills/sunday-note-lint" "$VAULT_ROOT/.agents/ski
 copy_managed_dir "$SOURCE_ROOT/skills/sunday-note-query" "$VAULT_ROOT/.agents/skills/sunday-note-query"
 if [ "$install_paper_summarizer" -eq 1 ]; then
   copy_managed_dir "$SOURCE_ROOT/skills/paper-summarizer" "$paper_skill_path"
+  rm -f \
+    "$paper_skill_path/assets/embodied_ai_terminology.json" \
+    "$paper_skill_path/scripts/write_summary_status.py"
 fi
 copy_if_missing "$SOURCE_ROOT/config/quickadd-rollups.json" "$VAULT_ROOT/.sunday-note-agent/config/quickadd-rollups.json"
 

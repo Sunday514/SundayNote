@@ -2,7 +2,7 @@
   "name": "summary-template",
   "version": "v1",
   "language": "zh-CN",
-  "description": "Project-level template configuration for markdown paper summaries.",
+  "description": "论文 Raw 总结的结构与校验契约。",
   "top_level_title": "# {{ title }}",
   "header_fields": [
     "作者",
@@ -13,6 +13,7 @@
     "代码链接"
   ],
   "core_conclusion": {
+    "evidence_key": "core_conclusion",
     "prefix": "> 核心结论：",
     "position": "after_header_fields",
     "description": "用一句话说明论文最重要的贡献、方法抓手和结果。"
@@ -24,6 +25,7 @@
   ],
   "sections": [
     {
+      "evidence_key": "background",
       "heading": "## 1. 研究背景与动机",
       "description": "对应 Introduction：用 SCQA 的思路写清问题设定、现有方法的 gap，以及本文的核心主张。",
       "items": [
@@ -34,6 +36,7 @@
       ]
     },
     {
+      "evidence_key": "method",
       "heading": "## 2. 技术方法",
       "description": "对应 Methods：先建立方法主线，再按论文贡献拆解支撑主线的关键机制；二级标题应按论文内容命名。",
       "organization": [
@@ -56,6 +59,7 @@
       ]
     },
     {
+      "evidence_key": "experiments",
       "heading": "## 3. 实验结果与分析",
       "description": "合并 Results 和 Discussion：先说明实验支持或削弱了哪些结论，再用任务、数据、基线、指标、关键结果和边界支撑。",
       "items": [

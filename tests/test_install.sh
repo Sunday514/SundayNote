@@ -325,10 +325,16 @@ test "$(grep -Fxc -- "## 个性化响应" "$vault/AGENTS.md")" -eq 1 || fail "pe
 assert_local_content_unchanged
 
 printf '%s\n' "stale optional skill" > "$vault/.agents/skills/paper-summarizer/SKILL.md"
+printf '%s\n' "obsolete status script" > "$vault/.agents/skills/paper-summarizer/scripts/write_summary_status.py"
+printf '%s\n' '{}' > "$vault/.agents/skills/paper-summarizer/assets/embodied_ai_terminology.json"
+printf '%s\n' "local paper extension" > "$vault/.agents/skills/paper-summarizer/local.md"
 bash "$ROOT/install/install.sh" --vault-root "$vault" >/dev/null
 if grep -Fq "stale optional skill" "$vault/.agents/skills/paper-summarizer/SKILL.md"; then
   fail "enabled optional skill was not refreshed"
 fi
+test ! -e "$vault/.agents/skills/paper-summarizer/scripts/write_summary_status.py" || fail "obsolete paper status script was not removed"
+test ! -e "$vault/.agents/skills/paper-summarizer/assets/embodied_ai_terminology.json" || fail "obsolete paper terminology asset was not removed"
+assert_file_contains "$vault/.agents/skills/paper-summarizer/local.md" "local paper extension"
 assert_local_content_unchanged
 assert_source_tree_exported "$ROOT/skills/paper-summarizer" "$vault/.agents/skills/paper-summarizer"
 assert_same_file "$ROOT/templates/每周记录.md" "$vault/个人模板/每周记录.md"

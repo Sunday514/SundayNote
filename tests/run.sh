@@ -14,5 +14,6 @@ node "$ROOT/tests/test_rollup.js"
 python "$ROOT/tests/test_skills.py"
 python "$ROOT/tests/test_query.py"
 python "$ROOT/tests/test_python_tools.py"
+python "$ROOT/tests/test_paper_summarizer.py"
 
 echo "All regression checks passed."

@@ -19,7 +19,7 @@ def utc_now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
-def read_json(path: Path) -> dict[str, object]:
+def read_json(path: Path) -> object:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
@@ -57,7 +57,10 @@ def normalize_authors(value: str | None) -> list[dict[str, str]]:
 def merge_metadata(args: argparse.Namespace, metadata_path: Path | None, pdf_path: Path) -> dict[str, object]:
     metadata: dict[str, object] = {}
     if metadata_path:
-        metadata = read_json(metadata_path.expanduser().resolve())
+        loaded = read_json(metadata_path.expanduser().resolve())
+        if not isinstance(loaded, dict):
+            raise ValueError("metadata JSON must be an object")
+        metadata = loaded
     if args.title:
         metadata["title"] = args.title
     if args.authors:
@@ -68,11 +71,13 @@ def merge_metadata(args: argparse.Namespace, metadata_path: Path | None, pdf_pat
         metadata["paper_link"] = args.paper_link
     if args.code_link:
         metadata["code_link"] = args.code_link
-    metadata.setdefault("title", pdf_path.stem)
-    metadata.setdefault("authors", [])
-    metadata.setdefault("published_at", UNKNOWN)
-    metadata.setdefault("paper_link", UNKNOWN)
-    metadata.setdefault("code_link", UNKNOWN)
+    if not metadata.get("title"):
+        metadata["title"] = pdf_path.stem
+    if metadata.get("authors") is None:
+        metadata["authors"] = []
+    for key in ("published_at", "paper_link", "code_link"):
+        if not metadata.get(key):
+            metadata[key] = UNKNOWN
     metadata["pdf_path"] = "paper.pdf"
     return metadata
 
@@ -162,6 +167,7 @@ def main() -> int:
 
     status: dict[str, object] = {
         "status": "prepared",
+        "step": "parse",
         "updated_at": utc_now_iso(),
         "import_dir": str(import_workspace),
         "raw_dir": str(raw_dir),
@@ -170,6 +176,7 @@ def main() -> int:
         "parse_dir": str(parse_dir),
         "figure_source_dir": str(figure_source_dir),
         "figures_dir": str(figures_dir),
+        "warnings": [],
         "error": None,
     }
 
@@ -183,6 +190,11 @@ def main() -> int:
                 artifacts_path=args.artifacts_path,
             )
             status["status"] = "parsed"
+            status["step"] = "summarize"
+            parse_status = read_json(parse_dir / "status.json")
+            health = parse_status.get("health", {})
+            if isinstance(health, dict) and isinstance(health.get("warnings"), list):
+                status["warnings"] = health["warnings"]
             status["extracted_figures"] = (
                 [path.name for path in sorted(figure_source_dir.iterdir()) if path.is_file()]
                 if figure_source_dir.exists()
@@ -190,6 +202,7 @@ def main() -> int:
             )
         except Exception as exc:
             status["status"] = "failed"
+            status["step"] = "parse"
             status["error"] = {
                 "code": "docling_parse_failed",
                 "message": f"{type(exc).__name__}: {exc}",
