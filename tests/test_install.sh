@@ -324,6 +324,28 @@ test "$(grep -Fxc -- "prompt paragraph sentinel" "$vault/AGENTS.md")" -eq 1 || f
 test "$(grep -Fxc -- "## 个性化响应" "$vault/AGENTS.md")" -eq 1 || fail "personal prompt heading was duplicated"
 assert_local_content_unchanged
 
+crlf_vault="$TMP_ROOT/crlf-vault"
+mkdir -p "$crlf_vault/SundayNoteAgent"
+printf '%s\r\n' '## 个性化响应' '' 'CRLF personal sentinel' '- [[个人上下文]]' > "$TMP_ROOT/personal-crlf"
+cp "$TMP_ROOT/personal-crlf" "$crlf_vault/AGENTS.md"
+for attempt in 1 2; do
+  bash "$ROOT/install/install.sh" --vault-root "$crlf_vault" >/dev/null
+  python - "$crlf_vault/AGENTS.md" "$TMP_ROOT/personal-crlf" <<'PY'
+import sys
+from pathlib import Path
+actual = Path(sys.argv[1]).read_bytes()
+personal = Path(sys.argv[2]).read_bytes()
+assert actual.endswith(personal), "CRLF personal section changed"
+assert actual.count(personal) == 1, "CRLF personal section duplicated"
+PY
+done
+printf '%s\n' '## 个性化响应' >> "$crlf_vault/AGENTS.md"
+cp "$crlf_vault/AGENTS.md" "$TMP_ROOT/duplicate-personal"
+if bash "$ROOT/install/install.sh" --vault-root "$crlf_vault" >"$TMP_ROOT/duplicate.out" 2>&1; then
+  fail "mixed-newline duplicate personal headings did not stop installation"
+fi
+assert_same_file "$TMP_ROOT/duplicate-personal" "$crlf_vault/AGENTS.md"
+
 printf '%s\n' "stale optional skill" > "$vault/.agents/skills/paper-summarizer/SKILL.md"
 printf '%s\n' "obsolete status script" > "$vault/.agents/skills/paper-summarizer/scripts/write_summary_status.py"
 printf '%s\n' '{}' > "$vault/.agents/skills/paper-summarizer/assets/embodied_ai_terminology.json"

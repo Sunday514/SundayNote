@@ -180,14 +180,14 @@ prepare_managed_agents() {
   local heading_count=0
   local has_personal_context=0
 
-  heading_count="$(grep -Fxc -- "$PERSONAL_CONTEXT_HEADING" "$template" || true)"
+  heading_count="$(grep -Exc -- "${PERSONAL_CONTEXT_HEADING}"$'\r?' "$template" || true)"
   if [ "$heading_count" -ne 0 ]; then
     echo "managed AGENTS.md scaffold must not contain a personal context section: $template" >&2
     return 1
   fi
 
   if [ -f "$target" ]; then
-    heading_count="$(grep -Fxc -- "$PERSONAL_CONTEXT_HEADING" "$target" || true)"
+    heading_count="$(grep -Exc -- "${PERSONAL_CONTEXT_HEADING}"$'\r?' "$target" || true)"
     if [ "$heading_count" -eq 1 ]; then
       has_personal_context=1
     elif [ "$heading_count" -gt 1 ]; then
@@ -204,7 +204,7 @@ prepare_managed_agents() {
     fi
     printf '\n' >> "$RENDERED_AGENTS"
     while IFS= read -r line || [ -n "$line" ]; do
-      if [ "$line" = "$PERSONAL_CONTEXT_HEADING" ]; then
+      if [ "${line%$'\r'}" = "$PERSONAL_CONTEXT_HEADING" ]; then
         state=inside
       fi
       if [ "$state" = inside ]; then

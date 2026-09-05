@@ -83,10 +83,10 @@ bash SundayNoteAgent/install/install.sh --vault-root .
 | `个人上下文.md` | 个性化任务所需的稳定上下文 | 只在用户明确初始化或校准后更新 |
 | `.import_files/` | PDF、docx、网页导出、解析产物和临时日志 | 只由导入流程管理 |
 | `10_原始材料/` | 论文、书籍、课程等长期来源总结 | 默认只读 |
-| `20_每日记录/` | Daily Routine | 改写前确认 |
-| `21_每周记录/` | Weekly Routine | 改写前确认 |
-| `22_每月记录/` | Monthly Routine | 改写前确认 |
-| `23_项目复盘/` | Project Routine | 改写前确认 |
+| `20_每日记录/` | Daily Routine | 明确操作和目标后写入 |
+| `21_每周记录/` | Weekly Routine | 明确操作和目标后写入 |
+| `22_每月记录/` | Monthly Routine | 明确操作和目标后写入 |
+| `23_项目复盘/` | Project Routine | 明确操作和目标后写入 |
 | `30_知识库/` | agent 可维护的长期 Wiki | 按 skills 和根规则维护 |
 | `40_个人写作/` | 可选 Journal | 仅用户明确要求时读写 |
 | `assets/figures/` | 长期引用图像 | 文档使用相对路径引用 |

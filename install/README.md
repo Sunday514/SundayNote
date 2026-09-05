@@ -79,9 +79,9 @@ bash SundayNoteAgent/install/install.sh --vault-root . --with-paper-summarizer
 - Calendar、QuickAdd 的其他字段、其他 choices 和 `.obsidian/community-plugins.json` 保持不变。
 - 父 vault `.stignore` 保留已有内容，每次安装确保包含根目录规则 `/SundayNoteAgent` 和 `/.import_files`。
 
-根目录 `个人上下文.md` 缺失时，安装器创建空 scaffold；已有文件保持不变。根 `AGENTS.md` 以唯一的末尾章节 `## 个性化响应` 识别并保留个性化响应段；没有该章节时只部署托管根规则，标题重复时停止覆盖并报告错误。
+根目录 `个人上下文.md` 缺失时创建空 scaffold，已有文件保留。根 `AGENTS.md` 以唯一末尾章节 `## 个性化响应` 保留个人响应段，兼容 LF 和 CRLF 标题；无该章节时部署托管根规则，标题重复时停止覆盖。段内换行保留，缺少末尾换行时补换行。
 
-安装完成后建议用户主动要求 agent“初始化个人上下文”，或显式调用 `$sunday-note-context`。该流程逐题生成完整个人上下文，再从中提炼一段个性化响应 prompt 和个人上下文链接；两份完整草案必须经一次明确确认才会写入。根规则不预留该段，安装器也不自动触发或提醒该流程。
+安装完成后建议用户主动要求 agent“初始化个人上下文”，或显式调用 `$sunday-note-context`。该流程逐题询问缺失信息，整个访谈最多追加两题澄清，再生成完整个人上下文、个性化响应 prompt 和入口链接；两份完整草案经一次明确确认后写入。根规则不预留该段，安装器也不自动触发或提醒该流程。
 
 项目模板只保存稳定结构和自动块标记，不包含具体打卡类别或个人正文。Daily 模板只在缺失时创建，Weekly 和 month pack 模板由安装器刷新；自动化脚本和统计配置使用固定的 Routine 与模板路径。论文总结脚本使用当前 Python 环境，导入工作目录为 `.import_files`，摘要目录为 `10_原始材料`。
 
@@ -89,9 +89,13 @@ bash SundayNoteAgent/install/install.sh --vault-root . --with-paper-summarizer
 
 - Ingest 从用户指定的 Raw、Routine 或已确认对话中提炼稳定知识，只写入 Wiki，并保留实际来源链接。
 - Query 搜索 Wiki，并在个性化任务需要时读取根目录个人上下文；Wiki 证据不足时，只沿页面中的直接链接按需读取 Raw / Routine。
-- Lint 仅在用户显式调用 `$sunday-note-lint` 时触发，每次逐页检查整个 Wiki；使用 `lint_headers.py` 和 `audit_reachability.py` 提供机械诊断基线。用户未限制写入时按唯一全局计划把 Wiki 维护交给 subagent，显式只读请求只输出计划；机械问题只进入最终报告。
+- Lint 仅在用户显式调用 `$sunday-note-lint` 时触发，逐页检查整个 Wiki，并用 `lint_headers.py` 和 `audit_reachability.py` 建立机械基线。默认按唯一全局计划委派 Wiki 维护，子任务继承已授权范围；只读请求只报告。默认展示范围和结果摘要，完整任务明细按需展开，阻塞、失败和未完成事项必须报告。
 
 安装器覆盖四个核心 skill、Weekly 和 month pack 模板，保留托管目录中的额外文件。父 vault 的 Daily 模板、QuickAdd 统计配置、个人上下文和其他知识内容不进入托管覆盖范围。
+
+普通 Routine 改写及 Ingest 多页写入，用户已明确操作和全部目标时直接执行；新增目标或操作再确认。删除、归档、未确认结论和个人上下文草案继续遵守 Skill 的专门确认规则。
+
+根规则集中维护公共表达要求，各 Skill 保留产物约定。论文总结保持三个主章节和证据校验，小节随实际方法组织。
 
 ## 验证
 
